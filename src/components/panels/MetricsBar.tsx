@@ -71,7 +71,7 @@ export function MetricsBar() {
     return (
       <div
         data-testid="metrics-loading"
-        className="fixed bottom-0 left-0 right-0 h-20 bg-background/95 backdrop-blur border-t border-border"
+        className="h-16 bg-background border-t border-border shrink-0"
       >
         <div className="h-full max-w-7xl mx-auto px-4 flex items-center justify-between">
           <div className="flex gap-4">
@@ -92,7 +92,7 @@ export function MetricsBar() {
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 h-20 bg-background/95 backdrop-blur border-t border-border">
+    <div className="h-16 bg-background border-t border-border shrink-0">
       <div className="h-full max-w-7xl mx-auto px-4 flex items-center justify-between">
         <div className="flex gap-4">
           <MetricCard

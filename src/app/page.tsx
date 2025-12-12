@@ -46,13 +46,12 @@ export default function Home() {
         <ViewToggle />
       </header>
 
-      {/* Main content */}
-      <div className="flex-1 relative">
-        {/* Map container */}
+      {/* Main content - map area */}
+      <div className="flex-1 relative min-h-0 overflow-hidden">
         <div
-          className="absolute inset-0 transition-all duration-300"
+          className="h-full w-full transition-all duration-300"
           style={{
-            right: isPanelOpen ? '20rem' : 0,
+            paddingRight: isPanelOpen ? '20rem' : 0,
           }}
         >
           {currentView === 'topology' ? <TopologyGraph /> : <GeographicMap />}

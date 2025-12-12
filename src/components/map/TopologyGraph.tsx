@@ -210,7 +210,7 @@ export function TopologyGraph() {
         <Background color="hsl(var(--muted-foreground))" gap={20} size={1} />
         <Controls
           className="!bg-zinc-900 !border-zinc-700 !rounded-lg [&>button]:!bg-zinc-800 [&>button]:!border-zinc-700 [&>button]:!text-zinc-300 [&>button:hover]:!bg-zinc-700"
-          style={{ bottom: 80 }}
+          style={{ bottom: 20, left: 20 }}
         />
         <MiniMap
           nodeColor={(node) => {
@@ -223,7 +223,7 @@ export function TopologyGraph() {
           }}
           maskColor="rgba(0, 0, 0, 0.8)"
           className="!bg-zinc-900 !border-zinc-700 !rounded-lg"
-          style={{ bottom: 80 }}
+          style={{ bottom: 20, right: 20 }}
         />
       </ReactFlow>
     </div>
