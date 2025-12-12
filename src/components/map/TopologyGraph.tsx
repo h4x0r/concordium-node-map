@@ -38,7 +38,11 @@ function ConcordiumNodeComponent({ data, selected }: NodeProps) {
     issue: 'bg-red-500 border-red-600',
   }[nodeData.health];
 
-  const sizeClass = nodeData.peersCount > 15 ? 'w-12 h-12' : nodeData.peersCount > 8 ? 'w-10 h-10' : 'w-8 h-8';
+  // Dynamic size based on peer count (min 24px, max 56px)
+  const baseSize = 24;
+  const maxSize = 56;
+  const scaleFactor = Math.min(nodeData.peersCount / 20, 1); // Normalize to 0-1 (20 peers = max)
+  const size = Math.round(baseSize + (maxSize - baseSize) * scaleFactor);
 
   return (
     <TooltipProvider>
@@ -48,9 +52,9 @@ function ConcordiumNodeComponent({ data, selected }: NodeProps) {
             className={cn(
               'rounded-full border-2 flex items-center justify-center cursor-pointer transition-all',
               healthColor,
-              sizeClass,
               selected && 'ring-2 ring-blue-500 ring-offset-2 ring-offset-background'
             )}
+            style={{ width: size, height: size }}
           >
             <Handle type="target" position={Position.Top} className="opacity-0" />
             <Handle type="source" position={Position.Bottom} className="opacity-0" />
