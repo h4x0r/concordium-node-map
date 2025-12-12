@@ -114,9 +114,9 @@ function NodeDetails({ node, maxHeight }: { node: ConcordiumNode; maxHeight: num
         <DetailRow label="Bandwidth Out" value={formatBytes(node.averageBytesPerSecondOut)} />
         {node.peersList.length > 0 && (
           <div className="mt-2">
-            <div className="text-xs text-muted-foreground mb-1">Connected Peers</div>
-            <div className="flex flex-wrap gap-1">
-              {node.peersList.slice(0, 5).map((peerId) => (
+            <div className="text-xs text-muted-foreground mb-1">Connected Peers ({node.peersList.length})</div>
+            <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
+              {node.peersList.map((peerId) => (
                 <Badge
                   key={peerId}
                   variant="secondary"
@@ -126,11 +126,6 @@ function NodeDetails({ node, maxHeight }: { node: ConcordiumNode; maxHeight: num
                   {peerId.slice(0, 8)}...
                 </Badge>
               ))}
-              {node.peersList.length > 5 && (
-                <Badge variant="outline" className="text-xs">
-                  +{node.peersList.length - 5} more
-                </Badge>
-              )}
             </div>
           </div>
         )}
