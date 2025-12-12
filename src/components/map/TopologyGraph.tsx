@@ -19,6 +19,7 @@ import '@xyflow/react/dist/style.css';
 import { useNodes } from '@/hooks/useNodes';
 import { useAppStore } from '@/hooks/useAppStore';
 import { toReactFlowNodes, toReactFlowEdges, type ConcordiumNodeData, type ConcordiumNode } from '@/lib/transforms';
+import { getLayoutedElements } from '@/lib/layout';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -109,9 +110,20 @@ export function TopologyGraph() {
 
   const { initialNodes, initialEdges } = useMemo(() => {
     if (!apiNodes) return { initialNodes: [], initialEdges: [] };
+
+    const rawNodes = toReactFlowNodes(apiNodes);
+    const rawEdges = toReactFlowEdges(apiNodes);
+
+    // Apply dagre layout (graphviz-like algorithm)
+    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
+      rawNodes,
+      rawEdges,
+      { direction: 'TB', rankSep: 120, nodeSep: 60 }
+    );
+
     return {
-      initialNodes: toReactFlowNodes(apiNodes),
-      initialEdges: toReactFlowEdges(apiNodes),
+      initialNodes: layoutedNodes,
+      initialEdges: layoutedEdges,
     };
   }, [apiNodes]);
 
@@ -144,7 +156,7 @@ export function TopologyGraph() {
     selectNode(null);
   }, [selectNode]);
 
-  // Style edges - highlight those connected to selected node
+  // Style edges - always visible, highlight those connected to selected node
   const styledEdges = useMemo((): Edge[] => {
     return edges.map((edge: Edge) => {
       const isConnectedToSelected = Boolean(
@@ -155,9 +167,9 @@ export function TopologyGraph() {
       return {
         ...edge,
         style: {
-          stroke: isConnectedToSelected ? '#3b82f6' : 'hsl(var(--muted-foreground))',
-          strokeWidth: isConnectedToSelected ? 2 : 1,
-          opacity: isConnectedToSelected ? 1 : 0.5,
+          stroke: isConnectedToSelected ? '#3b82f6' : '#64748b',
+          strokeWidth: isConnectedToSelected ? 2.5 : 1.5,
+          opacity: selectedNodeId ? (isConnectedToSelected ? 1 : 0.2) : 0.7,
         },
         animated: isConnectedToSelected,
       };
@@ -192,7 +204,7 @@ export function TopologyGraph() {
         minZoom={0.1}
         maxZoom={2}
         defaultEdgeOptions={{
-          style: { stroke: 'hsl(var(--muted-foreground))', strokeWidth: 1, opacity: 0.5 },
+          style: { stroke: '#64748b', strokeWidth: 1.5, opacity: 0.7 },
         }}
       >
         <Background color="hsl(var(--muted-foreground))" gap={20} size={1} />
