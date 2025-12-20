@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useAppStore } from '@/hooks/useAppStore';
 import { useNetworkMetrics, useNodes } from '@/hooks/useNodes';
 import { useMetricHistory, type MetricSnapshot } from '@/hooks/useMetricHistory';
@@ -61,6 +61,42 @@ export default function Home() {
   const { history, addSnapshot } = useMetricHistory();
   const currentTime = useCurrentTime();
   const [commandInput, setCommandInput] = useState('');
+  const [sortColumn, setSortColumn] = useState<'name' | 'peers' | 'fin' | 'status'>('name');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
+  // Sort nodes based on current sort column and direction
+  const sortedNodes = useMemo(() => {
+    if (!nodes) return [];
+    return [...nodes].sort((a, b) => {
+      let comparison = 0;
+      switch (sortColumn) {
+        case 'name':
+          const nameA = (a.nodeName || a.nodeId).toLowerCase();
+          const nameB = (b.nodeName || b.nodeId).toLowerCase();
+          comparison = nameA.localeCompare(nameB);
+          break;
+        case 'peers':
+          comparison = a.peersCount - b.peersCount;
+          break;
+        case 'fin':
+          comparison = a.finalizedBlockHeight - b.finalizedBlockHeight;
+          break;
+        case 'status':
+          comparison = (a.consensusRunning ? 1 : 0) - (b.consensusRunning ? 1 : 0);
+          break;
+      }
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  }, [nodes, sortColumn, sortDirection]);
+
+  const handleSort = (column: 'name' | 'peers' | 'fin' | 'status') => {
+    if (sortColumn === column) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
 
   // Calculate pulse and create snapshot from network metrics
   useEffect(() => {
@@ -314,14 +350,22 @@ export default function Home() {
               <table className="bb-table">
                 <thead>
                   <tr>
-                    <th>Node ID</th>
-                    <th>Peers</th>
-                    <th>Fin</th>
-                    <th>Status</th>
+                    <th onClick={() => handleSort('name')} style={{ cursor: 'pointer' }}>
+                      Node ID {sortColumn === 'name' && (sortDirection === 'asc' ? '▲' : '▼')}
+                    </th>
+                    <th onClick={() => handleSort('peers')} style={{ cursor: 'pointer' }}>
+                      Peers {sortColumn === 'peers' && (sortDirection === 'asc' ? '▲' : '▼')}
+                    </th>
+                    <th onClick={() => handleSort('fin')} style={{ cursor: 'pointer' }}>
+                      Fin {sortColumn === 'fin' && (sortDirection === 'asc' ? '▲' : '▼')}
+                    </th>
+                    <th onClick={() => handleSort('status')} style={{ cursor: 'pointer' }}>
+                      Status {sortColumn === 'status' && (sortDirection === 'asc' ? '▲' : '▼')}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {nodes?.map((node) => (
+                  {sortedNodes.map((node) => (
                     <tr
                       key={node.nodeId}
                       className={selectedNodeId === node.nodeId ? 'selected' : ''}
