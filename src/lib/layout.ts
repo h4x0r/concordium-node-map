@@ -2,7 +2,8 @@ import {
   forceSimulation,
   forceLink,
   forceManyBody,
-  forceCenter,
+  forceX,
+  forceY,
   forceCollide,
   type SimulationNodeDatum,
   type SimulationLinkDatum,
@@ -13,6 +14,7 @@ interface SimNode extends SimulationNodeDatum {
   id: string;
   width: number;
   height: number;
+  degree: number;
 }
 
 interface SimLink extends SimulationLinkDatum<SimNode> {
@@ -27,30 +29,57 @@ export interface LayoutOptions {
 }
 
 /**
- * Apply force-directed layout algorithm to minimize edge crossings
+ * Apply hierarchical layout algorithm based on node degree
+ * Nodes with fewer connections appear at the top, more connections at the bottom
  * Uses d3-force with:
+ * - Y force: positions nodes vertically by degree (low degree = top, high degree = bottom)
+ * - X force: centers nodes horizontally
  * - Link force: keeps connected nodes at optimal distance
- * - Many-body force: nodes repel each other
+ * - Many-body force: nodes repel each other for horizontal spreading
  * - Collision force: prevents node overlap
- * - Center force: keeps graph centered
  */
 export function getLayoutedElements(
   nodes: Node[],
   edges: Edge[],
   options: LayoutOptions = {}
 ): { nodes: Node[]; edges: Edge[] } {
-  const { width = 1200, height = 800, iterations = 300 } = options;
+  const { width = 2400, height = 1600, iterations = 300 } = options;
 
   if (nodes.length === 0) return { nodes, edges };
 
-  // Create simulation nodes
-  const simNodes: SimNode[] = nodes.map((node) => ({
-    id: node.id,
-    x: node.position.x || Math.random() * width,
-    y: node.position.y || Math.random() * height,
-    width: 50,
-    height: 50,
-  }));
+  // Calculate degree (number of edges) for each node
+  const degreeMap = new Map<string, number>();
+  for (const node of nodes) {
+    degreeMap.set(node.id, 0);
+  }
+  for (const edge of edges) {
+    degreeMap.set(edge.source, (degreeMap.get(edge.source) || 0) + 1);
+    degreeMap.set(edge.target, (degreeMap.get(edge.target) || 0) + 1);
+  }
+
+  // Find min and max degree for normalization
+  const degrees = Array.from(degreeMap.values());
+  const minDegree = Math.min(...degrees);
+  const maxDegree = Math.max(...degrees);
+  const degreeRange = maxDegree - minDegree || 1;
+
+  // Create simulation nodes with degree info
+  const simNodes: SimNode[] = nodes.map((node) => {
+    const degree = degreeMap.get(node.id) || 0;
+    // Normalize degree to 0-1, then map to Y position
+    // Low degree = top (small Y), high degree = bottom (large Y)
+    const normalizedDegree = (degree - minDegree) / degreeRange;
+    const targetY = 50 + normalizedDegree * (height - 100);
+
+    return {
+      id: node.id,
+      x: width / 2 + (Math.random() - 0.5) * width * 0.8,
+      y: targetY,
+      width: 50,
+      height: 50,
+      degree,
+    };
+  });
 
   // Create simulation links
   const simLinks: SimLink[] = edges.map((edge) => ({
@@ -58,21 +87,34 @@ export function getLayoutedElements(
     target: edge.target,
   }));
 
-  // Create force simulation
+  // Create force simulation with hierarchical Y positioning
   const simulation = forceSimulation<SimNode>(simNodes)
-    // Link force - connected nodes attract
+    // Y force - position nodes by degree (strongest force for hierarchy)
+    .force(
+      'y',
+      forceY<SimNode>((d) => {
+        const normalizedDegree = (d.degree - minDegree) / degreeRange;
+        return 50 + normalizedDegree * (height - 100);
+      }).strength(2.0)
+    )
+    // X force - center horizontally
+    .force(
+      'x',
+      forceX<SimNode>(width / 2).strength(0.05)
+    )
+    // Link force - connected nodes attract (very weak to not override Y positioning)
     .force(
       'link',
       forceLink<SimNode, SimLink>(simLinks)
         .id((d) => d.id)
-        .distance(120) // Target distance between linked nodes
-        .strength(0.5)
+        .distance(120)
+        .strength(0.05)
     )
-    // Many-body force - all nodes repel
+    // Many-body force - strong repulsion for horizontal spreading within tiers
     .force(
       'charge',
       forceManyBody<SimNode>()
-        .strength(-800) // Negative = repulsion
+        .strength(-1200)
         .distanceMax(500)
     )
     // Collision force - prevent overlap
@@ -80,10 +122,8 @@ export function getLayoutedElements(
       'collide',
       forceCollide<SimNode>()
         .radius(60)
-        .strength(0.8)
+        .strength(1.0)
     )
-    // Center force - keep graph centered
-    .force('center', forceCenter(width / 2, height / 2))
     .stop();
 
   // Run simulation synchronously
