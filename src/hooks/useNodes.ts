@@ -46,11 +46,9 @@ export function useNetworkMetrics() {
     const minHeight = Math.min(...heights);
     const maxFinalizationLag = maxHeight - minHeight;
 
-    // Consensus participation (% of nodes that are bakers)
-    const bakers = nodes.filter(
-      (n) => n.bakingCommitteeMember === 'ActiveInCommittee' && n.consensusBakerId !== null
-    );
-    const consensusParticipation = Math.round((bakers.length / totalNodes) * 100);
+    // Consensus participation (% of nodes with consensus running)
+    const consensusNodes = nodes.filter((n) => n.consensusRunning);
+    const consensusParticipation = Math.round((consensusNodes.length / totalNodes) * 100);
 
     return {
       totalNodes,

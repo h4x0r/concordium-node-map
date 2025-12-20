@@ -166,18 +166,10 @@ describe('useNetworkMetrics', () => {
 
   it('calculates consensus participation percentage', async () => {
     const mockNodes = [
-      createMockNode({
-        nodeId: '1',
-        bakingCommitteeMember: 'ActiveInCommittee',
-        consensusBakerId: 1,
-      }),
-      createMockNode({
-        nodeId: '2',
-        bakingCommitteeMember: 'ActiveInCommittee',
-        consensusBakerId: 2,
-      }),
-      createMockNode({ nodeId: '3', bakingCommitteeMember: 'NotInCommittee', consensusBakerId: null }),
-      createMockNode({ nodeId: '4', bakingCommitteeMember: 'NotInCommittee', consensusBakerId: null }),
+      createMockNode({ nodeId: '1', consensusRunning: true }),
+      createMockNode({ nodeId: '2', consensusRunning: true }),
+      createMockNode({ nodeId: '3', consensusRunning: true }),
+      createMockNode({ nodeId: '4', consensusRunning: false }),
     ];
     mockFetch.mockResolvedValueOnce({
       ok: true,
@@ -190,8 +182,8 @@ describe('useNetworkMetrics', () => {
       expect(result.current.metrics).not.toBeNull();
     });
 
-    // 2 out of 4 are bakers = 50%
-    expect(result.current.metrics?.consensusParticipation).toBe(50);
+    // 3 out of 4 have consensus running = 75%
+    expect(result.current.metrics?.consensusParticipation).toBe(75);
   });
 
   it('returns null metrics when loading', () => {

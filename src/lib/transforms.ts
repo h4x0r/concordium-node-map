@@ -65,7 +65,7 @@ export function toReactFlowNodes(nodes: ConcordiumNode[]): Node<ConcordiumNodeDa
       type: 'concordiumNode',
       position: { x: col * 150, y: row * 150 },
       data: {
-        label: node.nodeName,
+        label: node.nodeName || node.nodeId.slice(0, 12),
         peersCount: node.peersCount,
         health: calculateNodeHealth(node, maxHeight),
         isBaker,
