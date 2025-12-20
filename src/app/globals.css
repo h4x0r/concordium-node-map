@@ -830,6 +830,54 @@
   color: var(--bb-amber);
 }
 
+.bb-forensic-section {
+  margin-bottom: 12px;
+}
+
+.bb-forensic-section:last-child {
+  margin-bottom: 0;
+}
+
+.bb-forensic-section-header {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--bb-orange);
+  letter-spacing: 0.1em;
+  margin-bottom: 4px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--bb-border);
+}
+
+.bb-peer-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.bb-peer-tag {
+  font-size: 9px;
+  font-family: inherit;
+  padding: 2px 6px;
+  background: var(--bb-panel);
+  border: 1px solid var(--bb-border);
+  color: var(--bb-cyan);
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+.bb-peer-tag:hover {
+  background: var(--bb-orange-dim);
+  border-color: var(--bb-orange);
+  color: var(--bb-orange);
+}
+
+.bb-peer-more {
+  font-size: 9px;
+  padding: 2px 6px;
+  color: var(--bb-gray);
+}
+
 /* ============================================
    BLOOMBERG LOGO AREA
    ============================================ */
