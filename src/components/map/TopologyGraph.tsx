@@ -4,8 +4,6 @@ import { useCallback, useEffect, useMemo } from 'react';
 import {
   ReactFlow,
   Background,
-  Controls,
-  MiniMap,
   useNodesState,
   useEdgesState,
   type Node,
@@ -308,6 +306,7 @@ export function TopologyGraph() {
         fitView
         minZoom={0.1}
         maxZoom={2}
+        proOptions={{ hideAttribution: true }}
         defaultEdgeOptions={{
           style: { stroke: 'rgba(100, 116, 139, 0.5)', strokeWidth: 1, opacity: 0.5 },
         }}
@@ -317,23 +316,6 @@ export function TopologyGraph() {
           gap={40}
           size={1}
           style={{ opacity: 0.03 }}
-        />
-        <Controls
-          className="!bg-background/90 !backdrop-blur-md !border-[var(--concordium-teal)]/30 !rounded-lg [&>button]:!bg-card/50 [&>button]:!border-[var(--concordium-teal)]/20 [&>button]:!text-foreground [&>button:hover]:!bg-[var(--concordium-teal)]/20 [&>button:hover]:!text-[var(--concordium-teal)]"
-          style={{ bottom: 20, left: 20 }}
-        />
-        <MiniMap
-          nodeColor={(node) => {
-            const data = node.data as ConcordiumNodeData;
-            return data.health === 'healthy'
-              ? '#34d399'
-              : data.health === 'lagging'
-                ? '#fbbf24'
-                : '#f87171';
-          }}
-          maskColor="rgba(0, 0, 0, 0.85)"
-          className="!bg-background/90 !backdrop-blur-md !border-[var(--concordium-teal)]/30 !rounded-lg"
-          style={{ bottom: 20, right: 20 }}
         />
       </ReactFlow>
     </div>
