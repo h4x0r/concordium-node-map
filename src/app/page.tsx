@@ -424,7 +424,7 @@ export default function Home() {
             />
             <MRTGChart
               data={finalizationHealthData}
-              label="Sync Health (40%)"
+              label="Sync Health"
               unit="%"
               color="orange"
               min={0}
@@ -434,7 +434,7 @@ export default function Home() {
             />
             <MRTGChart
               data={latencyHealthData}
-              label="Latency Health (30%)"
+              label="Latency Health"
               unit="%"
               color="amber"
               min={0}
@@ -444,7 +444,7 @@ export default function Home() {
             />
             <MRTGChart
               data={consensusHealthData}
-              label="Consensus (30%)"
+              label="Consensus"
               unit="%"
               color="cyan"
               min={0}
