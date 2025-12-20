@@ -81,35 +81,31 @@ function ConcordiumNodeComponent({ data, selected }: NodeProps) {
         </TooltipTrigger>
         <TooltipContent
           side="top"
-          className="max-w-xs bg-background/95 backdrop-blur-md border-[var(--concordium-teal)]/30 shadow-[0_0_20px_var(--concordium-teal-dim)]"
+          className="max-w-xs bg-[var(--bb-black)] border border-[var(--bb-orange)] p-2 z-50"
         >
-          <div className="space-y-2 p-1">
-            <div className="font-mono font-bold text-[var(--concordium-teal)]">{nodeData.label}</div>
-            <div className="flex gap-2 flex-wrap">
-              <Badge
-                variant="outline"
-                className="text-[10px] font-mono bg-card/50"
-              >
+          <div className="space-y-1">
+            <div className="font-mono font-bold text-[var(--bb-orange)]">
+              {nodeData.node.nodeName || 'Unnamed Node'}
+            </div>
+            <div className="font-mono text-[10px] text-[var(--bb-gray)]">
+              {nodeData.node.nodeId}
+            </div>
+            <div className="flex gap-2 flex-wrap pt-1">
+              <span className="text-[10px] font-mono text-[var(--bb-cyan)]">
                 {nodeData.peersCount} PEERS
-              </Badge>
-              <Badge
-                variant="outline"
-                className={cn(
-                  'text-[10px] font-mono',
-                  nodeData.health === 'healthy' && 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50',
-                  nodeData.health === 'lagging' && 'bg-amber-500/20 text-amber-400 border-amber-500/50',
-                  nodeData.health === 'issue' && 'bg-red-500/20 text-red-400 border-red-500/50'
-                )}
-              >
+              </span>
+              <span className={cn(
+                'text-[10px] font-mono',
+                nodeData.health === 'healthy' && 'text-[var(--bb-green)]',
+                nodeData.health === 'lagging' && 'text-[var(--bb-amber)]',
+                nodeData.health === 'issue' && 'text-[var(--bb-red)]'
+              )}>
                 {nodeData.health.toUpperCase()}
-              </Badge>
+              </span>
               {nodeData.isBaker && (
-                <Badge
-                  variant="outline"
-                  className="text-[10px] font-mono bg-purple-500/20 text-purple-400 border-purple-500/50"
-                >
+                <span className="text-[10px] font-mono text-purple-400">
                   BAKER
-                </Badge>
+                </span>
               )}
             </div>
           </div>
