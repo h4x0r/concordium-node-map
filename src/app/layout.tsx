@@ -16,6 +16,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'Concordium Network Map',
   description: 'Real-time visualization of the Concordium blockchain network',
+  icons: {
+    icon: '/concordium-logo.svg',
+    apple: '/concordium-logo.svg',
+  },
 };
 
 export default function RootLayout({

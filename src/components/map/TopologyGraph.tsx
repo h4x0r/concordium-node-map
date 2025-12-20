@@ -32,17 +32,31 @@ import {
 
 function ConcordiumNodeComponent({ data, selected }: NodeProps) {
   const nodeData = data as unknown as ConcordiumNodeData;
-  const healthColor = {
-    healthy: 'bg-green-500 border-green-600',
-    lagging: 'bg-yellow-500 border-yellow-600',
-    issue: 'bg-red-500 border-red-600',
+
+  // Cyberpunk color scheme with glows
+  const healthColors = {
+    healthy: {
+      bg: 'bg-emerald-500',
+      border: 'border-emerald-400',
+      glow: 'shadow-[0_0_15px_rgba(52,211,153,0.5)]',
+    },
+    lagging: {
+      bg: 'bg-amber-500',
+      border: 'border-amber-400',
+      glow: 'shadow-[0_0_15px_rgba(251,191,36,0.5)]',
+    },
+    issue: {
+      bg: 'bg-red-500',
+      border: 'border-red-400',
+      glow: 'shadow-[0_0_15px_rgba(248,113,113,0.5)]',
+    },
   }[nodeData.health];
 
   // Dynamic size based on peer count (min 8px, max 120px) - very dramatic scaling
   const baseSize = 8;
   const maxSize = 120;
-  const scaleFactor = Math.min(nodeData.peersCount / 10, 1); // Normalize to 0-1 (10 peers = max)
-  const size = Math.round(baseSize + (maxSize - baseSize) * scaleFactor); // Linear for maximum drama
+  const scaleFactor = Math.min(nodeData.peersCount / 10, 1);
+  const size = Math.round(baseSize + (maxSize - baseSize) * scaleFactor);
 
   return (
     <TooltipProvider>
@@ -50,35 +64,51 @@ function ConcordiumNodeComponent({ data, selected }: NodeProps) {
         <TooltipTrigger asChild>
           <div
             className={cn(
-              'rounded-full border-2 flex items-center justify-center cursor-pointer transition-all',
-              healthColor,
-              selected && 'ring-2 ring-blue-500 ring-offset-2 ring-offset-background'
+              'rounded-full border-2 flex items-center justify-center cursor-pointer transition-all duration-300',
+              healthColors.bg,
+              healthColors.border,
+              healthColors.glow,
+              selected && 'ring-2 ring-[var(--concordium-teal)] ring-offset-2 ring-offset-background shadow-[0_0_25px_var(--concordium-teal-glow)]'
             )}
             style={{ width: size, height: size }}
           >
             <Handle type="target" position={Position.Top} className="opacity-0" />
             <Handle type="source" position={Position.Bottom} className="opacity-0" />
             {nodeData.isBaker && (
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-purple-500 rounded-full border border-background" />
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-purple-500 rounded-full border border-background shadow-[0_0_8px_rgba(168,85,247,0.6)]" />
             )}
           </div>
         </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-xs">
-          <div className="space-y-1">
-            <div className="font-medium">{nodeData.label}</div>
-            <div className="text-xs text-muted-foreground flex gap-2">
-              <Badge variant="outline" className="text-xs">
-                {nodeData.peersCount} peers
+        <TooltipContent
+          side="top"
+          className="max-w-xs bg-background/95 backdrop-blur-md border-[var(--concordium-teal)]/30 shadow-[0_0_20px_var(--concordium-teal-dim)]"
+        >
+          <div className="space-y-2 p-1">
+            <div className="font-mono font-bold text-[var(--concordium-teal)]">{nodeData.label}</div>
+            <div className="flex gap-2 flex-wrap">
+              <Badge
+                variant="outline"
+                className="text-[10px] font-mono bg-card/50"
+              >
+                {nodeData.peersCount} PEERS
               </Badge>
               <Badge
-                variant={nodeData.health === 'healthy' ? 'default' : nodeData.health === 'lagging' ? 'secondary' : 'destructive'}
-                className="text-xs"
+                variant="outline"
+                className={cn(
+                  'text-[10px] font-mono',
+                  nodeData.health === 'healthy' && 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50',
+                  nodeData.health === 'lagging' && 'bg-amber-500/20 text-amber-400 border-amber-500/50',
+                  nodeData.health === 'issue' && 'bg-red-500/20 text-red-400 border-red-500/50'
+                )}
               >
-                {nodeData.health}
+                {nodeData.health.toUpperCase()}
               </Badge>
               {nodeData.isBaker && (
-                <Badge variant="outline" className="text-xs bg-purple-500/10">
-                  Baker
+                <Badge
+                  variant="outline"
+                  className="text-[10px] font-mono bg-purple-500/20 text-purple-400 border-purple-500/50"
+                >
+                  BAKER
                 </Badge>
               )}
             </div>
@@ -95,14 +125,31 @@ const nodeTypes = {
 
 function LoadingSkeleton() {
   return (
-    <div className="w-full h-full flex items-center justify-center bg-muted/20">
-      <div className="text-center space-y-4">
-        <div className="flex justify-center gap-2">
-          {[...Array(5)].map((_, i) => (
-            <Skeleton key={i} className="w-8 h-8 rounded-full" />
-          ))}
+    <div className="w-full h-full flex items-center justify-center">
+      <div className="text-center space-y-6">
+        {/* Animated loading ring */}
+        <div className="relative w-20 h-20 mx-auto">
+          <div className="absolute inset-0 rounded-full border-2 border-[var(--concordium-teal)]/20" />
+          <div className="absolute inset-0 rounded-full border-2 border-[var(--concordium-teal)] border-t-transparent animate-spin" />
+          <div className="absolute inset-2 rounded-full border border-[var(--concordium-teal)]/30" />
+          <div className="absolute inset-4 rounded-full bg-[var(--concordium-teal)]/10 animate-pulse" />
         </div>
-        <p className="text-muted-foreground text-sm">Loading network topology...</p>
+
+        {/* Loading text with typing effect */}
+        <div className="space-y-2">
+          <p className="text-muted-foreground font-mono text-sm tracking-wider">
+            LOADING NETWORK TOPOLOGY<span className="cursor-blink" />
+          </p>
+          <div className="flex justify-center gap-2">
+            {[...Array(5)].map((_, i) => (
+              <Skeleton
+                key={i}
+                className="w-3 h-3 rounded-full bg-[var(--concordium-teal)]/20"
+                style={{ animationDelay: `${i * 0.1}s` }}
+              />
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -160,7 +207,7 @@ export function TopologyGraph() {
     selectNode(null);
   }, [selectNode]);
 
-  // Style edges - always visible, highlight those connected to selected node
+  // Style edges - cyberpunk aesthetic with teal highlights
   const styledEdges = useMemo((): Edge[] => {
     return edges.map((edge: Edge) => {
       const isConnectedToSelected = Boolean(
@@ -171,9 +218,10 @@ export function TopologyGraph() {
       return {
         ...edge,
         style: {
-          stroke: isConnectedToSelected ? '#3b82f6' : '#64748b',
-          strokeWidth: isConnectedToSelected ? 2.5 : 1.5,
-          opacity: selectedNodeId ? (isConnectedToSelected ? 1 : 0.2) : 0.7,
+          stroke: isConnectedToSelected ? 'var(--concordium-teal)' : 'rgba(100, 116, 139, 0.5)',
+          strokeWidth: isConnectedToSelected ? 2.5 : 1,
+          opacity: selectedNodeId ? (isConnectedToSelected ? 1 : 0.15) : 0.5,
+          filter: isConnectedToSelected ? 'drop-shadow(0 0 3px var(--concordium-teal-glow))' : 'none',
         },
         animated: isConnectedToSelected,
       };
@@ -194,8 +242,9 @@ export function TopologyGraph() {
             opacity: selectedNodeId
               ? n.id === selectedNodeId || selectedPeerIds.has(n.id)
                 ? 1
-                : 0.3
+                : 0.2
               : 1,
+            transition: 'opacity 0.3s ease',
           },
         }))}
         edges={styledEdges}
@@ -208,25 +257,30 @@ export function TopologyGraph() {
         minZoom={0.1}
         maxZoom={2}
         defaultEdgeOptions={{
-          style: { stroke: '#64748b', strokeWidth: 1.5, opacity: 0.7 },
+          style: { stroke: 'rgba(100, 116, 139, 0.5)', strokeWidth: 1, opacity: 0.5 },
         }}
       >
-        <Background color="hsl(var(--muted-foreground))" gap={20} size={1} />
+        <Background
+          color="var(--concordium-teal)"
+          gap={40}
+          size={1}
+          style={{ opacity: 0.03 }}
+        />
         <Controls
-          className="!bg-zinc-900 !border-zinc-700 !rounded-lg [&>button]:!bg-zinc-800 [&>button]:!border-zinc-700 [&>button]:!text-zinc-300 [&>button:hover]:!bg-zinc-700"
+          className="!bg-background/90 !backdrop-blur-md !border-[var(--concordium-teal)]/30 !rounded-lg [&>button]:!bg-card/50 [&>button]:!border-[var(--concordium-teal)]/20 [&>button]:!text-foreground [&>button:hover]:!bg-[var(--concordium-teal)]/20 [&>button:hover]:!text-[var(--concordium-teal)]"
           style={{ bottom: 20, left: 20 }}
         />
         <MiniMap
           nodeColor={(node) => {
             const data = node.data as ConcordiumNodeData;
             return data.health === 'healthy'
-              ? '#22c55e'
+              ? '#34d399'
               : data.health === 'lagging'
-                ? '#eab308'
-                : '#ef4444';
+                ? '#fbbf24'
+                : '#f87171';
           }}
-          maskColor="rgba(0, 0, 0, 0.8)"
-          className="!bg-zinc-900 !border-zinc-700 !rounded-lg"
+          maskColor="rgba(0, 0, 0, 0.85)"
+          className="!bg-background/90 !backdrop-blur-md !border-[var(--concordium-teal)]/30 !rounded-lg"
           style={{ bottom: 20, right: 20 }}
         />
       </ReactFlow>
