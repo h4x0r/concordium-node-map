@@ -62,8 +62,8 @@ export default function Home() {
   const { history, addSnapshot } = useMetricHistory();
   const currentTime = useCurrentTime();
   const [commandInput, setCommandInput] = useState('');
-  const [sortColumn, setSortColumn] = useState<'name' | 'peers' | 'fin' | 'status'>('name');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [sortColumn, setSortColumn] = useState<'name' | 'peers' | 'fin' | 'status'>('peers');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const commandInputRef = useRef<HTMLInputElement>(null);
 
   // Bloomberg-style: any typing focuses command input automatically
