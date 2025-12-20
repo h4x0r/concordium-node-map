@@ -1,14 +1,13 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppStore } from '@/hooks/useAppStore';
-import { useNetworkMetrics } from '@/hooks/useNodes';
+import { useNetworkMetrics, useNodes } from '@/hooks/useNodes';
 import { useMetricHistory, type MetricSnapshot } from '@/hooks/useMetricHistory';
-import { calculateNetworkPulse } from '@/lib/pulse';
-import { ViewToggle } from '@/components/map/ViewToggle';
+import { calculateNetworkPulse, getPulseStatus, THRESHOLDS } from '@/lib/pulse';
 import { NodeDetailPanel } from '@/components/panels/NodeDetailPanel';
-import { CommandHeader } from '@/components/dashboard/CommandHeader';
+import { Sparkline } from '@/components/dashboard/Sparkline';
 
 // Dynamic imports for heavy map components
 const TopologyGraph = dynamic(
@@ -16,16 +15,8 @@ const TopologyGraph = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="w-full h-full flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="relative w-16 h-16 mx-auto">
-            <div className="absolute inset-0 rounded-full border-2 border-[var(--concordium-teal)] opacity-20" />
-            <div className="absolute inset-0 rounded-full border-2 border-[var(--concordium-teal)] border-t-transparent animate-spin" />
-          </div>
-          <p className="text-muted-foreground font-mono text-sm tracking-wider">
-            INITIALIZING TOPOLOGY VIEW<span className="cursor-blink" />
-          </p>
-        </div>
+      <div className="w-full h-full flex items-center justify-center bg-[var(--bb-black)]">
+        <span className="text-[var(--bb-gray)]">LOADING TOPOLOGY...</span>
       </div>
     ),
   }
@@ -36,25 +27,40 @@ const GeographicMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="w-full h-full flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="relative w-16 h-16 mx-auto">
-            <div className="absolute inset-0 rounded-full border-2 border-[var(--concordium-teal)] opacity-20" />
-            <div className="absolute inset-0 rounded-full border-2 border-[var(--concordium-teal)] border-t-transparent animate-spin" />
-          </div>
-          <p className="text-muted-foreground font-mono text-sm tracking-wider">
-            INITIALIZING GEOGRAPHIC VIEW<span className="cursor-blink" />
-          </p>
-        </div>
+      <div className="w-full h-full flex items-center justify-center bg-[var(--bb-black)]">
+        <span className="text-[var(--bb-gray)]">LOADING GEOGRAPHIC...</span>
       </div>
     ),
   }
 );
 
+function useCurrentTime() {
+  const [time, setTime] = useState(new Date());
+  useEffect(() => {
+    const interval = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+  return time;
+}
+
+function formatTime(date: Date) {
+  return date.toLocaleTimeString('en-US', { hour12: false });
+}
+
+function formatDate(date: Date) {
+  return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
 export default function Home() {
-  const { currentView, isPanelOpen } = useAppStore();
-  const { metrics: networkMetrics } = useNetworkMetrics();
+  const { currentView, setView, isPanelOpen, selectedNodeId, selectNode } = useAppStore();
+  const { metrics: networkMetrics, dataUpdatedAt } = useNetworkMetrics();
+  const { data: nodes } = useNodes();
+
+  // Find selected node from nodes array
+  const selectedNode = nodes?.find(n => n.nodeId === selectedNodeId) ?? null;
   const { history, addSnapshot } = useMetricHistory();
+  const currentTime = useCurrentTime();
+  const [commandInput, setCommandInput] = useState('');
 
   // Calculate pulse and create snapshot from network metrics
   useEffect(() => {
@@ -62,7 +68,7 @@ export default function Home() {
 
     const pulse = calculateNetworkPulse({
       finalizationTime: networkMetrics.maxFinalizationLag,
-      latency: 45, // TODO: Get from API when available
+      latency: 45,
       consensusRunning: Math.round((networkMetrics.consensusParticipation / 100) * networkMetrics.totalNodes),
       totalNodes: networkMetrics.totalNodes,
     });
@@ -71,8 +77,8 @@ export default function Home() {
       timestamp: Date.now(),
       nodes: networkMetrics.totalNodes,
       finalizationTime: networkMetrics.maxFinalizationLag,
-      latency: 45, // Placeholder
-      packets: 1200000, // Placeholder
+      latency: 45,
+      packets: 1200000,
       consensus: networkMetrics.consensusParticipation,
       pulse,
     };
@@ -93,38 +99,339 @@ export default function Home() {
         pulse: 94,
       };
 
-  return (
-    <main className="h-screen w-screen flex flex-col overflow-hidden bg-[var(--lcars-black)]">
-      {/* LCARS Command Header with Network Pulse */}
-      <CommandHeader metrics={currentMetrics} history={history} />
+  const pulseStatus = getPulseStatus(currentMetrics.pulse);
+  const pulseColorClass = pulseStatus.label === 'NOMINAL' ? 'positive' :
+                          pulseStatus.label === 'ELEVATED' ? 'warning' :
+                          pulseStatus.label === 'DEGRADED' ? 'warning' : 'negative';
 
-      {/* LCARS Controls Bar */}
-      <div className="h-10 flex items-center justify-between px-4 shrink-0 bg-[var(--lcars-black)] border-t-4 border-[var(--lcars-lavender)]">
-        <div className="flex items-center gap-3">
-          {/* Status indicator */}
-          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--lcars-sky)]">
-            <div className="w-2 h-2 rounded-full bg-[var(--lcars-black)] animate-pulse" />
-            <span className="text-[10px] font-mono font-bold text-[var(--lcars-black)] tracking-wider uppercase">LIVE</span>
+  const lastUpdated = dataUpdatedAt ? new Date(dataUpdatedAt) : null;
+  const secondsAgo = lastUpdated ? Math.floor((Date.now() - lastUpdated.getTime()) / 1000) : 0;
+
+  // Get sparkline data
+  const pulseHistory = history.map(h => h.pulse);
+  const nodesHistory = history.map(h => h.nodes);
+
+  return (
+    <main className="h-screen w-screen flex flex-col overflow-hidden bg-[var(--bb-black)]">
+      {/* ===== COMMAND BAR ===== */}
+      <div className="bb-command-bar">
+        <div className="bb-logo">
+          <svg className="bb-logo-icon" viewBox="0 0 170 169" fill="currentColor">
+            <path d="M25.9077 84.5718C25.9077 116.886 52.3315 143.06 84.9828 143.06C93.7219 143.06 102.014 141.105 109.48 137.743V165.186C101.739 167.485 93.5155 168.754 84.9828 168.754C38.053 168.754 0 131.088 0 84.5718C0 38.0553 38.053 0.389404 85.0172 0.389404C93.5499 0.389404 101.739 1.65866 109.514 3.95703V31.4003C102.048 28.0042 93.7563 26.0832 85.0172 26.0832C52.4003 26.0832 25.9421 52.2573 25.9421 84.5718H25.9077ZM84.9828 120.214C65.0961 120.214 48.9597 104.262 48.9597 84.5375C48.9597 64.8126 65.0961 48.8611 84.9828 48.8611C104.869 48.8611 121.006 64.8469 121.006 84.5375C121.006 104.228 104.869 120.214 84.9828 120.214ZM162.018 120.214H131.741C139.413 110.334 144.058 98.019 144.058 84.5718C144.058 71.1245 139.413 58.775 131.706 48.8955H161.983C167.11 59.7356 170 71.8106 170 84.5718C170 97.3329 167.11 109.408 161.983 120.214" />
+          </svg>
+          <div className="bb-logo-text">
+            <span className="bb-logo-title">CONCORDIUM</span>
+            <span className="bb-logo-subtitle">Network Terminal</span>
           </div>
         </div>
 
-        <ViewToggle />
-      </div>
+        <input
+          type="text"
+          className="bb-command-input"
+          placeholder="Enter command or search nodes..."
+          value={commandInput}
+          onChange={(e) => setCommandInput(e.target.value)}
+        />
 
-      {/* Main content - map area */}
-      <div className="flex-1 relative min-h-0 overflow-hidden">
-        <div
-          className="h-full w-full transition-all duration-300"
-          style={{
-            paddingRight: isPanelOpen ? '24rem' : 0,
-          }}
-        >
-          {currentView === 'topology' ? <TopologyGraph /> : <GeographicMap />}
+        <div className="flex items-center gap-2">
+          <button className="bb-function-key">F1</button>
+          <button className="bb-function-key">F2</button>
+          <button className="bb-function-key secondary">HELP</button>
         </div>
 
-        {/* Detail panel */}
-        <NodeDetailPanel />
+        <div className="bb-time">
+          <span className="bb-time-value">{formatTime(currentTime)}</span>
+          <span className="bb-time-zone">UTC</span>
+        </div>
       </div>
+
+      {/* ===== TICKER BAR ===== */}
+      <div className="bb-ticker">
+        <span className="bb-ticker-label">LIVE</span>
+        <div className="bb-ticker-content">
+          <div className="bb-ticker-item">
+            <span className="bb-ticker-symbol">NODES</span>
+            <span className="bb-ticker-value">{currentMetrics.nodes}</span>
+            <span className="bb-ticker-change up">▲ ACTIVE</span>
+          </div>
+          <div className="bb-ticker-item">
+            <span className="bb-ticker-symbol">PULSE</span>
+            <span className="bb-ticker-value">{currentMetrics.pulse}%</span>
+            <span className={`bb-ticker-change ${pulseColorClass === 'positive' ? 'up' : 'down'}`}>
+              {pulseStatus.label}
+            </span>
+          </div>
+          <div className="bb-ticker-item">
+            <span className="bb-ticker-symbol">FINALIZATION</span>
+            <span className="bb-ticker-value">{currentMetrics.finalizationTime}s</span>
+          </div>
+          <div className="bb-ticker-item">
+            <span className="bb-ticker-symbol">CONSENSUS</span>
+            <span className="bb-ticker-value">{currentMetrics.consensus}%</span>
+            <span className={`bb-ticker-change ${currentMetrics.consensus >= THRESHOLDS.CONSENSUS_QUORUM ? 'up' : 'down'}`}>
+              {currentMetrics.consensus >= THRESHOLDS.CONSENSUS_QUORUM ? 'QUORUM' : 'NO QUORUM'}
+            </span>
+          </div>
+          <div className="bb-ticker-item">
+            <span className="bb-ticker-symbol">LATENCY</span>
+            <span className="bb-ticker-value">{currentMetrics.latency}ms</span>
+          </div>
+          {/* Duplicate for seamless scroll */}
+          <div className="bb-ticker-item">
+            <span className="bb-ticker-symbol">NODES</span>
+            <span className="bb-ticker-value">{currentMetrics.nodes}</span>
+            <span className="bb-ticker-change up">▲ ACTIVE</span>
+          </div>
+          <div className="bb-ticker-item">
+            <span className="bb-ticker-symbol">PULSE</span>
+            <span className="bb-ticker-value">{currentMetrics.pulse}%</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ===== MAIN CONTENT GRID ===== */}
+      <div className="flex-1 min-h-0 bb-grid" style={{ gridTemplateColumns: '280px 1fr 320px', gridTemplateRows: 'auto 1fr' }}>
+
+        {/* ===== LEFT COLUMN - METRICS ===== */}
+        <div className="bb-grid-cell flex flex-col">
+          {/* Network Pulse Panel */}
+          <div className="bb-panel flex-shrink-0">
+            <div className="bb-panel-header">Network Pulse</div>
+            <div className="bb-panel-body">
+              <div className="flex items-baseline justify-between mb-2">
+                <span className={`bb-metric-value large ${pulseColorClass}`}>{currentMetrics.pulse}%</span>
+                <span className={`text-xs font-bold ${pulseColorClass === 'positive' ? 'text-[var(--bb-green)]' : pulseColorClass === 'warning' ? 'text-[var(--bb-amber)]' : 'text-[var(--bb-red)]'}`}>
+                  {pulseStatus.label}
+                </span>
+              </div>
+              <div className="bb-metric-spark">
+                <Sparkline data={pulseHistory} min={0} max={100} maxBars={20} />
+              </div>
+            </div>
+          </div>
+
+          {/* Metrics Grid */}
+          <div className="bb-metrics-grid flex-1" style={{ gridTemplateColumns: '1fr 1fr' }}>
+            <div className="bb-metric">
+              <span className="bb-metric-label">Nodes</span>
+              <span className="bb-metric-value">{currentMetrics.nodes}</span>
+              <div className="bb-metric-spark">
+                <Sparkline data={nodesHistory} maxBars={12} />
+              </div>
+            </div>
+            <div className="bb-metric">
+              <span className="bb-metric-label">Avg Peers</span>
+              <span className="bb-metric-value">{networkMetrics?.avgPeers ?? 0}</span>
+            </div>
+            <div className="bb-metric">
+              <span className="bb-metric-label">Finalization</span>
+              <span className={`bb-metric-value ${currentMetrics.finalizationTime >= THRESHOLDS.FINALIZATION_TIMEOUT ? 'negative' : currentMetrics.finalizationTime >= THRESHOLDS.FINALIZATION_OPTIMAL ? 'warning' : ''}`}>
+                {currentMetrics.finalizationTime}s
+              </span>
+            </div>
+            <div className="bb-metric">
+              <span className="bb-metric-label">Consensus</span>
+              <span className={`bb-metric-value ${currentMetrics.consensus < THRESHOLDS.CONSENSUS_QUORUM ? 'negative' : 'positive'}`}>
+                {currentMetrics.consensus}%
+              </span>
+            </div>
+            <div className="bb-metric">
+              <span className="bb-metric-label">Latency</span>
+              <span className="bb-metric-value">{currentMetrics.latency}ms</span>
+            </div>
+            <div className="bb-metric">
+              <span className="bb-metric-label">Updated</span>
+              <span className="bb-metric-value">{secondsAgo}s</span>
+            </div>
+          </div>
+
+          {/* Alerts Panel */}
+          <div className="bb-panel flex-shrink-0">
+            <div className="bb-panel-header amber">Alerts</div>
+            <div className="bb-panel-body" style={{ maxHeight: '120px' }}>
+              {currentMetrics.consensus < THRESHOLDS.CONSENSUS_QUORUM && (
+                <div className="bb-alert error">
+                  CRITICAL: Consensus below quorum ({currentMetrics.consensus}% &lt; {THRESHOLDS.CONSENSUS_QUORUM}%)
+                </div>
+              )}
+              {currentMetrics.finalizationTime >= THRESHOLDS.FINALIZATION_TIMEOUT && (
+                <div className="bb-alert warning">
+                  WARNING: Finalization timeout ({currentMetrics.finalizationTime}s)
+                </div>
+              )}
+              {currentMetrics.pulse < 90 && currentMetrics.pulse >= THRESHOLDS.CONSENSUS_QUORUM && (
+                <div className="bb-alert warning">
+                  ELEVATED: Network pulse degraded ({currentMetrics.pulse}%)
+                </div>
+              )}
+              {currentMetrics.pulse >= 90 && (
+                <div className="bb-alert success">
+                  NOMINAL: All systems operational
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ===== CENTER - VISUALIZATION ===== */}
+        <div className="bb-grid-cell flex flex-col" style={{ gridRow: 'span 2' }}>
+          {/* View Tabs */}
+          <div className="bb-tabs flex-shrink-0">
+            <button
+              className={`bb-tab ${currentView === 'topology' ? 'active' : ''}`}
+              onClick={() => setView('topology')}
+            >
+              Topology
+            </button>
+            <button
+              className={`bb-tab ${currentView === 'geographic' ? 'active' : ''}`}
+              onClick={() => setView('geographic')}
+            >
+              Geographic
+            </button>
+            <button className="bb-tab">Transactions</button>
+            <button className="bb-tab">Blocks</button>
+            <div className="flex-1" />
+            <div className="bb-tab" style={{ cursor: 'default', color: 'var(--bb-gray)' }}>
+              {formatDate(currentTime)}
+            </div>
+          </div>
+
+          {/* Map Content */}
+          <div className="flex-1 min-h-0 relative">
+            {currentView === 'topology' ? <TopologyGraph /> : <GeographicMap />}
+          </div>
+        </div>
+
+        {/* ===== RIGHT COLUMN - NODE LIST ===== */}
+        <div className="bb-grid-cell flex flex-col" style={{ gridRow: 'span 2' }}>
+          <div className="bb-panel flex-1 flex flex-col">
+            <div className="bb-panel-header dark">
+              Node Explorer
+              <span className="text-[var(--bb-gray)] font-normal ml-2">({nodes?.length ?? 0})</span>
+            </div>
+            <div className="bb-panel-body no-padding flex-1 overflow-auto">
+              <table className="bb-table">
+                <thead>
+                  <tr>
+                    <th>Node ID</th>
+                    <th>Peers</th>
+                    <th>Fin</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {nodes?.slice(0, 50).map((node) => (
+                    <tr
+                      key={node.nodeId}
+                      className={selectedNodeId === node.nodeId ? 'selected' : ''}
+                      onClick={() => selectNode(node.nodeId)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <td className="text-[var(--bb-cyan)]" style={{ maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {node.nodeName || node.nodeId.slice(0, 8)}
+                      </td>
+                      <td className="num">{node.peersCount}</td>
+                      <td className="num">{node.finalizedBlockHeight}</td>
+                      <td>
+                        <span className={`inline-block w-2 h-2 mr-1 ${
+                          node.consensusRunning ? 'bg-[var(--bb-green)]' : 'bg-[var(--bb-red)]'
+                        }`} />
+                        {node.consensusRunning ? 'OK' : 'OFF'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        {/* ===== BOTTOM LEFT - FORENSICS ===== */}
+        <div className="bb-grid-cell">
+          <div className="bb-panel h-full">
+            <div className="bb-panel-header dark">Forensics</div>
+            <div className="bb-panel-body">
+              {selectedNode ? (
+                <div className="bb-forensic">
+                  <div className="bb-forensic-row">
+                    <span className="bb-forensic-label">Node ID</span>
+                    <span className="bb-forensic-value mono">{selectedNode.nodeId}</span>
+                  </div>
+                  <div className="bb-forensic-row">
+                    <span className="bb-forensic-label">Name</span>
+                    <span className="bb-forensic-value">{selectedNode.nodeName || 'Unnamed'}</span>
+                  </div>
+                  <div className="bb-forensic-row">
+                    <span className="bb-forensic-label">Client</span>
+                    <span className="bb-forensic-value">{selectedNode.client}</span>
+                  </div>
+                  <div className="bb-forensic-row">
+                    <span className="bb-forensic-label">Uptime</span>
+                    <span className="bb-forensic-value">{Math.floor(selectedNode.uptime / 3600)}h {Math.floor((selectedNode.uptime % 3600) / 60)}m</span>
+                  </div>
+                  <div className="bb-forensic-row">
+                    <span className="bb-forensic-label">Avg Latency</span>
+                    <span className="bb-forensic-value">{selectedNode.averagePing?.toFixed(0) ?? 'N/A'}ms</span>
+                  </div>
+                  <div className="bb-forensic-row">
+                    <span className="bb-forensic-label">Best Block</span>
+                    <span className="bb-forensic-value hash">{selectedNode.bestBlock?.slice(0, 16)}...</span>
+                  </div>
+                  <div className="bb-forensic-row">
+                    <span className="bb-forensic-label">Best Height</span>
+                    <span className="bb-forensic-value">{selectedNode.bestBlockHeight}</span>
+                  </div>
+                  <div className="bb-forensic-row">
+                    <span className="bb-forensic-label">Finalized</span>
+                    <span className="bb-forensic-value">{selectedNode.finalizedBlockHeight}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-[var(--bb-gray)] text-xs">
+                  Select a node to view forensic details
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ===== STATUS BAR ===== */}
+      <div className="bb-status-bar">
+        <div className="bb-status-item">
+          <div className={`bb-status-dot ${pulseStatus.label === 'NOMINAL' ? '' : pulseStatus.label === 'CRITICAL' ? 'error' : 'warning'}`} />
+          <span className="bb-status-label">Status:</span>
+          <span className="bb-status-value live">{pulseStatus.label}</span>
+        </div>
+        <div className="bb-status-item">
+          <span className="bb-status-label">Nodes:</span>
+          <span className="bb-status-value">{currentMetrics.nodes}</span>
+        </div>
+        <div className="bb-status-item">
+          <span className="bb-status-label">Consensus:</span>
+          <span className={`bb-status-value ${currentMetrics.consensus >= THRESHOLDS.CONSENSUS_QUORUM ? 'live' : ''}`}>
+            {currentMetrics.consensus}%
+          </span>
+        </div>
+        <div className="bb-status-item">
+          <span className="bb-status-label">Finalization:</span>
+          <span className="bb-status-value">{currentMetrics.finalizationTime}s</span>
+        </div>
+        <div className="flex-1" />
+        <div className="bb-status-item">
+          <span className="bb-status-label">Last Update:</span>
+          <span className="bb-status-value">{secondsAgo}s ago</span>
+        </div>
+        <div className="bb-status-item">
+          <span className="bb-status-value" style={{ color: 'var(--bb-amber)' }}>
+            CONCORDIUM MAINNET
+          </span>
+        </div>
+      </div>
+
+      {/* Detail Panel Overlay */}
+      {isPanelOpen && <NodeDetailPanel />}
     </main>
   );
 }

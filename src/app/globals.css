@@ -1,14 +1,19 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
 
 @custom-variant dark (&:is(.dark *));
 
-/* Cyberpunk Command Center Theme */
+/* ============================================
+   BLOOMBERG TERMINAL DESIGN SYSTEM
+   Authentic institutional trading terminal aesthetic
+   ============================================ */
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: 'IBM Plex Mono', 'JetBrains Mono', monospace;
+  --font-mono: 'JetBrains Mono', 'IBM Plex Mono', monospace;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -38,518 +43,916 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-xl: 0;
 }
 
-:root {
-  --radius: 0.5rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.72 0.17 180);
-  --primary-foreground: oklch(0.1 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.72 0.17 180);
-  --chart-1: oklch(0.72 0.17 180);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.72 0.17 180);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.72 0.17 180);
+/* ============================================
+   BLOOMBERG COLOR PALETTE
+   ============================================ */
 
-  /* Custom Concordium colors */
-  --concordium-teal: #00D4AA;
-  --concordium-teal-glow: rgba(0, 212, 170, 0.4);
-  --concordium-teal-dim: rgba(0, 212, 170, 0.15);
-  --cyber-grid: rgba(0, 212, 170, 0.03);
-  --scan-line: rgba(0, 212, 170, 0.02);
+:root {
+  --radius: 0;
+
+  /* Bloomberg Core Colors */
+  --bb-black: #000000;
+  --bb-dark: #0a0a0a;
+  --bb-panel: #111111;
+  --bb-border: #333333;
+  --bb-border-light: #444444;
+
+  /* Bloomberg Orange - Primary Brand */
+  --bb-orange: #FF6600;
+  --bb-orange-dim: rgba(255, 102, 0, 0.3);
+  --bb-orange-glow: rgba(255, 102, 0, 0.5);
+
+  /* Bloomberg Amber/Yellow - Headers & Labels */
+  --bb-amber: #FFCC00;
+  --bb-amber-dim: rgba(255, 204, 0, 0.3);
+
+  /* Data Colors */
+  --bb-green: #00FF00;
+  --bb-green-dim: rgba(0, 255, 0, 0.2);
+  --bb-red: #FF3333;
+  --bb-red-dim: rgba(255, 51, 51, 0.2);
+  --bb-white: #FFFFFF;
+  --bb-gray: #999999;
+  --bb-gray-dim: #666666;
+  --bb-cyan: #00CCFF;
+  --bb-magenta: #FF00FF;
+
+  /* Semantic Colors */
+  --bb-positive: var(--bb-green);
+  --bb-negative: var(--bb-red);
+  --bb-neutral: var(--bb-white);
+  --bb-warning: var(--bb-amber);
+  --bb-info: var(--bb-cyan);
+
+  /* shadcn overrides */
+  --background: var(--bb-black);
+  --foreground: var(--bb-white);
+  --card: var(--bb-panel);
+  --card-foreground: var(--bb-white);
+  --popover: var(--bb-panel);
+  --popover-foreground: var(--bb-white);
+  --primary: var(--bb-orange);
+  --primary-foreground: var(--bb-black);
+  --secondary: var(--bb-panel);
+  --secondary-foreground: var(--bb-white);
+  --muted: var(--bb-panel);
+  --muted-foreground: var(--bb-gray);
+  --accent: var(--bb-amber);
+  --accent-foreground: var(--bb-black);
+  --destructive: var(--bb-red);
+  --border: var(--bb-border);
+  --input: var(--bb-panel);
+  --ring: var(--bb-orange);
+  --chart-1: var(--bb-orange);
+  --chart-2: var(--bb-amber);
+  --chart-3: var(--bb-cyan);
+  --chart-4: var(--bb-green);
+  --chart-5: var(--bb-magenta);
+  --sidebar: var(--bb-dark);
+  --sidebar-foreground: var(--bb-white);
+  --sidebar-primary: var(--bb-orange);
+  --sidebar-primary-foreground: var(--bb-black);
+  --sidebar-accent: var(--bb-panel);
+  --sidebar-accent-foreground: var(--bb-white);
+  --sidebar-border: var(--bb-border);
+  --sidebar-ring: var(--bb-orange);
 }
 
 .dark {
-  --background: oklch(0.08 0.01 240);
-  --foreground: oklch(0.93 0.01 180);
-  --card: oklch(0.12 0.015 240);
-  --card-foreground: oklch(0.93 0.01 180);
-  --popover: oklch(0.1 0.015 240);
-  --popover-foreground: oklch(0.93 0.01 180);
-  --primary: oklch(0.75 0.18 172);
-  --primary-foreground: oklch(0.1 0 0);
-  --secondary: oklch(0.18 0.02 240);
-  --secondary-foreground: oklch(0.93 0.01 180);
-  --muted: oklch(0.18 0.015 240);
-  --muted-foreground: oklch(0.6 0.02 180);
-  --accent: oklch(0.2 0.02 240);
-  --accent-foreground: oklch(0.93 0.01 180);
-  --destructive: oklch(0.65 0.22 25);
-  --border: oklch(0.25 0.02 180 / 30%);
-  --input: oklch(0.2 0.02 240);
-  --ring: oklch(0.75 0.18 172);
-  --chart-1: oklch(0.75 0.18 172);
-  --chart-2: oklch(0.65 0.15 145);
-  --chart-3: oklch(0.55 0.12 200);
-  --chart-4: oklch(0.7 0.2 85);
-  --chart-5: oklch(0.65 0.22 25);
-  --sidebar: oklch(0.1 0.015 240);
-  --sidebar-foreground: oklch(0.93 0.01 180);
-  --sidebar-primary: oklch(0.75 0.18 172);
-  --sidebar-primary-foreground: oklch(0.1 0 0);
-  --sidebar-accent: oklch(0.18 0.02 240);
-  --sidebar-accent-foreground: oklch(0.93 0.01 180);
-  --sidebar-border: oklch(0.25 0.02 180 / 30%);
-  --sidebar-ring: oklch(0.75 0.18 172);
-
-  /* Dark mode Concordium colors */
-  --concordium-teal: #00FFCC;
-  --concordium-teal-glow: rgba(0, 255, 204, 0.5);
-  --concordium-teal-dim: rgba(0, 255, 204, 0.1);
-  --cyber-grid: rgba(0, 255, 204, 0.02);
-  --scan-line: rgba(0, 255, 204, 0.015);
+  /* Dark mode is the default Bloomberg look */
 }
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
+    box-sizing: border-box;
   }
-  body {
-    @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
+
+  html, body {
+    background: var(--bb-black);
+    color: var(--bb-white);
+    font-family: 'JetBrains Mono', 'IBM Plex Mono', 'Consolas', 'Monaco', monospace;
+    font-size: 12px;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
-}
 
-/* Cyber Grid Background */
-.cyber-grid {
-  background-image:
-    linear-gradient(var(--cyber-grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--cyber-grid) 1px, transparent 1px);
-  background-size: 40px 40px;
-}
-
-/* Animated scan line effect */
-.scan-lines {
-  position: relative;
-  overflow: hidden;
-}
-
-.scan-lines::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    var(--scan-line) 2px,
-    var(--scan-line) 4px
-  );
-  pointer-events: none;
-  animation: scan-scroll 8s linear infinite;
-}
-
-@keyframes scan-scroll {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(40px); }
-}
-
-/* Glow effects */
-.glow-teal {
-  box-shadow:
-    0 0 5px var(--concordium-teal-dim),
-    0 0 20px var(--concordium-teal-dim),
-    inset 0 0 10px var(--concordium-teal-dim);
-}
-
-.glow-teal-intense {
-  box-shadow:
-    0 0 5px var(--concordium-teal-glow),
-    0 0 20px var(--concordium-teal-glow),
-    0 0 40px var(--concordium-teal-dim);
-}
-
-.text-glow {
-  text-shadow: 0 0 10px var(--concordium-teal-glow);
-}
-
-/* Data pulse animation */
-@keyframes data-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
-}
-
-.data-pulse {
-  animation: data-pulse 2s ease-in-out infinite;
-}
-
-/* Metric card hover effect */
-@keyframes metric-glow {
-  0%, 100% {
-    box-shadow: 0 0 5px var(--concordium-teal-dim);
-  }
-  50% {
-    box-shadow: 0 0 15px var(--concordium-teal-glow), 0 0 30px var(--concordium-teal-dim);
+  /* Force monospace everywhere */
+  input, button, select, textarea {
+    font-family: inherit;
   }
 }
 
-.metric-card {
-  transition: all 0.3s ease;
-  border: 1px solid var(--border);
-}
+/* ============================================
+   BLOOMBERG SCROLLBAR
+   ============================================ */
 
-.metric-card:hover {
-  border-color: var(--concordium-teal);
-  animation: metric-glow 1.5s ease-in-out infinite;
-}
-
-/* Header border glow */
-.header-glow {
-  border-bottom: 1px solid var(--border);
-  position: relative;
-}
-
-.header-glow::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    var(--concordium-teal-glow) 20%,
-    var(--concordium-teal) 50%,
-    var(--concordium-teal-glow) 80%,
-    transparent
-  );
-}
-
-/* Status indicator pulse */
-@keyframes status-pulse {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.2);
-    opacity: 0.7;
-  }
-}
-
-.status-pulse {
-  animation: status-pulse 2s ease-in-out infinite;
-}
-
-/* Terminal-style scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--muted);
-  border-radius: 3px;
+  background: var(--bb-black);
+  border-left: 1px solid var(--bb-border);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--concordium-teal-dim);
-  border-radius: 3px;
+  background: var(--bb-border-light);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--concordium-teal-glow);
+  background: var(--bb-gray-dim);
 }
 
-/* Typing cursor effect */
-@keyframes cursor-blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
-}
+/* ============================================
+   BLOOMBERG COMMAND BAR
+   ============================================ */
 
-.cursor-blink::after {
-  content: '▋';
-  animation: cursor-blink 1s step-end infinite;
-  color: var(--concordium-teal);
-}
-
-/* Panel slide-in animation */
-@keyframes panel-slide-in {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-.panel-slide-in {
-  animation: panel-slide-in 0.3s ease-out;
-}
-
-/* Hexagon clip path for special elements */
-.hex-clip {
-  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
-}
-
-/* Node health colors with glow */
-.node-healthy {
-  background: oklch(0.7 0.2 145);
-  box-shadow: 0 0 10px oklch(0.7 0.2 145 / 50%);
-}
-
-.node-lagging {
-  background: oklch(0.8 0.18 85);
-  box-shadow: 0 0 10px oklch(0.8 0.18 85 / 50%);
-}
-
-.node-issue {
-  background: oklch(0.65 0.22 25);
-  box-shadow: 0 0 10px oklch(0.65 0.22 25 / 50%);
-}
-
-/* Logo animation */
-@keyframes logo-glow-pulse {
-  0%, 100% {
-    filter: drop-shadow(0 0 5px var(--concordium-teal-glow));
-  }
-  50% {
-    filter: drop-shadow(0 0 15px var(--concordium-teal-glow)) drop-shadow(0 0 25px var(--concordium-teal-dim));
-  }
-}
-
-.logo-glow {
-  animation: logo-glow-pulse 3s ease-in-out infinite;
-}
-
-/* Button cyber style */
-.btn-cyber {
-  position: relative;
-  background: var(--concordium-teal-dim);
-  border: 1px solid var(--concordium-teal);
-  color: var(--concordium-teal);
-  transition: all 0.2s ease;
-}
-
-.btn-cyber:hover {
-  background: var(--concordium-teal);
-  color: var(--background);
-  box-shadow: 0 0 20px var(--concordium-teal-glow);
-}
-
-/* Corner decorations */
-.corner-decor {
-  position: relative;
-}
-
-.corner-decor::before,
-.corner-decor::after {
-  content: '';
-  position: absolute;
-  width: 12px;
-  height: 12px;
-  border: 1px solid var(--concordium-teal);
-  opacity: 0.5;
-}
-
-.corner-decor::before {
-  top: -1px;
-  left: -1px;
-  border-right: none;
-  border-bottom: none;
-}
-
-.corner-decor::after {
-  bottom: -1px;
-  right: -1px;
-  border-left: none;
-  border-top: none;
-}
-
-/* Data readout style */
-.data-readout {
-  font-family: var(--font-geist-mono);
-  letter-spacing: 0.05em;
-}
-
-/* Horizontal rule with glow */
-.hr-glow {
-  border: none;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    var(--concordium-teal-glow) 20%,
-    var(--concordium-teal) 50%,
-    var(--concordium-teal-glow) 80%,
-    transparent
-  );
-}
-
-/* ========================
-   STARK INDUSTRIES HUD
-   Iron Man / J.A.R.V.I.S. Inspired UI
-   ======================== */
-
-/*
- * Stark Tech Color Palette
- * Electric blue holographic with orange/red accents
- */
-:root {
-  /* Core Stark colors */
-  --stark-blue: #00D4FF;
-  --stark-blue-dim: rgba(0, 212, 255, 0.3);
-  --stark-blue-glow: rgba(0, 212, 255, 0.6);
-  --stark-cyan: #00FFFF;
-  --stark-white: #E0F7FF;
-  --stark-orange: #FF6B00;
-  --stark-orange-dim: rgba(255, 107, 0, 0.3);
-  --stark-red: #FF3333;
-  --stark-gold: #FFD700;
-
-  /* Background */
-  --stark-black: #0A0E14;
-  --stark-dark: #0D1117;
-  --stark-panel: rgba(0, 212, 255, 0.05);
-  --stark-panel-border: rgba(0, 212, 255, 0.2);
-
-  /* Legacy support */
-  --lcars-cyan: var(--stark-blue);
-  --lcars-background: var(--stark-black);
-}
-
-/* ========================
-   STARK HUD - Main Container
-   ======================== */
-
-.stark-hud {
-  position: relative;
+.bb-command-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 16px 24px;
-  background: linear-gradient(180deg, var(--stark-dark) 0%, var(--stark-black) 100%);
-  border-bottom: 1px solid var(--stark-panel-border);
+  height: 28px;
+  background: var(--bb-dark);
+  border-bottom: 1px solid var(--bb-border);
+  padding: 0 8px;
+  gap: 12px;
+}
+
+.bb-command-input {
+  flex: 1;
+  height: 22px;
+  background: var(--bb-black);
+  border: 1px solid var(--bb-border);
+  color: var(--bb-amber);
+  font-size: 12px;
+  padding: 0 8px;
+  font-family: inherit;
+}
+
+.bb-command-input::placeholder {
+  color: var(--bb-gray-dim);
+}
+
+.bb-command-input:focus {
+  outline: none;
+  border-color: var(--bb-orange);
+  box-shadow: 0 0 0 1px var(--bb-orange-dim);
+}
+
+.bb-function-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 20px;
+  background: var(--bb-orange);
+  color: var(--bb-black);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 0 6px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.bb-function-key:hover {
+  background: var(--bb-amber);
+}
+
+.bb-function-key.secondary {
+  background: var(--bb-panel);
+  color: var(--bb-orange);
+  border: 1px solid var(--bb-orange);
+}
+
+/* ============================================
+   BLOOMBERG PANEL SYSTEM
+   ============================================ */
+
+.bb-panel {
+  background: var(--bb-black);
+  border: 1px solid var(--bb-border);
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
 
-/* Hexagon grid background */
-.stark-hud::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5L55 17.5V42.5L30 55L5 42.5V17.5L30 5Z' fill='none' stroke='%2300D4FF' stroke-opacity='0.03' stroke-width='1'/%3E%3C/svg%3E");
-  background-size: 60px 60px;
-  pointer-events: none;
-}
-
-/* Scanning line animation */
-.hud-scanline {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--stark-blue), transparent);
-  animation: hud-scan 3s ease-in-out infinite;
-  opacity: 0.6;
-}
-
-@keyframes hud-scan {
-  0% { transform: translateY(0); opacity: 0; }
-  10% { opacity: 0.6; }
-  90% { opacity: 0.6; }
-  100% { transform: translateY(100px); opacity: 0; }
-}
-
-/* Bottom edge glow */
-.hud-edge-glow {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg,
-    transparent 0%,
-    var(--stark-blue-dim) 20%,
-    var(--stark-blue) 50%,
-    var(--stark-blue-dim) 80%,
-    transparent 100%
-  );
-  box-shadow: 0 0 20px var(--stark-blue-glow), 0 0 40px var(--stark-blue-dim);
-}
-
-/* ========================
-   Left Section - Logo
-   ======================== */
-
-.hud-left {
+.bb-panel-header {
   display: flex;
   align-items: center;
-  gap: 16px;
+  justify-content: space-between;
+  height: 22px;
+  background: var(--bb-orange);
+  color: var(--bb-black);
+  padding: 0 8px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.bb-panel-header.amber {
+  background: var(--bb-amber);
+}
+
+.bb-panel-header.dark {
+  background: var(--bb-panel);
+  color: var(--bb-orange);
+  border-bottom: 1px solid var(--bb-border);
+}
+
+.bb-panel-header-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.bb-panel-body {
+  flex: 1;
+  overflow: auto;
+  padding: 6px 8px;
+}
+
+.bb-panel-body.no-padding {
+  padding: 0;
+}
+
+/* ============================================
+   BLOOMBERG DATA TABLE
+   ============================================ */
+
+.bb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.bb-table th {
+  background: var(--bb-panel);
+  color: var(--bb-amber);
+  font-weight: 600;
+  text-align: left;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--bb-border);
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  position: sticky;
+  top: 0;
   z-index: 1;
 }
 
-.hud-logo-container {
-  position: relative;
-  width: 52px;
-  height: 52px;
+.bb-table td {
+  padding: 3px 8px;
+  border-bottom: 1px solid var(--bb-border);
+  white-space: nowrap;
+}
+
+.bb-table tr:hover {
+  background: var(--bb-panel);
+}
+
+.bb-table tr.selected {
+  background: var(--bb-orange-dim);
+}
+
+/* Data alignments */
+.bb-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.bb-table .positive {
+  color: var(--bb-green);
+}
+
+.bb-table .negative {
+  color: var(--bb-red);
+}
+
+.bb-table .highlight {
+  color: var(--bb-amber);
+}
+
+/* ============================================
+   BLOOMBERG METRICS GRID
+   ============================================ */
+
+.bb-metrics-grid {
+  display: grid;
+  gap: 1px;
+  background: var(--bb-border);
+}
+
+.bb-metric {
+  background: var(--bb-black);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bb-metric-label {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--bb-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.bb-metric-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--bb-white);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.bb-metric-value.large {
+  font-size: 24px;
+}
+
+.bb-metric-value.positive {
+  color: var(--bb-green);
+}
+
+.bb-metric-value.negative {
+  color: var(--bb-red);
+}
+
+.bb-metric-value.warning {
+  color: var(--bb-amber);
+}
+
+.bb-metric-value.highlight {
+  color: var(--bb-orange);
+}
+
+.bb-metric-delta {
+  font-size: 10px;
   display: flex;
   align-items: center;
+  gap: 4px;
+}
+
+.bb-metric-delta.up {
+  color: var(--bb-green);
+}
+
+.bb-metric-delta.down {
+  color: var(--bb-red);
+}
+
+.bb-metric-spark {
+  font-size: 10px;
+  color: var(--bb-gray);
+  margin-top: 2px;
+}
+
+/* ============================================
+   BLOOMBERG STATUS BAR
+   ============================================ */
+
+.bb-status-bar {
+  display: flex;
+  align-items: center;
+  height: 22px;
+  background: var(--bb-dark);
+  border-top: 1px solid var(--bb-border);
+  padding: 0 8px;
+  font-size: 10px;
+  gap: 16px;
+}
+
+.bb-status-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bb-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--bb-green);
+  animation: bb-pulse 2s ease-in-out infinite;
+}
+
+.bb-status-dot.warning {
+  background: var(--bb-amber);
+}
+
+.bb-status-dot.error {
+  background: var(--bb-red);
+  animation: bb-blink 0.5s ease-in-out infinite;
+}
+
+@keyframes bb-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes bb-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.2; }
+}
+
+.bb-status-label {
+  color: var(--bb-gray);
+  text-transform: uppercase;
+}
+
+.bb-status-value {
+  color: var(--bb-white);
+}
+
+.bb-status-value.live {
+  color: var(--bb-green);
+}
+
+/* ============================================
+   BLOOMBERG TICKER
+   ============================================ */
+
+.bb-ticker {
+  display: flex;
+  align-items: center;
+  height: 20px;
+  background: var(--bb-panel);
+  overflow: hidden;
+  border-bottom: 1px solid var(--bb-border);
+}
+
+.bb-ticker-label {
+  flex-shrink: 0;
+  padding: 0 8px;
+  background: var(--bb-orange);
+  color: var(--bb-black);
+  font-size: 10px;
+  font-weight: 700;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.bb-ticker-content {
+  display: flex;
+  gap: 24px;
+  animation: bb-scroll 30s linear infinite;
+  padding-left: 100%;
+}
+
+@keyframes bb-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+
+.bb-ticker-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  font-size: 11px;
+}
+
+.bb-ticker-symbol {
+  color: var(--bb-amber);
+  font-weight: 600;
+}
+
+.bb-ticker-value {
+  color: var(--bb-white);
+}
+
+.bb-ticker-change.up {
+  color: var(--bb-green);
+}
+
+.bb-ticker-change.down {
+  color: var(--bb-red);
+}
+
+/* ============================================
+   BLOOMBERG TABS
+   ============================================ */
+
+.bb-tabs {
+  display: flex;
+  background: var(--bb-panel);
+  border-bottom: 1px solid var(--bb-border);
+}
+
+.bb-tab {
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--bb-gray);
+  border-right: 1px solid var(--bb-border);
+  cursor: pointer;
+  transition: all 0.1s;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.bb-tab:hover {
+  background: var(--bb-dark);
+  color: var(--bb-white);
+}
+
+.bb-tab.active {
+  background: var(--bb-orange);
+  color: var(--bb-black);
+  font-weight: 700;
+}
+
+/* ============================================
+   BLOOMBERG ALERTS
+   ============================================ */
+
+.bb-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  font-size: 11px;
+  border-left: 3px solid;
+  margin-bottom: 4px;
+}
+
+.bb-alert.info {
+  background: var(--bb-panel);
+  border-color: var(--bb-cyan);
+  color: var(--bb-cyan);
+}
+
+.bb-alert.warning {
+  background: var(--bb-amber-dim);
+  border-color: var(--bb-amber);
+  color: var(--bb-amber);
+}
+
+.bb-alert.error {
+  background: var(--bb-red-dim);
+  border-color: var(--bb-red);
+  color: var(--bb-red);
+  animation: bb-blink 1s ease-in-out infinite;
+}
+
+.bb-alert.success {
+  background: var(--bb-green-dim);
+  border-color: var(--bb-green);
+  color: var(--bb-green);
+}
+
+/* ============================================
+   BLOOMBERG BUTTONS
+   ============================================ */
+
+.bb-button {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
+  height: 22px;
+  padding: 0 10px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.1s;
+  border: none;
+  font-family: inherit;
+}
+
+.bb-button.primary {
+  background: var(--bb-orange);
+  color: var(--bb-black);
+}
+
+.bb-button.primary:hover {
+  background: var(--bb-amber);
+}
+
+.bb-button.secondary {
+  background: var(--bb-panel);
+  color: var(--bb-orange);
+  border: 1px solid var(--bb-orange);
+}
+
+.bb-button.secondary:hover {
+  background: var(--bb-orange-dim);
+}
+
+.bb-button.ghost {
+  background: transparent;
+  color: var(--bb-gray);
+}
+
+.bb-button.ghost:hover {
+  color: var(--bb-white);
+  background: var(--bb-panel);
+}
+
+/* ============================================
+   BLOOMBERG SPARKLINE (ASCII)
+   ============================================ */
+
+.bb-sparkline {
+  font-size: 10px;
+  letter-spacing: -0.05em;
+  color: var(--bb-gray);
+}
+
+.bb-sparkline.positive {
+  color: var(--bb-green);
+}
+
+.bb-sparkline.negative {
+  color: var(--bb-red);
+}
+
+/* ============================================
+   BLOOMBERG CHART AREA
+   ============================================ */
+
+.bb-chart {
+  background: var(--bb-black);
+  border: 1px solid var(--bb-border);
+  position: relative;
+}
+
+.bb-chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  background: var(--bb-panel);
+  border-bottom: 1px solid var(--bb-border);
+  font-size: 10px;
+}
+
+.bb-chart-title {
+  color: var(--bb-amber);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.bb-chart-legend {
+  display: flex;
+  gap: 12px;
+}
+
+.bb-chart-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bb-chart-legend-dot {
+  width: 8px;
+  height: 8px;
+}
+
+/* ============================================
+   BLOOMBERG GRID LAYOUT
+   ============================================ */
+
+.bb-grid {
+  display: grid;
+  gap: 1px;
+  background: var(--bb-border);
+  height: 100%;
+}
+
+.bb-grid-cell {
+  background: var(--bb-black);
+  overflow: hidden;
+}
+
+/* ============================================
+   BLOOMBERG NODE LIST
+   ============================================ */
+
+.bb-node-list {
+  font-size: 11px;
+}
+
+.bb-node-item {
+  display: grid;
+  grid-template-columns: 120px 80px 60px 60px 1fr;
+  gap: 8px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--bb-border);
+  align-items: center;
+}
+
+.bb-node-item:hover {
+  background: var(--bb-panel);
+}
+
+.bb-node-id {
+  color: var(--bb-cyan);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bb-node-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bb-node-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 1px;
+}
+
+.bb-node-status-dot.online {
+  background: var(--bb-green);
+}
+
+.bb-node-status-dot.syncing {
+  background: var(--bb-amber);
+  animation: bb-pulse 1s ease-in-out infinite;
+}
+
+.bb-node-status-dot.offline {
+  background: var(--bb-red);
+}
+
+/* ============================================
+   BLOOMBERG FORENSIC PANEL
+   ============================================ */
+
+.bb-forensic {
+  font-size: 11px;
+}
+
+.bb-forensic-row {
+  display: flex;
+  padding: 3px 0;
+  border-bottom: 1px solid var(--bb-border);
+}
+
+.bb-forensic-label {
+  width: 120px;
+  color: var(--bb-gray);
+  flex-shrink: 0;
+}
+
+.bb-forensic-value {
+  color: var(--bb-white);
+  font-family: inherit;
+  word-break: break-all;
+}
+
+.bb-forensic-value.mono {
+  font-size: 10px;
+  color: var(--bb-cyan);
+}
+
+.bb-forensic-value.hash {
+  font-size: 10px;
+  color: var(--bb-amber);
+}
+
+/* ============================================
+   BLOOMBERG LOGO AREA
+   ============================================ */
+
+.bb-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bb-logo-icon {
+  width: 24px;
+  height: 24px;
+  color: var(--bb-orange);
+}
+
+.bb-logo-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.bb-logo-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--bb-orange);
+  letter-spacing: 0.1em;
+  line-height: 1;
+}
+
+.bb-logo-subtitle {
+  font-size: 9px;
+  color: var(--bb-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+}
+
+/* ============================================
+   BLOOMBERG TIME DISPLAY
+   ============================================ */
+
+.bb-time {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bb-time-value {
+  color: var(--bb-amber);
+  font-weight: 600;
+}
+
+.bb-time-zone {
+  color: var(--bb-gray);
+  font-size: 9px;
+}
+
+/* ============================================
+   VIEW TOGGLE - BLOOMBERG STYLE
+   ============================================ */
+
+.bb-view-toggle {
+  display: flex;
+  border: 1px solid var(--bb-border);
+}
+
+.bb-view-option {
+  padding: 4px 12px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--bb-gray);
+  background: var(--bb-black);
+  cursor: pointer;
+  border-right: 1px solid var(--bb-border);
+  transition: all 0.1s;
+}
+
+.bb-view-option:last-child {
+  border-right: none;
+}
+
+.bb-view-option:hover {
+  color: var(--bb-white);
+  background: var(--bb-panel);
+}
+
+.bb-view-option.active {
+  color: var(--bb-black);
+  background: var(--bb-orange);
+}
+
+/* ============================================
+   LEGACY SUPPORT (stark-hud, lcars-panel)
+   ============================================ */
+
+.stark-hud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--bb-dark);
+  border-bottom: 1px solid var(--bb-border);
+}
+
+.hud-left, .hud-right, .hud-center {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hud-logo-container {
+  display: flex;
+  align-items: center;
 }
 
 .hud-logo {
-  color: var(--stark-blue);
-  filter: drop-shadow(0 0 8px var(--stark-blue-glow));
-  z-index: 2;
+  width: 24px;
+  height: 24px;
+  color: var(--bb-orange);
 }
 
 .logo-ring {
-  position: absolute;
-  inset: 0;
-  border: 2px solid var(--stark-blue);
-  border-radius: 50%;
-  opacity: 0.4;
-  animation: logo-rotate 10s linear infinite;
-}
-
-.logo-ring::before {
-  content: '';
-  position: absolute;
-  top: -4px;
-  left: 50%;
-  width: 8px;
-  height: 8px;
-  background: var(--stark-blue);
-  border-radius: 50%;
-  transform: translateX(-50%);
-  box-shadow: 0 0 10px var(--stark-blue);
-}
-
-@keyframes logo-rotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  display: none;
 }
 
 .hud-title-block {
@@ -558,218 +961,75 @@
 }
 
 .hud-title {
-  font-family: var(--font-geist-mono), monospace;
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 700;
-  letter-spacing: 0.3em;
-  color: var(--stark-white);
-  text-shadow: 0 0 20px var(--stark-blue-glow);
+  color: var(--bb-orange);
   margin: 0;
+  letter-spacing: 0.1em;
 }
 
 .hud-subtitle {
-  font-family: var(--font-geist-mono), monospace;
   font-size: 9px;
-  font-weight: 500;
-  letter-spacing: 0.25em;
-  color: var(--stark-blue);
-  opacity: 0.7;
-  margin-top: 2px;
+  color: var(--bb-gray);
+  letter-spacing: 0.1em;
 }
 
-/* ========================
-   Center - Arc Reactor
-   ======================== */
-
-.hud-center {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  z-index: 1;
+.arc-reactor, .arc-ring, .arc-ring-1, .arc-ring-2, .arc-ring-3 {
+  display: none;
 }
 
-.arc-reactor {
-  position: relative;
-  width: 90px;
-  height: 90px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Rotating rings */
-.arc-ring {
-  position: absolute;
-  border-radius: 50%;
-  border: 1px solid var(--stark-blue);
-}
-
-.arc-ring-1 {
-  inset: 0;
-  opacity: 0.2;
-  animation: arc-rotate 8s linear infinite;
-}
-
-.arc-ring-2 {
-  inset: 8px;
-  opacity: 0.4;
-  border-style: dashed;
-  animation: arc-rotate 6s linear infinite reverse;
-}
-
-.arc-ring-3 {
-  inset: 16px;
-  opacity: 0.6;
-  animation: arc-rotate 4s linear infinite;
-}
-
-@keyframes arc-rotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-/* Core pulse value */
 .arc-core {
-  position: relative;
-  z-index: 2;
   display: flex;
   align-items: baseline;
-  justify-content: center;
-  width: 54px;
-  height: 54px;
-  border-radius: 50%;
-  background: radial-gradient(circle, var(--stark-blue-dim) 0%, transparent 70%);
-  border: 2px solid var(--stark-blue);
-  box-shadow:
-    0 0 20px var(--stark-blue-glow),
-    inset 0 0 20px var(--stark-blue-dim);
-}
-
-.arc-core.nominal {
-  border-color: var(--stark-blue);
-  box-shadow:
-    0 0 20px var(--stark-blue-glow),
-    inset 0 0 20px var(--stark-blue-dim);
-}
-
-.arc-core.warning {
-  border-color: var(--stark-orange);
-  box-shadow:
-    0 0 20px var(--stark-orange-dim),
-    inset 0 0 20px var(--stark-orange-dim);
+  gap: 2px;
+  padding: 4px 12px;
+  background: var(--bb-panel);
+  border: 1px solid var(--bb-border);
 }
 
 .arc-value {
-  font-family: var(--font-geist-mono), monospace;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
-  color: var(--stark-white);
-  text-shadow: 0 0 10px var(--stark-blue);
+  color: var(--bb-white);
 }
 
 .arc-unit {
-  font-family: var(--font-geist-mono), monospace;
-  font-size: 10px;
-  color: var(--stark-blue);
-  margin-left: 1px;
+  font-size: 11px;
+  color: var(--bb-gray);
 }
 
 .arc-status {
-  position: absolute;
-  bottom: -6px;
-  font-family: var(--font-geist-mono), monospace;
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 600;
-  letter-spacing: 0.15em;
   padding: 2px 8px;
-  border-radius: 4px;
-  background: var(--stark-black);
-  border: 1px solid currentColor;
+  text-transform: uppercase;
 }
 
 .arc-status.nominal {
-  color: var(--stark-blue);
-  box-shadow: 0 0 8px var(--stark-blue-dim);
+  color: var(--bb-green);
 }
 
 .arc-status.warning {
-  color: var(--stark-orange);
-  box-shadow: 0 0 8px var(--stark-orange-dim);
+  color: var(--bb-amber);
 }
 
-.arc-history {
-  margin-top: 4px;
-}
-
-.arc-sparkline {
-  color: var(--stark-blue);
+.arc-history, .arc-sparkline {
   font-size: 10px;
-}
-
-/* ========================
-   Right - Metric Panels
-   ======================== */
-
-.hud-right {
-  display: flex;
-  gap: 12px;
-  z-index: 1;
+  color: var(--bb-gray);
 }
 
 .hud-panel {
-  position: relative;
-  padding: 10px 14px;
-  background: var(--stark-panel);
-  border: 1px solid var(--stark-panel-border);
-  min-width: 80px;
+  padding: 6px 10px;
+  background: var(--bb-panel);
+  border: 1px solid var(--bb-border);
 }
 
 .hud-panel.accent {
-  border-color: var(--stark-orange-dim);
-  background: rgba(255, 107, 0, 0.05);
+  border-color: var(--bb-amber);
 }
 
-/* Corner brackets - Iron Man style */
 .panel-corner {
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  border-color: var(--stark-blue);
-  border-style: solid;
-  border-width: 0;
-}
-
-.hud-panel.accent .panel-corner {
-  border-color: var(--stark-orange);
-}
-
-.panel-corner.tl {
-  top: -1px;
-  left: -1px;
-  border-top-width: 2px;
-  border-left-width: 2px;
-}
-
-.panel-corner.tr {
-  top: -1px;
-  right: -1px;
-  border-top-width: 2px;
-  border-right-width: 2px;
-}
-
-.panel-corner.bl {
-  bottom: -1px;
-  left: -1px;
-  border-bottom-width: 2px;
-  border-left-width: 2px;
-}
-
-.panel-corner.br {
-  bottom: -1px;
-  right: -1px;
-  border-bottom-width: 2px;
-  border-right-width: 2px;
+  display: none;
 }
 
 .panel-content {
@@ -780,121 +1040,53 @@
 }
 
 .panel-value {
-  font-family: var(--font-geist-mono), monospace;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
-  color: var(--stark-white);
-  text-shadow: 0 0 10px var(--stark-blue-dim);
-  line-height: 1;
-}
-
-.hud-panel.accent .panel-value {
-  text-shadow: 0 0 10px var(--stark-orange-dim);
+  color: var(--bb-white);
 }
 
 .panel-label {
-  font-family: var(--font-geist-mono), monospace;
-  font-size: 8px;
-  font-weight: 500;
-  letter-spacing: 0.15em;
-  color: var(--stark-blue);
-  opacity: 0.8;
-}
-
-.hud-panel.accent .panel-label {
-  color: var(--stark-orange);
+  font-size: 9px;
+  color: var(--bb-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .panel-spark {
-  color: var(--stark-blue);
-  font-size: 8px;
-  margin-top: 2px;
+  font-size: 9px;
+  color: var(--bb-gray);
 }
 
-.hud-panel.accent .panel-spark {
-  color: var(--stark-orange);
+.hud-scanline, .hud-edge-glow {
+  display: none;
 }
-
-/* ========================
-   Status Indicators
-   ======================== */
-
-.status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  animation: status-pulse 1.5s ease-in-out infinite;
-}
-
-.status-nominal .status-dot { background: var(--stark-blue); box-shadow: 0 0 8px var(--stark-blue); }
-.status-elevated .status-dot { background: var(--stark-gold); box-shadow: 0 0 8px var(--stark-gold); }
-.status-degraded .status-dot { background: var(--stark-orange); box-shadow: 0 0 8px var(--stark-orange); }
-.status-critical .status-dot { background: var(--stark-red); box-shadow: 0 0 8px var(--stark-red); }
-
-@keyframes status-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.6; transform: scale(0.9); }
-}
-
-/* ========================
-   Legacy Panel Support
-   ======================== */
 
 .lcars-panel {
-  position: relative;
-  background: var(--stark-panel);
-  border: 1px solid var(--stark-panel-border);
-  padding: 0.5rem 1rem;
+  background: var(--bb-panel);
+  border: 1px solid var(--bb-border);
+  padding: 8px;
 }
 
-.accent-cyan { color: var(--stark-blue); }
-.accent-amber { color: var(--stark-orange); }
-.accent-magenta { color: var(--stark-blue); }
-.accent-red { color: var(--stark-red); }
+/* ============================================
+   ANIMATIONS
+   ============================================ */
 
-/* ========================
-   Stark Button Style
-   ======================== */
-
-.stark-button {
-  padding: 8px 16px;
-  background: transparent;
-  border: 1px solid var(--stark-blue);
-  color: var(--stark-blue);
-  font-family: var(--font-geist-mono), monospace;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  position: relative;
+@keyframes bb-flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
 }
 
-.stark-button::before,
-.stark-button::after {
-  content: '';
-  position: absolute;
-  width: 6px;
-  height: 6px;
-  border: 1px solid var(--stark-blue);
+.bb-flash {
+  animation: bb-flash 0.5s ease-in-out;
 }
 
-.stark-button::before {
-  top: -2px;
-  left: -2px;
-  border-right: none;
-  border-bottom: none;
+.bb-flash-loop {
+  animation: bb-flash 1s ease-in-out infinite;
 }
 
-.stark-button::after {
-  bottom: -2px;
-  right: -2px;
-  border-left: none;
-  border-top: none;
-}
-
-.stark-button:hover {
-  background: var(--stark-blue-dim);
-  box-shadow: 0 0 20px var(--stark-blue-dim);
+/* Cursor blink for command line */
+.bb-cursor::after {
+  content: '█';
+  animation: bb-blink 1s step-end infinite;
+  color: var(--bb-amber);
 }
