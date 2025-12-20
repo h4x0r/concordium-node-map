@@ -32,6 +32,7 @@ import {
 
 function ConcordiumNodeComponent({ data, selected }: NodeProps) {
   const nodeData = data as unknown as ConcordiumNodeData;
+  const isConnectedPeer = nodeData.isConnectedPeer;
 
   // Cyberpunk color scheme with glows
   const healthColors = {
@@ -58,24 +59,75 @@ function ConcordiumNodeComponent({ data, selected }: NodeProps) {
   const scaleFactor = Math.min(nodeData.peersCount / 10, 1);
   const size = Math.round(baseSize + (maxSize - baseSize) * scaleFactor);
 
+  // Selected node is MUCH larger and has distinct styling
+  const selectedSize = selected ? Math.max(size * 1.5, 40) : size;
+
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div
-            className={cn(
-              'rounded-full border-2 flex items-center justify-center cursor-pointer transition-all duration-300',
-              healthColors.bg,
-              healthColors.border,
-              healthColors.glow,
-              selected && 'ring-2 ring-[var(--concordium-teal)] ring-offset-2 ring-offset-background shadow-[0_0_25px_var(--concordium-teal-glow)]'
+          <div className="relative">
+            {/* Selected node indicator - pulsing orange ring */}
+            {selected && (
+              <>
+                <div
+                  className="absolute rounded-full border-4 border-[var(--bb-orange)] animate-ping"
+                  style={{
+                    width: selectedSize + 20,
+                    height: selectedSize + 20,
+                    top: -10,
+                    left: -10,
+                    opacity: 0.75,
+                  }}
+                />
+                <div
+                  className="absolute rounded-full border-2 border-[var(--bb-orange)]"
+                  style={{
+                    width: selectedSize + 12,
+                    height: selectedSize + 12,
+                    top: -6,
+                    left: -6,
+                  }}
+                />
+              </>
             )}
-            style={{ width: size, height: size }}
-          >
-            <Handle type="target" position={Position.Top} className="opacity-0" />
-            <Handle type="source" position={Position.Bottom} className="opacity-0" />
-            {nodeData.isBaker && (
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-purple-500 rounded-full border border-background shadow-[0_0_8px_rgba(168,85,247,0.6)]" />
+            {/* Connected peer indicator - subtle cyan ring */}
+            {isConnectedPeer && !selected && (
+              <div
+                className="absolute rounded-full border-2 border-[var(--bb-cyan)]"
+                style={{
+                  width: size + 8,
+                  height: size + 8,
+                  top: -4,
+                  left: -4,
+                }}
+              />
+            )}
+            <div
+              className={cn(
+                'rounded-full border-2 flex items-center justify-center cursor-pointer transition-all duration-300',
+                healthColors.bg,
+                healthColors.border,
+                healthColors.glow,
+                selected && 'border-[var(--bb-orange)] shadow-[0_0_30px_rgba(255,102,0,0.8)]',
+                isConnectedPeer && !selected && 'shadow-[0_0_20px_rgba(0,204,255,0.5)]'
+              )}
+              style={{ width: selectedSize, height: selectedSize }}
+            >
+              <Handle type="target" position={Position.Top} className="opacity-0" />
+              <Handle type="source" position={Position.Bottom} className="opacity-0" />
+              {nodeData.isBaker && (
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-purple-500 rounded-full border border-background shadow-[0_0_8px_rgba(168,85,247,0.6)]" />
+              )}
+            </div>
+            {/* Selected node label */}
+            {selected && (
+              <div
+                className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] font-bold text-[var(--bb-orange)] bg-[var(--bb-black)] px-2 py-0.5 border border-[var(--bb-orange)]"
+                style={{ top: selectedSize + 8 }}
+              >
+                ▶ SELECTED
+              </div>
             )}
           </div>
         </TooltipTrigger>
@@ -234,6 +286,10 @@ export function TopologyGraph() {
         nodes={nodes.map((n) => ({
           ...n,
           selected: n.id === selectedNodeId,
+          data: {
+            ...n.data,
+            isConnectedPeer: selectedNodeId && selectedPeerIds.has(n.id) && n.id !== selectedNodeId,
+          },
           style: {
             opacity: selectedNodeId
               ? n.id === selectedNodeId || selectedPeerIds.has(n.id)

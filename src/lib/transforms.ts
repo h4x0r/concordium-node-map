@@ -34,6 +34,8 @@ export interface ConcordiumNodeData extends Record<string, unknown> {
   health: NodeHealth;
   isBaker: boolean;
   node: ConcordiumNode;
+  /** Set dynamically when a node is selected - true for its connected peers */
+  isConnectedPeer?: boolean;
 }
 
 export function calculateNodeHealth(node: ConcordiumNode, maxHeight: number): NodeHealth {
