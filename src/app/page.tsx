@@ -5,9 +5,10 @@ import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { useAppStore } from '@/hooks/useAppStore';
 import { useNetworkMetrics, useNodes } from '@/hooks/useNodes';
 import { useMetricHistory, type MetricSnapshot } from '@/hooks/useMetricHistory';
-import { calculateNetworkPulse, getPulseStatus, THRESHOLDS } from '@/lib/pulse';
+import { calculateNetworkPulse, getPulseStatus, THRESHOLDS, calculateFinalizationHealth, calculateLatencyHealth } from '@/lib/pulse';
 import { NodeDetailPanel } from '@/components/panels/NodeDetailPanel';
 import { Sparkline } from '@/components/dashboard/Sparkline';
+import { MRTGChart, type MRTGDataPoint } from '@/components/dashboard/MRTGChart';
 
 // Dynamic imports for heavy map components
 const TopologyGraph = dynamic(
@@ -184,6 +185,40 @@ export default function Home() {
   // Get sparkline data
   const pulseHistory = history.map(h => h.pulse);
   const nodesHistory = history.map(h => h.nodes);
+
+  // Convert history to MRTG chart data format with HEALTH SCORES (0-100)
+  // These are the 3 components that make up the pulse score:
+  // - 40% finalization health (sync lag)
+  // - 30% latency health
+  // - 30% consensus health
+  const pulseChartData = useMemo((): MRTGDataPoint[] =>
+    history.map(h => ({ timestamp: h.timestamp, value: h.pulse })),
+    [history]
+  );
+
+  const finalizationHealthData = useMemo((): MRTGDataPoint[] =>
+    history.map(h => ({
+      timestamp: h.timestamp,
+      value: calculateFinalizationHealth(h.finalizationTime),
+    })),
+    [history]
+  );
+
+  const latencyHealthData = useMemo((): MRTGDataPoint[] =>
+    history.map(h => ({
+      timestamp: h.timestamp,
+      value: calculateLatencyHealth(h.latency),
+    })),
+    [history]
+  );
+
+  const consensusHealthData = useMemo((): MRTGDataPoint[] =>
+    history.map(h => ({
+      timestamp: h.timestamp,
+      value: h.consensus, // Already 0-100 percentage
+    })),
+    [history]
+  );
 
   return (
     <main className="h-screen w-screen flex flex-col overflow-hidden bg-[var(--bb-black)]">
@@ -375,6 +410,48 @@ export default function Home() {
           {/* Map Content */}
           <div className="flex-1 min-h-0 relative">
             {currentView === 'topology' ? <TopologyGraph /> : <GeographicMap />}
+          </div>
+
+          {/* MRTG Historical Charts - Health Scores (0-100) with raw values */}
+          <div className="flex-shrink-0 bb-mrtg-row">
+            <MRTGChart
+              data={pulseChartData}
+              label="Network Pulse"
+              unit="%"
+              color="green"
+              min={0}
+              max={100}
+            />
+            <MRTGChart
+              data={finalizationHealthData}
+              label="Sync Health (40%)"
+              unit="%"
+              color="orange"
+              min={0}
+              max={100}
+              rawValue={currentMetrics.finalizationTime}
+              rawUnit=" blks"
+            />
+            <MRTGChart
+              data={latencyHealthData}
+              label="Latency Health (30%)"
+              unit="%"
+              color="amber"
+              min={0}
+              max={100}
+              rawValue={currentMetrics.latency}
+              rawUnit="ms"
+            />
+            <MRTGChart
+              data={consensusHealthData}
+              label="Consensus (30%)"
+              unit="%"
+              color="cyan"
+              min={0}
+              max={100}
+              rawValue={currentMetrics.consensus}
+              rawUnit="%"
+            />
           </div>
         </div>
 

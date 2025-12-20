@@ -1092,3 +1092,147 @@
   animation: bb-blink 1s step-end infinite;
   color: var(--bb-amber);
 }
+
+/* ============================================
+   BLOOMBERG MRTG CHARTS
+   MRTG-style historical monitoring charts
+   ============================================ */
+
+:root {
+  --bb-grid: #222222;
+}
+
+.bb-mrtg-chart {
+  position: relative;
+  background: var(--bb-black);
+  border: 1px solid var(--bb-border);
+  padding: 0;
+  overflow: hidden;
+}
+
+.bb-mrtg-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  background: var(--bb-panel);
+  border-bottom: 1px solid var(--bb-border);
+}
+
+.bb-mrtg-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--bb-amber);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.bb-mrtg-values {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.bb-mrtg-value {
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.bb-mrtg-raw {
+  font-size: 10px;
+  color: var(--bb-gray);
+  font-variant-numeric: tabular-nums;
+}
+
+.bb-mrtg-svg {
+  display: block;
+  width: 100%;
+  height: calc(100% - 40px);
+}
+
+.bb-mrtg-grid line {
+  stroke: var(--bb-grid);
+}
+
+.bb-mrtg-axis-label {
+  font-size: 2.5px;
+  font-family: 'JetBrains Mono', monospace;
+  fill: var(--bb-gray);
+}
+
+.bb-mrtg-time-axis {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  background: var(--bb-panel);
+  border-top: 1px solid var(--bb-border);
+}
+
+.bb-mrtg-time-label {
+  position: absolute;
+  font-size: 9px;
+  color: var(--bb-gray);
+  font-variant-numeric: tabular-nums;
+  transform: translateX(-50%);
+}
+
+.bb-mrtg-time-label:first-child {
+  transform: translateX(0);
+}
+
+.bb-mrtg-time-label:last-child {
+  transform: translateX(-100%);
+}
+
+/* Multi-chart legend */
+.bb-mrtg-legend {
+  display: flex;
+  gap: 12px;
+  padding: 4px 8px;
+  background: var(--bb-panel);
+  border-bottom: 1px solid var(--bb-border);
+}
+
+.bb-mrtg-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9px;
+  color: var(--bb-gray);
+  text-transform: uppercase;
+}
+
+.bb-mrtg-legend-dot {
+  width: 8px;
+  height: 3px;
+}
+
+/* Chart container for dashboard grid */
+.bb-mrtg-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1px;
+  background: var(--bb-border);
+}
+
+.bb-mrtg-grid > * {
+  background: var(--bb-black);
+}
+
+/* Single row variant */
+.bb-mrtg-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--bb-border);
+  height: 100px;
+}
+
+.bb-mrtg-row > * {
+  background: var(--bb-black);
+}
