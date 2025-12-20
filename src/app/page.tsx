@@ -65,17 +65,22 @@ export default function Home() {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const commandInputRef = useRef<HTMLInputElement>(null);
 
-  // Focus command input on "/" key
+  // Bloomberg-style: any typing focuses command input automatically
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Don't trigger if already in an input
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
         return;
       }
-      if (e.key === '/') {
-        e.preventDefault();
-        commandInputRef.current?.focus();
-      }
+      // Ignore modifier keys, function keys, and navigation keys
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key.startsWith('F') && e.key.length > 1) return; // F1-F12
+      if (['Escape', 'Tab', 'Shift', 'Control', 'Alt', 'Meta', 'CapsLock',
+           'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+           'Home', 'End', 'PageUp', 'PageDown', 'Insert', 'Delete'].includes(e.key)) return;
+
+      // Focus command input and let the keypress through
+      commandInputRef.current?.focus();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -198,7 +203,7 @@ export default function Home() {
           ref={commandInputRef}
           type="text"
           className="bb-command-input"
-          placeholder="Press / to search nodes..."
+          placeholder="Start typing to search nodes..."
           value={commandInput}
           onChange={(e) => setCommandInput(e.target.value)}
         />
