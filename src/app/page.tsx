@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { useAppStore } from '@/hooks/useAppStore';
 import { useNetworkMetrics, useNodes } from '@/hooks/useNodes';
 import { useMetricHistory, type MetricSnapshot } from '@/hooks/useMetricHistory';
@@ -63,11 +63,39 @@ export default function Home() {
   const [commandInput, setCommandInput] = useState('');
   const [sortColumn, setSortColumn] = useState<'name' | 'peers' | 'fin' | 'status'>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const commandInputRef = useRef<HTMLInputElement>(null);
 
-  // Sort nodes based on current sort column and direction
-  const sortedNodes = useMemo(() => {
+  // Focus command input on "/" key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if already in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+      if (e.key === '/') {
+        e.preventDefault();
+        commandInputRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Filter and sort nodes based on command input and sort settings
+  const filteredAndSortedNodes = useMemo(() => {
     if (!nodes) return [];
-    return [...nodes].sort((a, b) => {
+
+    // Filter by search term
+    const searchTerm = commandInput.toLowerCase().trim();
+    const filtered = searchTerm
+      ? nodes.filter(node =>
+          node.nodeName.toLowerCase().includes(searchTerm) ||
+          node.nodeId.toLowerCase().includes(searchTerm)
+        )
+      : nodes;
+
+    // Sort the filtered results
+    return [...filtered].sort((a, b) => {
       let comparison = 0;
       switch (sortColumn) {
         case 'name':
@@ -87,7 +115,7 @@ export default function Home() {
       }
       return sortDirection === 'asc' ? comparison : -comparison;
     });
-  }, [nodes, sortColumn, sortDirection]);
+  }, [nodes, commandInput, sortColumn, sortDirection]);
 
   const handleSort = (column: 'name' | 'peers' | 'fin' | 'status') => {
     if (sortColumn === column) {
@@ -167,9 +195,10 @@ export default function Home() {
         </div>
 
         <input
+          ref={commandInputRef}
           type="text"
           className="bb-command-input"
-          placeholder="Enter command or search nodes..."
+          placeholder="Press / to search nodes..."
           value={commandInput}
           onChange={(e) => setCommandInput(e.target.value)}
         />
@@ -349,7 +378,9 @@ export default function Home() {
           <div className="bb-panel flex-1 flex flex-col">
             <div className="bb-panel-header dark">
               Node Explorer
-              <span className="text-[var(--bb-gray)] font-normal ml-2">({nodes?.length ?? 0})</span>
+              <span className="text-[var(--bb-gray)] font-normal ml-2">
+                ({commandInput ? `${filteredAndSortedNodes.length}/` : ''}{nodes?.length ?? 0})
+              </span>
             </div>
             <div className="bb-panel-body no-padding flex-1 overflow-auto">
               <table className="bb-table">
@@ -370,7 +401,7 @@ export default function Home() {
                   </tr>
                 </thead>
                 <tbody>
-                  {sortedNodes.map((node) => (
+                  {filteredAndSortedNodes.map((node) => (
                     <tr
                       key={node.nodeId}
                       className={selectedNodeId === node.nodeId ? 'selected' : ''}
