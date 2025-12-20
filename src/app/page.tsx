@@ -1,7 +1,6 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import Image from 'next/image';
 import { useAppStore } from '@/hooks/useAppStore';
 import { ViewToggle } from '@/components/map/ViewToggle';
 import { NodeDetailPanel } from '@/components/panels/NodeDetailPanel';
@@ -58,7 +57,7 @@ export default function Home() {
         <div className="flex items-center gap-4">
           {/* Logo with glow effect */}
           <div className="relative">
-            <Image
+            <img
               src="/concordium-logo.svg"
               alt="Concordium"
               width={36}
