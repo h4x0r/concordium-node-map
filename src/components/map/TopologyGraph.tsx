@@ -194,16 +194,16 @@ const nodeTypes = {
 // Tier label positions in graph coordinates (from layout.ts tierConfig)
 const TIER_LABELS = [
   { tier: 'BAKERS', y: 80, color: 'rgb(168, 85, 247)', opacity: 0.6 },
-  { tier: 'HUBS', y: 250, color: 'var(--bb-cyan)', opacity: 0.4 },
-  { tier: 'STANDARD', y: 480, color: 'var(--bb-gray)', opacity: 0.3 },
+  { tier: 'HUBS', y: 280, color: 'var(--bb-cyan)', opacity: 0.4 },
+  { tier: 'STANDARD', y: 500, color: 'var(--bb-gray)', opacity: 0.3 },
   { tier: 'EDGE', y: 750, color: 'var(--bb-gray)', opacity: 0.2 },
 ] as const;
 
 // Tier separator line positions (between tiers)
 const TIER_SEPARATORS = [
-  { y: 165, color: 'rgb(168, 85, 247)', opacity: 0.2 },
-  { y: 365, color: 'var(--bb-cyan)', opacity: 0.15 },
-  { y: 615, color: 'var(--bb-gray)', opacity: 0.1 },
+  { y: 200, color: 'rgb(168, 85, 247)', opacity: 0.2 },
+  { y: 420, color: 'var(--bb-cyan)', opacity: 0.15 },
+  { y: 650, color: 'var(--bb-gray)', opacity: 0.1 },
 ] as const;
 
 /**

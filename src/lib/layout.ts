@@ -26,6 +26,23 @@ function classifyNode(data: ConcordiumNodeData): NodeTier {
 }
 
 /**
+ * Calculate estimated node size based on tier and peer count
+ * Mirrors the sizing logic in TopologyGraph.tsx
+ */
+function estimateNodeSize(tier: NodeTier, peersCount: number): number {
+  const tierSizes = {
+    baker: { base: 40, max: 70 },
+    hub: { base: 25, max: 50 },
+    standard: { base: 14, max: 30 },
+    edge: { base: 8, max: 18 },
+  };
+
+  const tierSize = tierSizes[tier];
+  const peerScale = Math.min(peersCount / 20, 1);
+  return tierSize.base + (tierSize.max - tierSize.base) * peerScale;
+}
+
+/**
  * Tiered Arc Layout - "Mission Control" style
  *
  * Organizes nodes into horizontal tiers based on importance:
@@ -36,6 +53,7 @@ function classifyNode(data: ConcordiumNodeData): NodeTier {
  *
  * Within each tier, nodes are distributed in an arc pattern
  * with slight vertical variance for visual interest.
+ * Large tiers automatically use multiple rows to prevent overlap.
  */
 export function getLayoutedElements(
   nodes: Node<ConcordiumNodeData>[],
@@ -64,17 +82,24 @@ export function getLayoutedElements(
     tiers[tier].sort((a, b) => b.data.peersCount - a.data.peersCount);
   }
 
-  // Tier configuration: Y position and arc settings
-  const tierConfig: Record<NodeTier, { y: number; arcHeight: number; label: string }> = {
-    baker: { y: 80, arcHeight: 30, label: 'BAKERS' },
-    hub: { y: 250, arcHeight: 40, label: 'HUBS' },
-    standard: { y: 480, arcHeight: 60, label: 'STANDARD' },
-    edge: { y: 750, arcHeight: 50, label: 'EDGE' },
+  // Tier configuration: Y position, arc settings, and spacing
+  // minSpacing accounts for largest possible node size + padding
+  const tierConfig: Record<NodeTier, {
+    y: number;
+    arcHeight: number;
+    rowSpacing: number;
+    minSpacing: number;
+    label: string;
+  }> = {
+    baker: { y: 80, arcHeight: 25, rowSpacing: 100, minSpacing: 100, label: 'BAKERS' },
+    hub: { y: 280, arcHeight: 30, rowSpacing: 80, minSpacing: 70, label: 'HUBS' },
+    standard: { y: 500, arcHeight: 40, rowSpacing: 50, minSpacing: 45, label: 'STANDARD' },
+    edge: { y: 750, arcHeight: 35, rowSpacing: 35, minSpacing: 30, label: 'EDGE' },
   };
 
   const layoutedNodes: Node<ConcordiumNodeData>[] = [];
   const centerX = width / 2;
-  const padding = 100;
+  const padding = 120;
   const usableWidth = width - padding * 2;
 
   // Position nodes in each tier
@@ -85,25 +110,37 @@ export function getLayoutedElements(
 
     if (count === 0) continue;
 
-    // Calculate spacing - ensure nodes don't overlap
-    // For small counts, spread more; for large counts, pack tighter
-    const maxSpread = Math.min(usableWidth, count * 80);
-    const startX = centerX - maxSpread / 2;
+    // Calculate how many nodes can fit per row based on minimum spacing
+    const nodesPerRow = Math.max(1, Math.floor(usableWidth / config.minSpacing));
+    const numRows = Math.ceil(count / nodesPerRow);
 
     tierNodes.forEach((node, index) => {
-      // Horizontal position: evenly distributed across tier width
-      const progress = count === 1 ? 0.5 : index / (count - 1);
-      const x = startX + progress * maxSpread;
+      // Determine which row this node belongs to
+      const row = Math.floor(index / nodesPerRow);
+      const indexInRow = index % nodesPerRow;
+      const nodesInThisRow = Math.min(nodesPerRow, count - row * nodesPerRow);
 
-      // Vertical position: arc curve (parabola centered at middle)
-      // Nodes at edges are slightly higher than center
+      // Calculate horizontal spread for this row
+      // Use more spread for rows with fewer nodes
+      const rowSpread = Math.min(usableWidth, nodesInThisRow * config.minSpacing);
+      const startX = centerX - rowSpread / 2;
+
+      // Horizontal position: evenly distributed across row width
+      const progress = nodesInThisRow === 1 ? 0.5 : indexInRow / (nodesInThisRow - 1);
+      const x = startX + progress * rowSpread;
+
+      // Vertical position: base Y + row offset + arc curve
+      const rowY = config.y + row * config.rowSpacing;
+
+      // Arc curve (parabola centered at middle) - flatter for multi-row layouts
       const arcProgress = (progress - 0.5) * 2; // -1 to 1
-      const arcOffset = config.arcHeight * (1 - arcProgress * arcProgress);
-      const y = config.y + arcOffset;
+      const arcMultiplier = numRows > 1 ? 0.5 : 1; // Reduce arc for multi-row
+      const arcOffset = config.arcHeight * arcMultiplier * (1 - arcProgress * arcProgress);
+      const y = rowY + arcOffset;
 
       // Add small random jitter for organic feel (but consistent per node)
-      const jitterX = ((hashCode(node.id) % 20) - 10);
-      const jitterY = ((hashCode(node.id + 'y') % 10) - 5);
+      const jitterX = ((hashCode(node.id) % 16) - 8);
+      const jitterY = ((hashCode(node.id + 'y') % 8) - 4);
 
       layoutedNodes.push({
         ...node,
@@ -113,7 +150,7 @@ export function getLayoutedElements(
         },
         data: {
           ...node.data,
-          tier, // Add tier info for styling
+          tier,
         },
       });
     });
