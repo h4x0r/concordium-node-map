@@ -121,16 +121,6 @@ export function MRTGMirroredChart({
         {/* Grid lines */}
         {showGrid && (
           <g className="bb-mrtg-grid">
-            {/* Center line (origin) */}
-            <line
-              x1={padding.left}
-              y1={centerY}
-              x2={100 - padding.right}
-              y2={centerY}
-              stroke="var(--bb-gray)"
-              strokeWidth="0.5"
-              opacity={0.5}
-            />
             {/* Top grid line */}
             <line
               x1={padding.left}
@@ -140,6 +130,16 @@ export function MRTGMirroredChart({
               stroke="var(--bb-grid)"
               strokeWidth="0.3"
               strokeDasharray="1,1"
+            />
+            {/* Center line (origin) - prominent */}
+            <line
+              x1={padding.left}
+              y1={centerY}
+              x2={100 - padding.right}
+              y2={centerY}
+              stroke="var(--bb-gray)"
+              strokeWidth="1"
+              opacity={0.8}
             />
             {/* Bottom grid line */}
             <line
@@ -158,14 +158,14 @@ export function MRTGMirroredChart({
         <path
           d={outboundArea}
           fill={COLORS.outbound.fill}
-          opacity={0.3}
+          opacity={0.5}
         />
 
         {/* Inbound area (below center) */}
         <path
           d={inboundArea}
           fill={COLORS.inbound.fill}
-          opacity={0.3}
+          opacity={0.5}
         />
 
         {/* Outbound line */}
@@ -186,14 +186,15 @@ export function MRTGMirroredChart({
           vectorEffect="non-scaling-stroke"
         />
 
-        {/* Y-axis labels */}
+        {/* Y-axis labels with direction indicators */}
         <text
           x={100 - padding.right + 2}
           y={padding.top + 3}
           className="bb-mrtg-axis-label"
           textAnchor="start"
+          fill={COLORS.outbound.stroke}
         >
-          {formatValue(yMax, unit)}
+          ↑{formatValue(yMax, unit)}
         </text>
         <text
           x={100 - padding.right + 2}
@@ -208,8 +209,9 @@ export function MRTGMirroredChart({
           y={height - padding.bottom}
           className="bb-mrtg-axis-label"
           textAnchor="start"
+          fill={COLORS.inbound.stroke}
         >
-          {formatValue(yMax, unit)}
+          ↓{formatValue(yMax, unit)}
         </text>
       </svg>
     </div>
