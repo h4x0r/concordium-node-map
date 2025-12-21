@@ -7,11 +7,20 @@ export interface MRTGDataPoint {
   value: number;
 }
 
+export interface HealthThresholds {
+  green: number;  // >= this value = green
+  amber: number;  // >= this value = amber
+  orange: number; // >= this value = orange
+  // below orange threshold = red
+}
+
 export interface MRTGChartProps {
   data: MRTGDataPoint[];
   label: string;
   unit?: string;
   color?: 'green' | 'amber' | 'orange' | 'cyan' | 'red' | 'auto';
+  /** Custom thresholds for auto-coloring (default: 90/70/50) */
+  thresholds?: HealthThresholds;
   min?: number;
   max?: number;
   height?: number;
@@ -32,17 +41,19 @@ const COLOR_MAP = {
   red: { stroke: 'var(--bb-red)', fill: 'rgba(255, 68, 68, 0.15)' },
 };
 
+const DEFAULT_THRESHOLDS: HealthThresholds = {
+  green: 90,
+  amber: 70,
+  orange: 50,
+};
+
 /**
- * Determine color based on health value (0-100 scale)
- * >= 90: green (healthy)
- * >= 70: amber (degraded)
- * >= 50: orange (warning)
- * < 50: red (critical)
+ * Determine color based on health value with configurable thresholds
  */
-function getHealthColor(value: number): 'green' | 'amber' | 'orange' | 'red' {
-  if (value >= 90) return 'green';
-  if (value >= 70) return 'amber';
-  if (value >= 50) return 'orange';
+function getHealthColor(value: number, thresholds: HealthThresholds = DEFAULT_THRESHOLDS): 'green' | 'amber' | 'orange' | 'red' {
+  if (value >= thresholds.green) return 'green';
+  if (value >= thresholds.amber) return 'amber';
+  if (value >= thresholds.orange) return 'orange';
   return 'red';
 }
 
@@ -67,6 +78,7 @@ export function MRTGChart({
   label,
   unit = '',
   color = 'auto',
+  thresholds,
   min: minProp,
   max: maxProp,
   height = 100,
@@ -79,7 +91,7 @@ export function MRTGChart({
   const chartWidth = 100; // percentage
   const padding = { top: 8, right: 40, bottom: 20, left: 8 };
   const latestValue = data.length > 0 ? data[data.length - 1].value : 0;
-  const effectiveColor = color === 'auto' ? getHealthColor(latestValue) : color;
+  const effectiveColor = color === 'auto' ? getHealthColor(latestValue, thresholds) : color;
   const colors = COLOR_MAP[effectiveColor];
 
   const { points, pathD, areaD, yMin, yMax, yTicks, timeLabels } = useMemo(() => {

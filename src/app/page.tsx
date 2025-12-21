@@ -10,6 +10,8 @@ import { useAudio } from '@/hooks/useAudio';
 import { calculateNetworkPulse, getPulseStatus, THRESHOLDS, calculateFinalizationHealth, calculateLatencyHealth } from '@/lib/pulse';
 import { Sparkline } from '@/components/dashboard/Sparkline';
 import { MRTGChart, type MRTGDataPoint } from '@/components/dashboard/MRTGChart';
+import { NodeDetailPanel } from '@/components/dashboard/NodeDetailPanel';
+import { type HealthStatus } from '@/components/dashboard/HealthTimeline';
 import { MobileHome } from '@/components/mobile/MobileHome';
 
 // Dynamic imports for heavy map components
@@ -200,6 +202,73 @@ function DesktopHome() {
   const lastUpdated = dataUpdatedAt ? new Date(dataUpdatedAt) : null;
   const secondsAgo = lastUpdated ? Math.floor((Date.now() - lastUpdated.getTime()) / 1000) : 0;
   const secondsUntilRefresh = Math.max(0, 30 - secondsAgo);
+
+  // Generate mock per-node history data for the selected node
+  // TODO: Replace with actual per-node history tracking
+  const nodeHistoryData = useMemo(() => {
+    if (!selectedNode || !nodes) return null;
+
+    const now = Date.now();
+    const interval = 60000; // 1 minute intervals
+    const dataPoints = 15; // 15 minutes of history
+
+    // Calculate max height from all nodes
+    const maxHeight = Math.max(...nodes.map(n => n.finalizedBlockHeight));
+    const lag = maxHeight - selectedNode.finalizedBlockHeight;
+
+    // Determine node health based on finalization lag
+    const getNodeHealth = (nodeLag: number): HealthStatus['status'] => {
+      if (nodeLag <= 2) return 'healthy';
+      if (nodeLag <= 5) return 'lagging';
+      return 'issue';
+    };
+
+    const currentHealth = getNodeHealth(lag);
+
+    // Generate mock history with some variation
+    const healthHistory: HealthStatus[] = Array.from({ length: dataPoints }, (_, i) => {
+      const timestamp = now - (dataPoints - 1 - i) * interval;
+      // Mostly current status with occasional variations
+      const random = Math.random();
+      let status: HealthStatus['status'] = currentHealth;
+      if (random > 0.85) status = 'lagging';
+      if (random > 0.95) status = 'issue';
+      return { timestamp, status };
+    });
+
+    // Use actual values with some historical variation
+    const baseLatency = selectedNode.averagePing || 50;
+    const basePeers = selectedNode.peersCount;
+
+    const latencyHistory: MRTGDataPoint[] = Array.from({ length: dataPoints }, (_, i) => ({
+      timestamp: now - (dataPoints - 1 - i) * interval,
+      value: baseLatency + (Math.random() - 0.5) * 30,
+    }));
+
+    const peerCountHistory: MRTGDataPoint[] = Array.from({ length: dataPoints }, (_, i) => ({
+      timestamp: now - (dataPoints - 1 - i) * interval,
+      value: Math.max(0, basePeers + Math.floor((Math.random() - 0.5) * 4)),
+    }));
+
+    // Mock bandwidth data (KB/s)
+    const bandwidthInHistory: MRTGDataPoint[] = Array.from({ length: dataPoints }, (_, i) => ({
+      timestamp: now - (dataPoints - 1 - i) * interval,
+      value: 50 + Math.random() * 100,
+    }));
+
+    const bandwidthOutHistory: MRTGDataPoint[] = Array.from({ length: dataPoints }, (_, i) => ({
+      timestamp: now - (dataPoints - 1 - i) * interval,
+      value: 30 + Math.random() * 70,
+    }));
+
+    return {
+      healthHistory,
+      latencyHistory,
+      bandwidthInHistory,
+      bandwidthOutHistory,
+      peerCountHistory,
+    };
+  }, [selectedNode, nodes]);
 
   // Get sparkline data
   const pulseHistory = history.map(h => h.pulse);
@@ -431,6 +500,22 @@ function DesktopHome() {
             {currentView === 'topology' ? <TopologyGraph /> : <GeographicMap />}
           </div>
 
+          {/* Per-Node Detail Panel - shows when a node is selected */}
+          {selectedNode && nodeHistoryData && (
+            <div className="flex-shrink-0">
+              <NodeDetailPanel
+                nodeId={selectedNode.nodeId}
+                nodeName={selectedNode.nodeName || 'Unnamed Node'}
+                healthHistory={nodeHistoryData.healthHistory}
+                latencyHistory={nodeHistoryData.latencyHistory}
+                bandwidthInHistory={nodeHistoryData.bandwidthInHistory}
+                bandwidthOutHistory={nodeHistoryData.bandwidthOutHistory}
+                peerCountHistory={nodeHistoryData.peerCountHistory}
+                onClose={() => selectNode(null)}
+              />
+            </div>
+          )}
+
           {/* MRTG Historical Charts - Health Scores (0-100) with auto color based on health */}
           <div className="flex-shrink-0 bb-mrtg-row">
             <MRTGChart
@@ -462,6 +547,7 @@ function DesktopHome() {
               data={consensusHealthData}
               label="Consensus"
               unit="%"
+              thresholds={{ green: THRESHOLDS.CONSENSUS_QUORUM, amber: 50, orange: 33 }}
               min={0}
               max={100}
               rawValue={currentMetrics.consensus}

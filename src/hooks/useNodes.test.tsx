@@ -143,11 +143,17 @@ describe('useNetworkMetrics', () => {
     expect(result.current.metrics?.avgPeers).toBe(15);
   });
 
-  it('calculates finalization lag', async () => {
+  it('calculates finalization lag using 95th percentile', async () => {
+    // Create 21 nodes so 5% index = floor(21 * 0.05) = 1, giving us the 2nd highest height
+    // Heights sorted descending: [100, 95, 90, 90, 90, ...]
+    // percentile95Height = heights[1] = 95
+    // lag = 100 - 95 = 5
     const mockNodes = [
-      createMockNode({ nodeId: '1', finalizedBlockHeight: 100 }),
-      createMockNode({ nodeId: '2', finalizedBlockHeight: 95 }),
-      createMockNode({ nodeId: '3', finalizedBlockHeight: 98 }),
+      createMockNode({ nodeId: '1', finalizedBlockHeight: 100 }),  // max
+      createMockNode({ nodeId: '2', finalizedBlockHeight: 95 }),   // 95th percentile (index 1)
+      ...Array.from({ length: 19 }, (_, i) =>
+        createMockNode({ nodeId: `${i + 3}`, finalizedBlockHeight: 90 })
+      ),
     ];
     mockFetch.mockResolvedValueOnce({
       ok: true,
@@ -160,7 +166,7 @@ describe('useNetworkMetrics', () => {
       expect(result.current.metrics).not.toBeNull();
     });
 
-    // Max is 100, worst is 95, lag is 5
+    // Max is 100, 95th percentile is 95, lag is 5
     expect(result.current.metrics?.maxFinalizationLag).toBe(5);
   });
 
