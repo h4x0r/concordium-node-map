@@ -11,7 +11,7 @@ export interface MRTGChartProps {
   data: MRTGDataPoint[];
   label: string;
   unit?: string;
-  color?: 'green' | 'amber' | 'orange' | 'cyan' | 'red';
+  color?: 'green' | 'amber' | 'orange' | 'cyan' | 'red' | 'auto';
   min?: number;
   max?: number;
   height?: number;
@@ -31,6 +31,20 @@ const COLOR_MAP = {
   cyan: { stroke: 'var(--bb-cyan)', fill: 'rgba(102, 204, 255, 0.15)' },
   red: { stroke: 'var(--bb-red)', fill: 'rgba(255, 68, 68, 0.15)' },
 };
+
+/**
+ * Determine color based on health value (0-100 scale)
+ * >= 90: green (healthy)
+ * >= 70: amber (degraded)
+ * >= 50: orange (warning)
+ * < 50: red (critical)
+ */
+function getHealthColor(value: number): 'green' | 'amber' | 'orange' | 'red' {
+  if (value >= 90) return 'green';
+  if (value >= 70) return 'amber';
+  if (value >= 50) return 'orange';
+  return 'red';
+}
 
 function formatTimeLabel(timestamp: number): string {
   const date = new Date(timestamp);
@@ -52,7 +66,7 @@ export function MRTGChart({
   data,
   label,
   unit = '',
-  color = 'green',
+  color = 'auto',
   min: minProp,
   max: maxProp,
   height = 100,
@@ -64,7 +78,9 @@ export function MRTGChart({
 }: MRTGChartProps) {
   const chartWidth = 100; // percentage
   const padding = { top: 8, right: 40, bottom: 20, left: 8 };
-  const colors = COLOR_MAP[color];
+  const latestValue = data.length > 0 ? data[data.length - 1].value : 0;
+  const effectiveColor = color === 'auto' ? getHealthColor(latestValue) : color;
+  const colors = COLOR_MAP[effectiveColor];
 
   const { points, pathD, areaD, yMin, yMax, yTicks, timeLabels } = useMemo(() => {
     if (data.length === 0) {
@@ -126,7 +142,6 @@ export function MRTGChart({
   }, [data, minProp, maxProp, height, padding.top, padding.bottom, padding.left, padding.right]);
 
   const chartHeight = height - padding.top - padding.bottom;
-  const latestValue = data.length > 0 ? data[data.length - 1].value : 0;
 
   return (
     <div className="bb-mrtg-chart" style={{ height }}>

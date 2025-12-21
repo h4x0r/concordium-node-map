@@ -431,13 +431,12 @@ function DesktopHome() {
             {currentView === 'topology' ? <TopologyGraph /> : <GeographicMap />}
           </div>
 
-          {/* MRTG Historical Charts - Health Scores (0-100) with raw values */}
+          {/* MRTG Historical Charts - Health Scores (0-100) with auto color based on health */}
           <div className="flex-shrink-0 bb-mrtg-row">
             <MRTGChart
               data={pulseChartData}
               label="Network Pulse"
               unit="%"
-              color="green"
               min={0}
               max={100}
             />
@@ -445,7 +444,6 @@ function DesktopHome() {
               data={finalizationHealthData}
               label="Sync Health"
               unit="%"
-              color="orange"
               min={0}
               max={100}
               rawValue={currentMetrics.finalizationTime}
@@ -455,7 +453,6 @@ function DesktopHome() {
               data={latencyHealthData}
               label="Latency Health"
               unit="%"
-              color="amber"
               min={0}
               max={100}
               rawValue={currentMetrics.latency}
@@ -465,7 +462,6 @@ function DesktopHome() {
               data={consensusHealthData}
               label="Consensus"
               unit="%"
-              color="cyan"
               min={0}
               max={100}
               rawValue={currentMetrics.consensus}
