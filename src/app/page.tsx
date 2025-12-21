@@ -197,6 +197,7 @@ function DesktopHome() {
 
   const lastUpdated = dataUpdatedAt ? new Date(dataUpdatedAt) : null;
   const secondsAgo = lastUpdated ? Math.floor((Date.now() - lastUpdated.getTime()) / 1000) : 0;
+  const secondsUntilRefresh = Math.max(0, 30 - secondsAgo);
 
   // Get sparkline data
   const pulseHistory = history.map(h => h.pulse);
@@ -366,8 +367,8 @@ function DesktopHome() {
               <span className="bb-metric-value">{currentMetrics.latency}ms</span>
             </div>
             <div className="bb-metric">
-              <span className="bb-metric-label">Updated</span>
-              <span className="bb-metric-value">{secondsAgo}s</span>
+              <span className="bb-metric-label">Refresh</span>
+              <span className="bb-metric-value">{secondsUntilRefresh}s</span>
             </div>
           </div>
 
@@ -685,8 +686,8 @@ function DesktopHome() {
         </div>
         <div className="flex-1" />
         <div className="bb-status-item">
-          <span className="bb-status-label">Last Update:</span>
-          <span className="bb-status-value">{secondsAgo}s ago</span>
+          <span className="bb-status-label">Refresh:</span>
+          <span className="bb-status-value">{secondsUntilRefresh}s</span>
         </div>
         <div className="bb-status-item">
           <span className="bb-status-value" style={{ color: 'var(--bb-amber)' }}>
