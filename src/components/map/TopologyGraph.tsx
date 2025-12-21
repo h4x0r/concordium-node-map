@@ -387,6 +387,9 @@ export function TopologyGraph({ onNodeSelect }: TopologyGraphProps = {}) {
               opacity: selectedNodeId ? 0.15 : 0.5,
             },
         animated: false,
+        // Reduce interaction width to minimize cursor capture area
+        // Active edges get slightly larger hit area, inactive edges minimal
+        interactionWidth: isConnectedToSelected ? 10 : 1,
       };
     });
   }, [edges, selectedNodeId]);

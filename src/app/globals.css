@@ -1209,6 +1209,21 @@
   filter: drop-shadow(0 0 6px #00CCFF);
 }
 
+/* Prevent edges from blocking pan/drag - keep grab cursor */
+.react-flow__edge {
+  cursor: grab !important;
+}
+
+.react-flow__edge path.react-flow__edge-interaction {
+  cursor: grab !important;
+  pointer-events: none !important;
+}
+
+/* Only show pointer on nodes, not edges */
+.react-flow__node {
+  cursor: pointer !important;
+}
+
 /* ============================================
    BLOOMBERG MRTG CHARTS
    MRTG-style historical monitoring charts
