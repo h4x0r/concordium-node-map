@@ -1178,11 +1178,11 @@
 
 @keyframes energy-pulse {
   0%, 100% {
-    filter: drop-shadow(0 0 2px var(--concordium-teal)) drop-shadow(0 0 4px var(--concordium-teal));
+    filter: drop-shadow(0 0 2px #00CCFF) drop-shadow(0 0 4px #00CCFF);
     stroke-opacity: 0.8;
   }
   50% {
-    filter: drop-shadow(0 0 6px var(--concordium-teal)) drop-shadow(0 0 12px var(--concordium-teal)) drop-shadow(0 0 20px rgba(0, 204, 255, 0.4));
+    filter: drop-shadow(0 0 8px #00CCFF) drop-shadow(0 0 16px #00CCFF) drop-shadow(0 0 24px rgba(0, 204, 255, 0.5));
     stroke-opacity: 1;
   }
 }
@@ -1198,15 +1198,15 @@
 
 /* Applied to ReactFlow edge paths when connected to selected node */
 .react-flow__edge.energy-active path {
-  stroke: var(--concordium-teal) !important;
-  stroke-width: 2.5px !important;
+  stroke: #00CCFF !important;
+  stroke-width: 3px !important;
   stroke-dasharray: 8 4 !important;
-  animation: energy-pulse 1.5s ease-in-out infinite, energy-flow 0.8s linear infinite !important;
+  animation: energy-pulse 1.5s ease-in-out infinite, energy-flow 0.6s linear infinite !important;
 }
 
-/* Extra glow layer for more dramatic effect */
-.react-flow__edge.energy-active path.react-flow__edge-path {
-  filter: drop-shadow(0 0 4px var(--concordium-teal));
+/* Ensure the animation applies to the edge interaction path too */
+.react-flow__edge.energy-active {
+  filter: drop-shadow(0 0 6px #00CCFF);
 }
 
 /* ============================================

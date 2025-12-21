@@ -370,15 +370,18 @@ export function TopologyGraph({ onNodeSelect }: TopologyGraphProps = {}) {
         (edge.source === selectedNodeId || edge.target === selectedNodeId)
       );
 
+      // For connected edges, let CSS handle styling via energy-active class
+      // For non-connected edges, apply inline styles
       return {
         ...edge,
         className: isConnectedToSelected ? 'energy-active' : '',
-        style: {
-          stroke: isConnectedToSelected ? 'var(--concordium-teal)' : 'rgba(100, 116, 139, 0.5)',
-          strokeWidth: isConnectedToSelected ? 2.5 : 1,
-          opacity: selectedNodeId ? (isConnectedToSelected ? 1 : 0.15) : 0.5,
-        },
-        // Disable default animation - we use custom CSS animation instead
+        style: isConnectedToSelected
+          ? { opacity: 1 }  // Let CSS animation handle the rest
+          : {
+              stroke: 'rgba(100, 116, 139, 0.5)',
+              strokeWidth: 1,
+              opacity: selectedNodeId ? 0.15 : 0.5,
+            },
         animated: false,
       };
     });
