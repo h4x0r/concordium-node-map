@@ -93,18 +93,18 @@ export function HealthTimeline({
           />
         ))}
 
-        {/* Segment boundary ticks */}
-        {showLabels && segments.map((s, i) => (
+        {/* Segment boundary ticks - mark every 5-min block */}
+        {segments.map((s, i) => (
           <div
-            key={i}
+            key={`tick-${i}`}
             style={{
               position: 'absolute',
               left: `${s.left}%`,
               top: 0,
               width: '1px',
               height: '100%',
-              background: 'var(--bb-border)',
-              opacity: 0.4,
+              background: 'var(--bb-text)',
+              opacity: 0.5,
             }}
           />
         ))}
