@@ -36,7 +36,8 @@ export function MRTGMirroredChart({
   showGrid = true,
 }: MRTGMirroredChartProps) {
   const padding = { top: 8, right: 45, bottom: 8, left: 8 };
-  const centerY = height / 2;
+  // Center Y should be in middle of drawable area (accounting for padding)
+  const centerY = padding.top + (height - padding.top - padding.bottom) / 2;
 
   const latestOutbound = outboundData.length > 0 ? outboundData[outboundData.length - 1].value : 0;
   const latestInbound = inboundData.length > 0 ? inboundData[inboundData.length - 1].value : 0;
