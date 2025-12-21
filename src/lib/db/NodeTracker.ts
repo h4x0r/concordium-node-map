@@ -32,6 +32,11 @@ export interface ProcessResult {
     from: HealthStatus;
     to: HealthStatus;
   }>;
+  versionChanges: Array<{
+    nodeId: string;
+    from: string;
+    to: string;
+  }>;
   snapshotsRecorded: number;
 }
 
@@ -42,6 +47,7 @@ export class NodeTracker {
   private db: Client;
   private lastUptimes: Map<string, number> = new Map();
   private lastHealthStatus: Map<string, HealthStatus> = new Map();
+  private lastClientVersions: Map<string, string> = new Map();
 
   constructor(db: Client) {
     this.db = db;
@@ -87,6 +93,7 @@ export class NodeTracker {
       reappeared: [],
       restarts: [],
       healthChanges: [],
+      versionChanges: [],
       snapshotsRecorded: 0,
     };
 
@@ -191,12 +198,31 @@ export class NodeTracker {
 
             await this.recordEvent(now, node.nodeId, 'health_changed', lastHealth, healthStatus);
           }
+
+          // Check for client version change
+          const lastVersion = this.lastClientVersions.get(node.nodeId);
+          if (lastVersion !== undefined && lastVersion !== node.client) {
+            result.versionChanges.push({
+              nodeId: node.nodeId,
+              from: lastVersion,
+              to: node.client,
+            });
+
+            // Update client in nodes table
+            await this.db.execute(
+              `UPDATE nodes SET client = ? WHERE node_id = ?`,
+              [node.client, node.nodeId]
+            );
+
+            await this.recordEvent(now, node.nodeId, 'client_updated', lastVersion, node.client);
+          }
         }
       }
 
       // Update tracking maps
       this.lastUptimes.set(node.nodeId, node.uptime);
       this.lastHealthStatus.set(node.nodeId, healthStatus);
+      this.lastClientVersions.set(node.nodeId, node.client);
 
       // Record snapshot
       await this.db.execute(

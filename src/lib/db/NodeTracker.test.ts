@@ -231,6 +231,37 @@ describe('NodeTracker', () => {
       expect(events.rows[0].old_value).toBe('healthy');
       expect(events.rows[0].new_value).toBe('lagging');
     });
+
+    it('detects client version changes', async () => {
+      const node = createMockNode({ nodeId: 'updating-node', client: '9.0.6' });
+
+      // First: version 9.0.6
+      await tracker.processNodes([node], 1000000);
+
+      // Second: upgraded to 9.0.7
+      const upgradedNode = createMockNode({ nodeId: 'updating-node', client: '9.0.7' });
+      const result = await tracker.processNodes([upgradedNode], 1000000);
+
+      expect(result.versionChanges).toHaveLength(1);
+      expect(result.versionChanges[0]).toEqual({
+        nodeId: 'updating-node',
+        from: '9.0.6',
+        to: '9.0.7',
+      });
+
+      // Verify client was updated in nodes table
+      const stored = await db.execute('SELECT client FROM nodes WHERE node_id = ?', ['updating-node']);
+      expect(stored.rows[0].client).toBe('9.0.7');
+
+      // Verify event was recorded
+      const events = await db.execute(
+        "SELECT * FROM events WHERE event_type = 'client_updated' AND node_id = ?",
+        ['updating-node']
+      );
+      expect(events.rows).toHaveLength(1);
+      expect(events.rows[0].old_value).toBe('9.0.6');
+      expect(events.rows[0].new_value).toBe('9.0.7');
+    });
   });
 
   describe('getNewNodesInRange', () => {

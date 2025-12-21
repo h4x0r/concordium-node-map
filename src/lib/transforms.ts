@@ -3,27 +3,76 @@ import type { Node, Edge } from '@xyflow/react';
 // Types matching the Concordium API structure
 // Note: Many numeric fields can be null from the API
 export interface ConcordiumNode {
+  // Node identity
   nodeName: string;
   nodeId: string;
   peerType: string;
   client: string;
+  uptime: number;
+  genesisBlock: string;
+
+  // Network connectivity
   peersCount: number;
   peersList: string[];
   averagePing: number | null;
+
+  // Bandwidth (rates)
   averageBytesPerSecondIn: number | null;
   averageBytesPerSecondOut: number | null;
+
+  // Packet counts (totals)
+  packetsSent: number;
+  packetsReceived: number;
+
+  // Best block info
   bestBlock: string;
   bestBlockHeight: number;
+  bestBlockBakerId: number | null;
+  bestArrivedTime: string | null;
+  bestBlockTransactionCount: number;
+  bestBlockTransactionsSize: number;
+  bestBlockTransactionEnergyCost: number;
+  bestBlockExecutionCost: number | null;
+  bestBlockTotalAmount: number;
+  bestBlockTotalEncryptedAmount: number;
+  bestBlockCentralBankAmount: number;
+
+  // Block arrival timing stats
+  blockArrivePeriodEMA: number | null;
+  blockArrivePeriodEMSD: number | null;
+  blockArriveLatencyEMA: number | null;
+  blockArriveLatencyEMSD: number | null;
+
+  // Block receive timing stats
+  blockReceivePeriodEMA: number | null;
+  blockReceivePeriodEMSD: number | null;
+  blockReceiveLatencyEMA: number | null;
+  blockReceiveLatencyEMSD: number | null;
+
+  // Block counts
+  blocksReceivedCount: number;
+  blocksVerifiedCount: number;
+
+  // Finalized block info
   finalizedBlock: string;
   finalizedBlockHeight: number;
+  finalizedBlockParent: string;
+  finalizedTime: string | null;
+
+  // Finalization timing stats
+  finalizationPeriodEMA: number | null;
+  finalizationPeriodEMSD: number | null;
+  finalizationCount: number;
+
+  // Consensus & baking
   consensusRunning: boolean;
   bakingCommitteeMember: string;
   finalizationCommitteeMember: boolean;
   consensusBakerId: number | null;
-  uptime: number;
-  blockArrivePeriodEMA: number | null;
-  blockReceivePeriodEMA: number | null;
+
+  // Transaction stats
   transactionsPerBlockEMA: number | null;
+  transactionsPerBlockEMSD: number | null;
 }
 
 export type NodeHealth = 'healthy' | 'lagging' | 'issue';
