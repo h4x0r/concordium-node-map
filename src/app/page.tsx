@@ -5,6 +5,7 @@ import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { useAppStore } from '@/hooks/useAppStore';
 import { useNetworkMetrics, useNodes } from '@/hooks/useNodes';
 import { useMetricHistory, type MetricSnapshot } from '@/hooks/useMetricHistory';
+import { useNodeHistory } from '@/hooks/useNodeHistory';
 import { useIsMobile } from '@/hooks/useMediaQuery';
 import { useAudio } from '@/hooks/useAudio';
 import { calculateNetworkPulse, getPulseStatus, THRESHOLDS, calculateFinalizationHealth, calculateLatencyHealth } from '@/lib/pulse';
@@ -203,72 +204,11 @@ function DesktopHome() {
   const secondsAgo = lastUpdated ? Math.floor((Date.now() - lastUpdated.getTime()) / 1000) : 0;
   const secondsUntilRefresh = Math.max(0, 30 - secondsAgo);
 
-  // Generate mock per-node history data for the selected node
-  // TODO: Replace with actual per-node history tracking
-  const nodeHistoryData = useMemo(() => {
-    if (!selectedNode || !nodes) return null;
-
-    const now = Date.now();
-    const interval = 60000; // 1 minute intervals
-    const dataPoints = 15; // 15 minutes of history
-
-    // Calculate max height from all nodes
-    const maxHeight = Math.max(...nodes.map(n => n.finalizedBlockHeight));
-    const lag = maxHeight - selectedNode.finalizedBlockHeight;
-
-    // Determine node health based on finalization lag
-    const getNodeHealth = (nodeLag: number): HealthStatus['status'] => {
-      if (nodeLag <= 2) return 'healthy';
-      if (nodeLag <= 5) return 'lagging';
-      return 'issue';
-    };
-
-    const currentHealth = getNodeHealth(lag);
-
-    // Generate mock history with some variation
-    const healthHistory: HealthStatus[] = Array.from({ length: dataPoints }, (_, i) => {
-      const timestamp = now - (dataPoints - 1 - i) * interval;
-      // Mostly current status with occasional variations
-      const random = Math.random();
-      let status: HealthStatus['status'] = currentHealth;
-      if (random > 0.85) status = 'lagging';
-      if (random > 0.95) status = 'issue';
-      return { timestamp, status };
-    });
-
-    // Use actual values with some historical variation
-    const baseLatency = selectedNode.averagePing || 50;
-    const basePeers = selectedNode.peersCount;
-
-    const latencyHistory: MRTGDataPoint[] = Array.from({ length: dataPoints }, (_, i) => ({
-      timestamp: now - (dataPoints - 1 - i) * interval,
-      value: baseLatency + (Math.random() - 0.5) * 30,
-    }));
-
-    const peerCountHistory: MRTGDataPoint[] = Array.from({ length: dataPoints }, (_, i) => ({
-      timestamp: now - (dataPoints - 1 - i) * interval,
-      value: Math.max(0, basePeers + Math.floor((Math.random() - 0.5) * 4)),
-    }));
-
-    // Mock bandwidth data (KB/s)
-    const bandwidthInHistory: MRTGDataPoint[] = Array.from({ length: dataPoints }, (_, i) => ({
-      timestamp: now - (dataPoints - 1 - i) * interval,
-      value: 50 + Math.random() * 100,
-    }));
-
-    const bandwidthOutHistory: MRTGDataPoint[] = Array.from({ length: dataPoints }, (_, i) => ({
-      timestamp: now - (dataPoints - 1 - i) * interval,
-      value: 30 + Math.random() * 70,
-    }));
-
-    return {
-      healthHistory,
-      latencyHistory,
-      bandwidthInHistory,
-      bandwidthOutHistory,
-      peerCountHistory,
-    };
-  }, [selectedNode, nodes]);
+  // Fetch real per-node history data from Turso
+  const { data: nodeHistoryData, isLoading: isHistoryLoading } = useNodeHistory(
+    selectedNode?.nodeId ?? null,
+    15 // 15 minutes of history
+  );
 
   // Get sparkline data
   const pulseHistory = history.map(h => h.pulse);
@@ -501,18 +441,55 @@ function DesktopHome() {
           </div>
 
           {/* Per-Node Detail Panel - shows when a node is selected */}
-          {selectedNode && nodeHistoryData && (
+          {selectedNode && (
             <div className="flex-shrink-0">
-              <NodeDetailPanel
-                nodeId={selectedNode.nodeId}
-                nodeName={selectedNode.nodeName || 'Unnamed Node'}
-                healthHistory={nodeHistoryData.healthHistory}
-                latencyHistory={nodeHistoryData.latencyHistory}
-                bandwidthInHistory={nodeHistoryData.bandwidthInHistory}
-                bandwidthOutHistory={nodeHistoryData.bandwidthOutHistory}
-                peerCountHistory={nodeHistoryData.peerCountHistory}
-                onClose={() => selectNode(null)}
-              />
+              {isHistoryLoading ? (
+                <div className="bb-node-detail-loading" style={{
+                  padding: '16px',
+                  background: 'var(--bb-panel-bg)',
+                  border: '1px solid var(--bb-border)',
+                  color: 'var(--bb-gray)',
+                  fontSize: '12px',
+                }}>
+                  Loading history for {selectedNode.nodeName || selectedNode.nodeId}...
+                </div>
+              ) : nodeHistoryData ? (
+                <NodeDetailPanel
+                  nodeId={selectedNode.nodeId}
+                  nodeName={selectedNode.nodeName || 'Unnamed Node'}
+                  healthHistory={nodeHistoryData.healthHistory}
+                  latencyHistory={nodeHistoryData.latencyHistory}
+                  bandwidthInHistory={nodeHistoryData.bandwidthInHistory}
+                  bandwidthOutHistory={nodeHistoryData.bandwidthOutHistory}
+                  peerCountHistory={nodeHistoryData.peerCountHistory}
+                  onClose={() => selectNode(null)}
+                />
+              ) : (
+                <div className="bb-node-detail-empty" style={{
+                  padding: '16px',
+                  background: 'var(--bb-panel-bg)',
+                  border: '1px solid var(--bb-border)',
+                  color: 'var(--bb-amber)',
+                  fontSize: '12px',
+                }}>
+                  No history data yet for {selectedNode.nodeName || selectedNode.nodeId}.
+                  <br />
+                  <span style={{ color: 'var(--bb-gray)' }}>Data collection started - check back in a few minutes.</span>
+                  <button
+                    onClick={() => selectNode(null)}
+                    style={{
+                      marginLeft: '12px',
+                      padding: '2px 8px',
+                      background: 'var(--bb-border)',
+                      border: 'none',
+                      color: 'var(--bb-text)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Close
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
