@@ -413,10 +413,10 @@ export function TopologyGraph({ onNodeSelect }: TopologyGraphProps = {}) {
         {/* JARVIS Audio Mute Toggle - positioned directly below Controls */}
         <button
           onClick={toggleMute}
-          className="react-flow__controls absolute z-10 w-[26px] h-[26px] flex items-center justify-center text-sm !bg-[var(--bb-black)] !border-[var(--bb-border)] border transition-opacity hover:opacity-80"
+          className="absolute z-10 w-[26px] h-[26px] flex items-center justify-center text-sm bg-[var(--bb-black)] border border-[var(--bb-border)] transition-opacity hover:opacity-80"
           style={{
-            bottom: 0,
-            left: 23,
+            bottom: 5,
+            left: 35,
             opacity: isMuted ? 0.4 : 1,
           }}
           title={isMuted ? 'Enable JARVIS sounds' : 'Mute JARVIS sounds'}
