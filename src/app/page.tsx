@@ -651,7 +651,9 @@ export default function Home() {
         <div className="bb-status-item">
           <div className={`bb-status-dot ${pulseStatus.label === 'NOMINAL' ? '' : pulseStatus.label === 'CRITICAL' ? 'error' : 'warning'}`} />
           <span className="bb-status-label">Status:</span>
-          <span className="bb-status-value live">{pulseStatus.label}</span>
+          <span className={`bb-status-value ${pulseStatus.label === 'NOMINAL' ? 'live' : pulseStatus.label === 'CRITICAL' ? 'error' : 'warning'}`}>
+            {pulseStatus.label}
+          </span>
         </div>
         <div className="bb-status-item">
           <span className="bb-status-label">Nodes:</span>

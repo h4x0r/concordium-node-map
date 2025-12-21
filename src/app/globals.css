@@ -480,6 +480,14 @@
   color: var(--bb-green);
 }
 
+.bb-status-value.warning {
+  color: var(--bb-amber);
+}
+
+.bb-status-value.error {
+  color: var(--bb-red);
+}
+
 /* ============================================
    BLOOMBERG TICKER
    ============================================ */
