@@ -651,7 +651,7 @@ function DesktopHome() {
                     <div className="bb-forensic-section-header">IDENTITY</div>
                     <div className="bb-forensic-row">
                       <span className="bb-forensic-label">Node ID</span>
-                      <span className="bb-forensic-value mono">{selectedNode.nodeId.slice(0, 24)}...</span>
+                      <span className="bb-forensic-value mono" title={selectedNode.nodeId} style={{ cursor: 'help' }}>{selectedNode.nodeId.slice(0, 24)}...</span>
                     </div>
                     <div className="bb-forensic-row">
                       <span className="bb-forensic-label">Name</span>
@@ -722,7 +722,7 @@ function DesktopHome() {
                     </div>
                     <div className="bb-forensic-row">
                       <span className="bb-forensic-label">Best Block</span>
-                      <span className="bb-forensic-value hash">{selectedNode.bestBlock?.slice(0, 16)}...</span>
+                      <span className="bb-forensic-value hash" title={selectedNode.bestBlock ?? ''} style={{ cursor: 'help' }}>{selectedNode.bestBlock?.slice(0, 16)}...</span>
                     </div>
                   </div>
 
