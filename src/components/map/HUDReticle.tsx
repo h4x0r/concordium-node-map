@@ -14,7 +14,7 @@ interface HUDReticleProps {
 
 // Tier-based sizing
 const TIER_CONFIG = {
-  baker: { radius: 50, stroke: 3 },
+  baker: { radius: 40, stroke: 3 },
   hub: { radius: 35, stroke: 2 },
   standard: { radius: 25, stroke: 1.5 },
   edge: { radius: 18, stroke: 1 },
