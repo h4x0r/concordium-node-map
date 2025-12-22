@@ -102,7 +102,7 @@ export function MRTGMirroredChart({
   }, [outboundData, inboundData, viewBoxHeight, centerY, padding.top, padding.bottom, padding.left, padding.right]);
 
   return (
-    <div className="bb-mrtg-chart" style={{ height, display: 'flex', flexDirection: 'column' }}>
+    <div className="bb-mrtg-chart" style={{ height }}>
       {/* Header */}
       <div className="bb-mrtg-header">
         <span className="bb-mrtg-label">{label}</span>
@@ -116,12 +116,12 @@ export function MRTGMirroredChart({
         </div>
       </div>
 
-      {/* Chart SVG - flex:1 to fill remaining space, override CSS calc */}
+      {/* Chart SVG - override CSS height since we don't have time axis */}
       <svg
         viewBox={`0 0 100 ${viewBoxHeight}`}
         preserveAspectRatio="none"
         className="bb-mrtg-svg"
-        style={{ flex: 1, height: 'auto' }}
+        style={{ height: 'calc(100% - 22px)' }}
       >
         {/* Grid lines */}
         {showGrid && (
