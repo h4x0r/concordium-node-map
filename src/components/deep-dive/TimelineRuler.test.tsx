@@ -137,4 +137,67 @@ describe('TimelineRuler', () => {
       expect(window).toBeInTheDocument();
     });
   });
+
+  describe('edge drag handles', () => {
+    const propsWithSetRange = {
+      ...defaultProps,
+      onSetRange: vi.fn(),
+    };
+
+    it('renders left edge handle', () => {
+      render(<TimelineRuler {...propsWithSetRange} />);
+      expect(screen.getByTestId('edge-handle-left')).toBeInTheDocument();
+    });
+
+    it('renders right edge handle', () => {
+      render(<TimelineRuler {...propsWithSetRange} />);
+      expect(screen.getByTestId('edge-handle-right')).toBeInTheDocument();
+    });
+
+    it('calls onSetRange when left edge is dragged', () => {
+      const onSetRange = vi.fn();
+      render(<TimelineRuler {...defaultProps} onSetRange={onSetRange} />);
+
+      const leftHandle = screen.getByTestId('edge-handle-left');
+      const ruler = screen.getByTestId('timeline-ruler');
+
+      // Simulate drag: mouseDown on handle, mouseMove on ruler
+      fireEvent.mouseDown(leftHandle, { clientX: 0 });
+      fireEvent.mouseMove(ruler, { clientX: 50 });
+      fireEvent.mouseUp(ruler);
+
+      expect(onSetRange).toHaveBeenCalled();
+    });
+
+    it('calls onSetRange when right edge is dragged', () => {
+      const onSetRange = vi.fn();
+      render(<TimelineRuler {...defaultProps} onSetRange={onSetRange} />);
+
+      const rightHandle = screen.getByTestId('edge-handle-right');
+      const ruler = screen.getByTestId('timeline-ruler');
+
+      // Simulate drag: mouseDown on handle, mouseMove on ruler
+      fireEvent.mouseDown(rightHandle, { clientX: 800 });
+      fireEvent.mouseMove(ruler, { clientX: 850 });
+      fireEvent.mouseUp(ruler);
+
+      expect(onSetRange).toHaveBeenCalled();
+    });
+
+    it('does not pan when dragging edge', () => {
+      const onPan = vi.fn();
+      const onSetRange = vi.fn();
+      render(<TimelineRuler {...defaultProps} onPan={onPan} onSetRange={onSetRange} />);
+
+      const leftHandle = screen.getByTestId('edge-handle-left');
+      const ruler = screen.getByTestId('timeline-ruler');
+
+      fireEvent.mouseDown(leftHandle, { clientX: 0 });
+      fireEvent.mouseMove(ruler, { clientX: 50 });
+      fireEvent.mouseUp(ruler);
+
+      // Pan should not be called when dragging edges
+      expect(onPan).not.toHaveBeenCalled();
+    });
+  });
 });

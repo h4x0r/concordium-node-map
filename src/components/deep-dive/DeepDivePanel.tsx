@@ -6,6 +6,7 @@ import { useDeepDiveData } from '@/hooks/useDeepDiveData';
 import { TimelineRuler } from './TimelineRuler';
 import { MetricTrack } from './MetricTrack';
 import { NodeSelector, type NodeInfo } from './NodeSelector';
+import { TimeRangeInput } from './TimeRangeInput';
 import type { TimeRange, TimeRangePreset } from '@/lib/timeline';
 
 const HOUR = 60 * 60 * 1000;
@@ -56,7 +57,7 @@ export function DeepDivePanel({
   const [comparisonNodeIds, setComparisonNodeIds] = useState<string[]>([]);
   const [isNodeSelectorOpen, setIsNodeSelectorOpen] = useState(false);
 
-  const { range, zoomIn, zoomOut, pan, setPreset } = useTimelineZoom(bounds);
+  const { range, zoomIn, zoomOut, pan, setPreset, setRange } = useTimelineZoom(bounds);
 
   const {
     primaryData,
@@ -267,6 +268,7 @@ export function DeepDivePanel({
       <div
         style={{
           display: 'flex',
+          alignItems: 'center',
           gap: '4px',
           padding: '8px 16px',
           background: 'var(--bb-panel)',
@@ -299,6 +301,19 @@ export function DeepDivePanel({
             </button>
           );
         })}
+
+        {/* Separator */}
+        <div
+          style={{
+            width: '1px',
+            height: '20px',
+            background: 'var(--bb-border)',
+            margin: '0 8px',
+          }}
+        />
+
+        {/* Custom time input */}
+        <TimeRangeInput onRangeChange={setRange} now={now} />
       </div>
 
       {/* Timeline ruler */}
@@ -307,6 +322,7 @@ export function DeepDivePanel({
         bounds={bounds}
         onZoom={handleZoom}
         onPan={pan}
+        onSetRange={setRange}
       />
 
       {/* Loading indicator */}

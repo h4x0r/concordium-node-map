@@ -146,3 +146,158 @@ export function positionToTimestamp(
   const duration = range.end - range.start;
   return range.start + ratio * duration;
 }
+
+const MINUTE = 60 * 1000;
+
+/**
+ * Parse a free-form time input string into a TimeRange
+ * Supports formats:
+ * - Duration: "30m", "2h", "3d", "1w", "45min", "2 hours", "5 days"
+ * - Relative: "last 6h", "past 2d", "last 30 minutes"
+ * - Absolute: "2024-12-25T10:00 - 2024-12-26T14:00", "2024-12-25 to 2024-12-26"
+ *
+ * @param input User input string
+ * @param now Current timestamp (for relative calculations)
+ * @returns TimeRange or null if invalid
+ */
+export function parseTimeInput(input: string, now: number): TimeRange | null {
+  // Normalize input: trim, lowercase, collapse multiple spaces
+  const normalized = input.trim().toLowerCase().replace(/\s+/g, ' ');
+
+  if (!normalized) {
+    return null;
+  }
+
+  // Try absolute range first (contains " - " or " to ")
+  const absoluteResult = parseAbsoluteRange(normalized);
+  if (absoluteResult) {
+    return absoluteResult;
+  }
+
+  // Try relative format ("last X", "past X")
+  const relativeResult = parseRelativeFormat(normalized, now);
+  if (relativeResult) {
+    return relativeResult;
+  }
+
+  // Try simple duration format ("2h", "30m", "3d", etc.)
+  const durationResult = parseDurationFormat(normalized, now);
+  if (durationResult) {
+    return durationResult;
+  }
+
+  return null;
+}
+
+/**
+ * Parse duration string into milliseconds
+ * Supports: 30m, 2h, 3d, 1w, 45min, 2 hours, 5 days, 2 weeks
+ */
+function parseDuration(input: string): number | null {
+  // Pattern: number + optional space + unit
+  const match = input.match(/^(\d+)\s*(m|min|mins|minutes?|h|hr|hrs|hours?|d|days?|w|weeks?)$/i);
+
+  if (!match) {
+    return null;
+  }
+
+  const value = parseInt(match[1], 10);
+  const unit = match[2].toLowerCase();
+
+  if (value <= 0) {
+    return null;
+  }
+
+  // Convert to milliseconds
+  if (unit.startsWith('m') && !unit.startsWith('mi')) {
+    // "m" alone means minutes
+    return value * MINUTE;
+  }
+  if (unit.startsWith('mi')) {
+    // "min", "mins", "minute", "minutes"
+    return value * MINUTE;
+  }
+  if (unit.startsWith('h')) {
+    // "h", "hr", "hrs", "hour", "hours"
+    return value * HOUR;
+  }
+  if (unit.startsWith('d')) {
+    // "d", "day", "days"
+    return value * DAY;
+  }
+  if (unit.startsWith('w')) {
+    // "w", "week", "weeks"
+    return value * 7 * DAY;
+  }
+
+  return null;
+}
+
+/**
+ * Parse simple duration format like "2h", "30m"
+ */
+function parseDurationFormat(input: string, now: number): TimeRange | null {
+  const duration = parseDuration(input);
+
+  if (duration === null) {
+    return null;
+  }
+
+  return {
+    start: now - duration,
+    end: now,
+  };
+}
+
+/**
+ * Parse relative format like "last 6h", "past 2d"
+ */
+function parseRelativeFormat(input: string, now: number): TimeRange | null {
+  // Pattern: "last" or "past" + duration
+  const match = input.match(/^(last|past)\s+(.+)$/i);
+
+  if (!match) {
+    return null;
+  }
+
+  const durationStr = match[2];
+  const duration = parseDuration(durationStr);
+
+  if (duration === null) {
+    return null;
+  }
+
+  return {
+    start: now - duration,
+    end: now,
+  };
+}
+
+/**
+ * Parse absolute date range like "2024-12-25T10:00 - 2024-12-26T14:00"
+ */
+function parseAbsoluteRange(input: string): TimeRange | null {
+  // Try " - " separator
+  let parts = input.split(/\s+-\s+/);
+  if (parts.length !== 2) {
+    // Try " to " separator
+    parts = input.split(/\s+to\s+/);
+  }
+
+  if (parts.length !== 2) {
+    return null;
+  }
+
+  const start = new Date(parts[0]).getTime();
+  const end = new Date(parts[1]).getTime();
+
+  if (isNaN(start) || isNaN(end)) {
+    return null;
+  }
+
+  if (start >= end) {
+    return null;
+  }
+
+  return { start, end };
+}

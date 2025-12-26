@@ -8,9 +8,16 @@ export interface TimelineRulerProps {
   bounds?: TimeRange;
   onZoom: (cursorRatio: number, direction: 'in' | 'out') => void;
   onPan: (delta: number) => void;
+  onSetRange?: (range: TimeRange) => void;
 }
 
 interface DragState {
+  startX: number;
+  startRange: TimeRange;
+}
+
+interface EdgeDragState {
+  edge: 'left' | 'right';
   startX: number;
   startRange: TimeRange;
 }
@@ -85,10 +92,12 @@ export function TimelineRuler({
   bounds,
   onZoom,
   onPan,
+  onSetRange,
 }: TimelineRulerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [cursorX, setCursorX] = useState<number | null>(null);
   const [dragState, setDragState] = useState<DragState | null>(null);
+  const [edgeDragState, setEdgeDragState] = useState<EdgeDragState | null>(null);
 
   const duration = range.end - range.start;
   const ticks = useMemo(() => generateTicks(range, 800), [range]);
@@ -128,6 +137,31 @@ export function TimelineRuler({
       const x = e.clientX - rect.left;
       setCursorX(x);
 
+      // Handle edge dragging
+      if (edgeDragState && onSetRange) {
+        const deltaX = e.clientX - edgeDragState.startX;
+        const width = rect.width || 800; // Use reasonable default for test environments
+        const rangeDuration = edgeDragState.startRange.end - edgeDragState.startRange.start;
+        const deltaTime = (deltaX / width) * rangeDuration;
+
+        if (edgeDragState.edge === 'left') {
+          const newStart = edgeDragState.startRange.start + deltaTime;
+          // Ensure minimum range of 1 minute and don't go past end
+          const minRange = 60 * 1000;
+          if (newStart < edgeDragState.startRange.end - minRange) {
+            onSetRange({ start: newStart, end: edgeDragState.startRange.end });
+          }
+        } else {
+          const newEnd = edgeDragState.startRange.end + deltaTime;
+          // Ensure minimum range of 1 minute and don't go before start
+          const minRange = 60 * 1000;
+          if (newEnd > edgeDragState.startRange.start + minRange) {
+            onSetRange({ start: edgeDragState.startRange.start, end: newEnd });
+          }
+        }
+        return; // Don't pan while dragging edges
+      }
+
       if (dragState) {
         const deltaX = e.clientX - dragState.startX;
         const width = rect.width;
@@ -135,7 +169,7 @@ export function TimelineRuler({
         onPan(deltaTime);
       }
     },
-    [dragState, duration, onPan]
+    [dragState, edgeDragState, duration, onPan, onSetRange]
   );
 
   const handleMouseDown = useCallback(
@@ -150,12 +184,26 @@ export function TimelineRuler({
 
   const handleMouseUp = useCallback(() => {
     setDragState(null);
+    setEdgeDragState(null);
   }, []);
 
   const handleMouseLeave = useCallback(() => {
     setCursorX(null);
     setDragState(null);
+    setEdgeDragState(null);
   }, []);
+
+  const handleEdgeMouseDown = useCallback(
+    (edge: 'left' | 'right') => (e: React.MouseEvent) => {
+      e.stopPropagation(); // Prevent triggering pan drag
+      setEdgeDragState({
+        edge,
+        startX: e.clientX,
+        startRange: range,
+      });
+    },
+    [range]
+  );
 
   // Minimap calculations
   const minimapWindow = useMemo(() => {
@@ -243,6 +291,66 @@ export function TimelineRuler({
               pointerEvents: 'none',
             }}
           />
+        )}
+
+        {/* Edge drag handles - Premiere Pro style trim handles */}
+        {onSetRange && (
+          <>
+            {/* Left edge handle */}
+            <div
+              data-testid="edge-handle-left"
+              onMouseDown={handleEdgeMouseDown('left')}
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                width: '8px',
+                height: '100%',
+                cursor: 'ew-resize',
+                background: edgeDragState?.edge === 'left'
+                  ? 'var(--bb-cyan)'
+                  : 'linear-gradient(90deg, var(--bb-amber) 0%, transparent 100%)',
+                opacity: edgeDragState?.edge === 'left' ? 0.8 : 0.5,
+                transition: 'opacity 0.15s ease',
+                zIndex: 10,
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.opacity = '0.8';
+              }}
+              onMouseLeave={(e) => {
+                if (edgeDragState?.edge !== 'left') {
+                  (e.currentTarget as HTMLElement).style.opacity = '0.5';
+                }
+              }}
+            />
+            {/* Right edge handle */}
+            <div
+              data-testid="edge-handle-right"
+              onMouseDown={handleEdgeMouseDown('right')}
+              style={{
+                position: 'absolute',
+                right: 0,
+                top: 0,
+                width: '8px',
+                height: '100%',
+                cursor: 'ew-resize',
+                background: edgeDragState?.edge === 'right'
+                  ? 'var(--bb-cyan)'
+                  : 'linear-gradient(270deg, var(--bb-amber) 0%, transparent 100%)',
+                opacity: edgeDragState?.edge === 'right' ? 0.8 : 0.5,
+                transition: 'opacity 0.15s ease',
+                zIndex: 10,
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.opacity = '0.8';
+              }}
+              onMouseLeave={(e) => {
+                if (edgeDragState?.edge !== 'right') {
+                  (e.currentTarget as HTMLElement).style.opacity = '0.5';
+                }
+              }}
+            />
+          </>
         )}
       </div>
 

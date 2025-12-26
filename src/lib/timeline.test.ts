@@ -6,6 +6,7 @@ import {
   getTimeRangePreset,
   timestampToPosition,
   positionToTimestamp,
+  parseTimeInput,
   type TimeRange,
 } from './timeline';
 
@@ -202,6 +203,151 @@ describe('timeline zoom utilities', () => {
 
       expect(positionToTimestamp(-500, range, width)).toBe(DAY / 2);
       expect(positionToTimestamp(1500, range, width)).toBe(2.5 * DAY);
+    });
+  });
+
+  describe('parseTimeInput', () => {
+    const MIN = 60 * 1000;
+    const now = Date.now();
+
+    describe('duration formats', () => {
+      it('parses minutes: "30m"', () => {
+        const result = parseTimeInput('30m', now);
+        expect(result).not.toBeNull();
+        expect(result!.end - result!.start).toBe(30 * MIN);
+        expect(result!.end).toBe(now);
+      });
+
+      it('parses minutes: "45min"', () => {
+        const result = parseTimeInput('45min', now);
+        expect(result).not.toBeNull();
+        expect(result!.end - result!.start).toBe(45 * MIN);
+      });
+
+      it('parses hours: "2h"', () => {
+        const result = parseTimeInput('2h', now);
+        expect(result).not.toBeNull();
+        expect(result!.end - result!.start).toBe(2 * HOUR);
+      });
+
+      it('parses hours: "3hr"', () => {
+        const result = parseTimeInput('3hr', now);
+        expect(result).not.toBeNull();
+        expect(result!.end - result!.start).toBe(3 * HOUR);
+      });
+
+      it('parses hours: "4 hours"', () => {
+        const result = parseTimeInput('4 hours', now);
+        expect(result).not.toBeNull();
+        expect(result!.end - result!.start).toBe(4 * HOUR);
+      });
+
+      it('parses days: "3d"', () => {
+        const result = parseTimeInput('3d', now);
+        expect(result).not.toBeNull();
+        expect(result!.end - result!.start).toBe(3 * DAY);
+      });
+
+      it('parses days: "5 days"', () => {
+        const result = parseTimeInput('5 days', now);
+        expect(result).not.toBeNull();
+        expect(result!.end - result!.start).toBe(5 * DAY);
+      });
+
+      it('parses weeks: "1w"', () => {
+        const result = parseTimeInput('1w', now);
+        expect(result).not.toBeNull();
+        expect(result!.end - result!.start).toBe(7 * DAY);
+      });
+
+      it('parses weeks: "2 weeks"', () => {
+        const result = parseTimeInput('2 weeks', now);
+        expect(result).not.toBeNull();
+        expect(result!.end - result!.start).toBe(14 * DAY);
+      });
+    });
+
+    describe('relative formats', () => {
+      it('parses "last 6h"', () => {
+        const result = parseTimeInput('last 6h', now);
+        expect(result).not.toBeNull();
+        expect(result!.end - result!.start).toBe(6 * HOUR);
+        expect(result!.end).toBe(now);
+      });
+
+      it('parses "past 2d"', () => {
+        const result = parseTimeInput('past 2d', now);
+        expect(result).not.toBeNull();
+        expect(result!.end - result!.start).toBe(2 * DAY);
+      });
+
+      it('parses "last 30 minutes"', () => {
+        const result = parseTimeInput('last 30 minutes', now);
+        expect(result).not.toBeNull();
+        expect(result!.end - result!.start).toBe(30 * MIN);
+      });
+    });
+
+    describe('absolute range formats', () => {
+      it('parses ISO date range with dash: "2024-12-25T10:00 - 2024-12-26T14:00"', () => {
+        const result = parseTimeInput('2024-12-25T10:00 - 2024-12-26T14:00', now);
+        expect(result).not.toBeNull();
+        expect(result!.start).toBe(new Date('2024-12-25T10:00').getTime());
+        expect(result!.end).toBe(new Date('2024-12-26T14:00').getTime());
+      });
+
+      it('parses ISO date range with "to": "2024-12-25 to 2024-12-26"', () => {
+        const result = parseTimeInput('2024-12-25 to 2024-12-26', now);
+        expect(result).not.toBeNull();
+        expect(result!.start).toBe(new Date('2024-12-25').getTime());
+        expect(result!.end).toBe(new Date('2024-12-26').getTime());
+      });
+    });
+
+    describe('case insensitivity', () => {
+      it('parses uppercase: "2H"', () => {
+        const result = parseTimeInput('2H', now);
+        expect(result).not.toBeNull();
+        expect(result!.end - result!.start).toBe(2 * HOUR);
+      });
+
+      it('parses mixed case: "Last 6H"', () => {
+        const result = parseTimeInput('Last 6H', now);
+        expect(result).not.toBeNull();
+        expect(result!.end - result!.start).toBe(6 * HOUR);
+      });
+    });
+
+    describe('invalid inputs', () => {
+      it('returns null for empty string', () => {
+        expect(parseTimeInput('', now)).toBeNull();
+      });
+
+      it('returns null for invalid format', () => {
+        expect(parseTimeInput('abc', now)).toBeNull();
+      });
+
+      it('returns null for invalid duration', () => {
+        expect(parseTimeInput('0h', now)).toBeNull();
+      });
+
+      it('returns null for negative duration', () => {
+        expect(parseTimeInput('-5h', now)).toBeNull();
+      });
+    });
+
+    describe('whitespace handling', () => {
+      it('trims leading/trailing whitespace', () => {
+        const result = parseTimeInput('  2h  ', now);
+        expect(result).not.toBeNull();
+        expect(result!.end - result!.start).toBe(2 * HOUR);
+      });
+
+      it('handles multiple spaces between words', () => {
+        const result = parseTimeInput('last   6   hours', now);
+        expect(result).not.toBeNull();
+        expect(result!.end - result!.start).toBe(6 * HOUR);
+      });
     });
   });
 });
