@@ -121,9 +121,9 @@ describe('TimelineRuler', () => {
   });
 
   describe('minimap', () => {
-    it('renders minimap when bounds provided', () => {
+    it('renders minimap when bounds and onSetRange provided', () => {
       const bounds: TimeRange = { start: now - 30 * DAY, end: now };
-      render(<TimelineRuler {...defaultProps} bounds={bounds} />);
+      render(<TimelineRuler {...defaultProps} bounds={bounds} onSetRange={vi.fn()} />);
 
       expect(screen.getByTestId('timeline-minimap')).toBeInTheDocument();
     });
@@ -131,72 +131,89 @@ describe('TimelineRuler', () => {
     it('shows visible window in minimap', () => {
       const bounds: TimeRange = { start: now - 30 * DAY, end: now };
       const range: TimeRange = { start: now - DAY, end: now };
-      render(<TimelineRuler {...defaultProps} range={range} bounds={bounds} />);
+      render(<TimelineRuler {...defaultProps} range={range} bounds={bounds} onSetRange={vi.fn()} />);
 
       const window = screen.getByTestId('minimap-window');
       expect(window).toBeInTheDocument();
     });
   });
 
-  describe('edge drag handles', () => {
-    const propsWithSetRange = {
+  describe('minimap edge drag handles', () => {
+    const bounds: TimeRange = { start: now - 30 * DAY, end: now };
+    const propsWithBounds = {
       ...defaultProps,
+      bounds,
       onSetRange: vi.fn(),
     };
 
-    it('renders left edge handle', () => {
-      render(<TimelineRuler {...propsWithSetRange} />);
+    it('renders left edge handle in minimap', () => {
+      render(<TimelineRuler {...propsWithBounds} />);
       expect(screen.getByTestId('edge-handle-left')).toBeInTheDocument();
     });
 
-    it('renders right edge handle', () => {
-      render(<TimelineRuler {...propsWithSetRange} />);
+    it('renders right edge handle in minimap', () => {
+      render(<TimelineRuler {...propsWithBounds} />);
       expect(screen.getByTestId('edge-handle-right')).toBeInTheDocument();
     });
 
     it('calls onSetRange when left edge is dragged', () => {
       const onSetRange = vi.fn();
-      render(<TimelineRuler {...defaultProps} onSetRange={onSetRange} />);
+      render(<TimelineRuler {...defaultProps} bounds={bounds} onSetRange={onSetRange} />);
 
       const leftHandle = screen.getByTestId('edge-handle-left');
-      const ruler = screen.getByTestId('timeline-ruler');
+      const minimap = screen.getByTestId('timeline-minimap');
 
-      // Simulate drag: mouseDown on handle, mouseMove on ruler
-      fireEvent.mouseDown(leftHandle, { clientX: 0 });
-      fireEvent.mouseMove(ruler, { clientX: 50 });
-      fireEvent.mouseUp(ruler);
+      // Simulate drag: mouseDown on handle, mouseMove on minimap
+      fireEvent.mouseDown(leftHandle, { clientX: 100 });
+      fireEvent.mouseMove(minimap, { clientX: 150 });
+      fireEvent.mouseUp(minimap);
 
       expect(onSetRange).toHaveBeenCalled();
     });
 
     it('calls onSetRange when right edge is dragged', () => {
       const onSetRange = vi.fn();
-      render(<TimelineRuler {...defaultProps} onSetRange={onSetRange} />);
+      render(<TimelineRuler {...defaultProps} bounds={bounds} onSetRange={onSetRange} />);
 
       const rightHandle = screen.getByTestId('edge-handle-right');
-      const ruler = screen.getByTestId('timeline-ruler');
+      const minimap = screen.getByTestId('timeline-minimap');
 
-      // Simulate drag: mouseDown on handle, mouseMove on ruler
-      fireEvent.mouseDown(rightHandle, { clientX: 800 });
-      fireEvent.mouseMove(ruler, { clientX: 850 });
-      fireEvent.mouseUp(ruler);
+      // Simulate drag: mouseDown on handle, mouseMove on minimap
+      fireEvent.mouseDown(rightHandle, { clientX: 700 });
+      fireEvent.mouseMove(minimap, { clientX: 750 });
+      fireEvent.mouseUp(minimap);
 
       expect(onSetRange).toHaveBeenCalled();
     });
 
-    it('does not pan when dragging edge', () => {
+    it('calls onSetRange when minimap window is dragged (pan)', () => {
+      const onSetRange = vi.fn();
+      render(<TimelineRuler {...defaultProps} bounds={bounds} onSetRange={onSetRange} />);
+
+      const window = screen.getByTestId('minimap-window');
+      const minimap = screen.getByTestId('timeline-minimap');
+
+      // Simulate drag: mouseDown on window, mouseMove on minimap
+      fireEvent.mouseDown(window, { clientX: 400 });
+      fireEvent.mouseMove(minimap, { clientX: 500 });
+      fireEvent.mouseUp(minimap);
+
+      expect(onSetRange).toHaveBeenCalled();
+    });
+
+    it('does not call onPan when dragging minimap', () => {
       const onPan = vi.fn();
       const onSetRange = vi.fn();
-      render(<TimelineRuler {...defaultProps} onPan={onPan} onSetRange={onSetRange} />);
+      render(<TimelineRuler {...defaultProps} bounds={bounds} onPan={onPan} onSetRange={onSetRange} />);
 
       const leftHandle = screen.getByTestId('edge-handle-left');
-      const ruler = screen.getByTestId('timeline-ruler');
+      const minimap = screen.getByTestId('timeline-minimap');
 
-      fireEvent.mouseDown(leftHandle, { clientX: 0 });
-      fireEvent.mouseMove(ruler, { clientX: 50 });
-      fireEvent.mouseUp(ruler);
+      fireEvent.mouseDown(leftHandle, { clientX: 100 });
+      fireEvent.mouseMove(minimap, { clientX: 150 });
+      fireEvent.mouseUp(minimap);
 
-      // Pan should not be called when dragging edges
+      // Pan should not be called when dragging minimap
       expect(onPan).not.toHaveBeenCalled();
     });
   });

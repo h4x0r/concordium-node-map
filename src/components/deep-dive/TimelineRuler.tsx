@@ -22,6 +22,12 @@ interface EdgeDragState {
   startRange: TimeRange;
 }
 
+interface MinimapDragState {
+  type: 'pan' | 'edge-left' | 'edge-right';
+  startX: number;
+  startRange: TimeRange;
+}
+
 /**
  * Format a timestamp for display based on the visible range duration
  */
@@ -95,9 +101,11 @@ export function TimelineRuler({
   onSetRange,
 }: TimelineRulerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const minimapRef = useRef<HTMLDivElement>(null);
   const [cursorX, setCursorX] = useState<number | null>(null);
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [edgeDragState, setEdgeDragState] = useState<EdgeDragState | null>(null);
+  const [minimapDragState, setMinimapDragState] = useState<MinimapDragState | null>(null);
 
   const duration = range.end - range.start;
   const ticks = useMemo(() => generateTicks(range, 800), [range]);
@@ -205,6 +213,75 @@ export function TimelineRuler({
     [range]
   );
 
+  // Minimap drag handlers
+  const handleMinimapMouseDown = useCallback(
+    (type: 'pan' | 'edge-left' | 'edge-right') => (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setMinimapDragState({
+        type,
+        startX: e.clientX,
+        startRange: range,
+      });
+    },
+    [range]
+  );
+
+  const handleMinimapMouseMove = useCallback(
+    (e: React.MouseEvent) => {
+      if (!minimapDragState || !bounds || !onSetRange || !minimapRef.current) return;
+
+      const rect = minimapRef.current.getBoundingClientRect();
+      const width = rect.width || 800;
+      const boundsDuration = bounds.end - bounds.start;
+      const deltaX = e.clientX - minimapDragState.startX;
+      const deltaTime = (deltaX / width) * boundsDuration;
+
+      const minRange = 60 * 60 * 1000; // 1 hour minimum
+
+      if (minimapDragState.type === 'pan') {
+        // Pan the entire window
+        let newStart = minimapDragState.startRange.start + deltaTime;
+        let newEnd = minimapDragState.startRange.end + deltaTime;
+        const rangeDuration = newEnd - newStart;
+
+        // Clamp to bounds
+        if (newStart < bounds.start) {
+          newStart = bounds.start;
+          newEnd = bounds.start + rangeDuration;
+        }
+        if (newEnd > bounds.end) {
+          newEnd = bounds.end;
+          newStart = bounds.end - rangeDuration;
+        }
+
+        onSetRange({ start: newStart, end: newEnd });
+      } else if (minimapDragState.type === 'edge-left') {
+        // Resize from left edge
+        let newStart = minimapDragState.startRange.start + deltaTime;
+        // Clamp to bounds and ensure minimum range
+        newStart = Math.max(bounds.start, newStart);
+        newStart = Math.min(minimapDragState.startRange.end - minRange, newStart);
+        onSetRange({ start: newStart, end: minimapDragState.startRange.end });
+      } else if (minimapDragState.type === 'edge-right') {
+        // Resize from right edge
+        let newEnd = minimapDragState.startRange.end + deltaTime;
+        // Clamp to bounds and ensure minimum range
+        newEnd = Math.min(bounds.end, newEnd);
+        newEnd = Math.max(minimapDragState.startRange.start + minRange, newEnd);
+        onSetRange({ start: minimapDragState.startRange.start, end: newEnd });
+      }
+    },
+    [minimapDragState, bounds, onSetRange]
+  );
+
+  const handleMinimapMouseUp = useCallback(() => {
+    setMinimapDragState(null);
+  }, []);
+
+  const handleMinimapMouseLeave = useCallback(() => {
+    setMinimapDragState(null);
+  }, []);
+
   // Minimap calculations
   const minimapWindow = useMemo(() => {
     if (!bounds) return null;
@@ -293,103 +370,142 @@ export function TimelineRuler({
           />
         )}
 
-        {/* Edge drag handles - Premiere Pro style trim handles */}
-        {onSetRange && (
-          <>
-            {/* Left edge handle */}
-            <div
-              data-testid="edge-handle-left"
-              onMouseDown={handleEdgeMouseDown('left')}
-              style={{
-                position: 'absolute',
-                left: 0,
-                top: 0,
-                width: '8px',
-                height: '100%',
-                cursor: 'ew-resize',
-                background: edgeDragState?.edge === 'left'
-                  ? 'var(--bb-cyan)'
-                  : 'linear-gradient(90deg, var(--bb-amber) 0%, transparent 100%)',
-                opacity: edgeDragState?.edge === 'left' ? 0.8 : 0.5,
-                transition: 'opacity 0.15s ease',
-                zIndex: 10,
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.opacity = '0.8';
-              }}
-              onMouseLeave={(e) => {
-                if (edgeDragState?.edge !== 'left') {
-                  (e.currentTarget as HTMLElement).style.opacity = '0.5';
-                }
-              }}
-            />
-            {/* Right edge handle */}
-            <div
-              data-testid="edge-handle-right"
-              onMouseDown={handleEdgeMouseDown('right')}
-              style={{
-                position: 'absolute',
-                right: 0,
-                top: 0,
-                width: '8px',
-                height: '100%',
-                cursor: 'ew-resize',
-                background: edgeDragState?.edge === 'right'
-                  ? 'var(--bb-cyan)'
-                  : 'linear-gradient(270deg, var(--bb-amber) 0%, transparent 100%)',
-                opacity: edgeDragState?.edge === 'right' ? 0.8 : 0.5,
-                transition: 'opacity 0.15s ease',
-                zIndex: 10,
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.opacity = '0.8';
-              }}
-              onMouseLeave={(e) => {
-                if (edgeDragState?.edge !== 'right') {
-                  (e.currentTarget as HTMLElement).style.opacity = '0.5';
-                }
-              }}
-            />
-          </>
-        )}
       </div>
 
-      {/* Minimap */}
-      {bounds && (
+      {/* Minimap / Timeline Scrubber - Premiere Pro style */}
+      {bounds && onSetRange && (
         <div
+          ref={minimapRef}
           data-testid="timeline-minimap"
+          onMouseMove={handleMinimapMouseMove}
+          onMouseUp={handleMinimapMouseUp}
+          onMouseLeave={handleMinimapMouseLeave}
           style={{
             position: 'relative',
-            height: '12px',
+            height: '24px',
             background: 'var(--bb-bg)',
             borderBottom: '1px solid var(--bb-border)',
+            cursor: minimapDragState ? 'grabbing' : 'default',
           }}
         >
-          {/* Full range background */}
+          {/* Full range background with subtle pattern */}
           <div
             style={{
               position: 'absolute',
               inset: 0,
-              background: 'var(--bb-panel)',
-              opacity: 0.3,
+              background: 'linear-gradient(90deg, var(--bb-panel) 0%, var(--bb-bg) 50%, var(--bb-panel) 100%)',
+              opacity: 0.5,
             }}
           />
-          {/* Visible window */}
+
+          {/* Date markers on minimap */}
+          {bounds && (() => {
+            const DAY = 24 * 60 * 60 * 1000;
+            const boundsDuration = bounds.end - bounds.start;
+            const markers: { pos: number; label: string }[] = [];
+
+            // Generate weekly markers
+            const firstDay = Math.ceil(bounds.start / DAY) * DAY;
+            for (let t = firstDay; t <= bounds.end; t += 7 * DAY) {
+              const pos = ((t - bounds.start) / boundsDuration) * 100;
+              const date = new Date(t);
+              markers.push({ pos, label: `${date.getMonth() + 1}/${date.getDate()}` });
+            }
+
+            return markers.map((m, i) => (
+              <div
+                key={i}
+                style={{
+                  position: 'absolute',
+                  left: `${m.pos}%`,
+                  top: 0,
+                  height: '100%',
+                  borderLeft: '1px solid var(--bb-border)',
+                  opacity: 0.3,
+                }}
+              >
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: '2px',
+                    left: '2px',
+                    fontSize: '8px',
+                    color: 'var(--bb-gray)',
+                    fontFamily: 'var(--font-mono)',
+                    opacity: 0.7,
+                  }}
+                >
+                  {m.label}
+                </span>
+              </div>
+            ));
+          })()}
+
+          {/* Visible window - draggable */}
           {minimapWindow && (
-            <div
-              data-testid="minimap-window"
-              style={{
-                position: 'absolute',
-                top: 0,
-                bottom: 0,
-                left: minimapWindow.left,
-                width: minimapWindow.width,
-                background: 'var(--bb-cyan)',
-                opacity: 0.3,
-                borderLeft: '1px solid var(--bb-cyan)',
-                borderRight: '1px solid var(--bb-cyan)',
-              }}
-            />
+            <>
+              {/* Left edge handle */}
+              <div
+                data-testid="edge-handle-left"
+                onMouseDown={handleMinimapMouseDown('edge-left')}
+                style={{
+                  position: 'absolute',
+                  left: minimapWindow.left,
+                  top: 0,
+                  width: '8px',
+                  height: '100%',
+                  cursor: 'ew-resize',
+                  background: minimapDragState?.type === 'edge-left'
+                    ? 'var(--bb-cyan)'
+                    : 'var(--bb-amber)',
+                  opacity: minimapDragState?.type === 'edge-left' ? 1 : 0.8,
+                  zIndex: 10,
+                  transform: 'translateX(-4px)',
+                  borderRadius: '2px 0 0 2px',
+                }}
+              />
+
+              {/* Center window (pan handle) */}
+              <div
+                data-testid="minimap-window"
+                onMouseDown={handleMinimapMouseDown('pan')}
+                style={{
+                  position: 'absolute',
+                  top: '2px',
+                  bottom: '2px',
+                  left: `calc(${minimapWindow.left} + 4px)`,
+                  width: `calc(${minimapWindow.width} - 8px)`,
+                  background: minimapDragState?.type === 'pan'
+                    ? 'var(--bb-cyan)'
+                    : 'rgba(0, 212, 255, 0.3)',
+                  border: '1px solid var(--bb-cyan)',
+                  borderRadius: '2px',
+                  cursor: minimapDragState?.type === 'pan' ? 'grabbing' : 'grab',
+                  opacity: minimapDragState?.type === 'pan' ? 0.8 : 1,
+                }}
+              />
+
+              {/* Right edge handle */}
+              <div
+                data-testid="edge-handle-right"
+                onMouseDown={handleMinimapMouseDown('edge-right')}
+                style={{
+                  position: 'absolute',
+                  left: `calc(${minimapWindow.left} + ${minimapWindow.width})`,
+                  top: 0,
+                  width: '8px',
+                  height: '100%',
+                  cursor: 'ew-resize',
+                  background: minimapDragState?.type === 'edge-right'
+                    ? 'var(--bb-cyan)'
+                    : 'var(--bb-amber)',
+                  opacity: minimapDragState?.type === 'edge-right' ? 1 : 0.8,
+                  zIndex: 10,
+                  transform: 'translateX(-4px)',
+                  borderRadius: '0 2px 2px 0',
+                }}
+              />
+            </>
           )}
         </div>
       )}
