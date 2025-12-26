@@ -8,6 +8,7 @@ interface AppState {
   currentView: ViewType;
   isPanelOpen: boolean;
   isDeepDiveOpen: boolean;
+  isHelpOpen: boolean;
 
   // Actions
   selectNode: (nodeId: string | null) => void;
@@ -16,6 +17,8 @@ interface AppState {
   closePanel: () => void;
   openDeepDive: () => void;
   closeDeepDive: () => void;
+  openHelp: () => void;
+  closeHelp: () => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -24,6 +27,7 @@ export const useAppStore = create<AppState>((set) => ({
   currentView: 'topology',
   isPanelOpen: false,
   isDeepDiveOpen: false,
+  isHelpOpen: false,
 
   // Actions
   selectNode: (nodeId) =>
@@ -47,4 +51,8 @@ export const useAppStore = create<AppState>((set) => ({
   openDeepDive: () => set({ isDeepDiveOpen: true }),
 
   closeDeepDive: () => set({ isDeepDiveOpen: false }),
+
+  openHelp: () => set({ isHelpOpen: true }),
+
+  closeHelp: () => set({ isHelpOpen: false }),
 }));
