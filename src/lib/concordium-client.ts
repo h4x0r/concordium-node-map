@@ -65,7 +65,7 @@ export class ConcordiumClient {
     const client = new ConcordiumGRPCNodeClient(
       this.host,
       this.port,
-      credentials.createInsecure(),
+      credentials.createSsl(),
       { timeout: this.timeout }
     );
 
@@ -78,12 +78,9 @@ export class ConcordiumClient {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const peer = peerData as any;
 
-        // Extract IP and port from socket address
-        const socketAddress = peer.socketAddress;
-        if (!socketAddress) continue;
-
-        const ip = socketAddress.ip?.value;
-        const port = socketAddress.port?.value;
+        // Extract IP and port - SDK returns them directly on the peer object
+        const ip = peer.ip;
+        const port = peer.port;
 
         if (!ip || !port) continue;
 
@@ -93,7 +90,7 @@ export class ConcordiumClient {
         // Get catchup status for non-bootstrappers
         let catchupStatus: CatchupStatus = 'UPTODATE';
         if (!isBootstrapper && peer.consensusInfo?.tag === 'nodeCatchupStatus') {
-          const status = peer.consensusInfo.value;
+          const status = peer.consensusInfo.catchupStatus ?? peer.consensusInfo.value;
           if (typeof status === 'number') {
             catchupStatus = this.parseCatchupStatus(status);
           }
@@ -109,8 +106,13 @@ export class ConcordiumClient {
           ? Number(networkStats.packetsReceived)
           : 0;
 
+        // peerId is already a string from the SDK
+        const peerId = typeof peer.peerId === 'string'
+          ? peer.peerId
+          : this.formatPeerId(peer.peerId?.value ?? BigInt(0));
+
         peers.push({
-          peerId: this.formatPeerId(peer.peerId?.value ?? BigInt(0)),
+          peerId,
           ipAddress: ip,
           port: Number(port),
           catchupStatus,
