@@ -17,11 +17,6 @@ const GRPC_ENDPOINTS = [
 // Secret to protect the cron endpoint (set in Vercel env)
 const CRON_SECRET = process.env.CRON_SECRET;
 
-// Feature flags
-const ENABLE_GRPC_POLLING = process.env.ENABLE_GRPC_POLLING === 'true';
-const ENABLE_GEO_LOOKUP = process.env.ENABLE_GEO_LOOKUP === 'true';
-const ENABLE_INFERENCE = process.env.ENABLE_INFERENCE === 'true';
-
 /**
  * Fetch nodes from the Concordium dashboard API
  */
@@ -86,38 +81,30 @@ async function processPollJob(verbose: boolean = false) {
   // NEW: Process reporting nodes in peers table
   await pollService.processReportingNodes(nodes);
 
-  // NEW: Poll gRPC endpoints for peer data (if enabled)
+  // Poll gRPC endpoints for peer data (IPs, network stats)
   let grpcPeersTotal = 0;
   const grpcErrors: string[] = [];
 
-  if (ENABLE_GRPC_POLLING) {
-    for (const endpoint of GRPC_ENDPOINTS) {
-      try {
-        const client = new ConcordiumClient(endpoint.host, endpoint.port);
-        const peers = await client.getPeersInfo();
-        if (peers.length > 0) {
-          await pollService.processGrpcPeers(peers, `grpc:${endpoint.host}`);
-          grpcPeersTotal += peers.length;
-        }
-      } catch (error) {
-        const msg = error instanceof Error ? error.message : 'Unknown error';
-        grpcErrors.push(`${endpoint.host}: ${msg}`);
-        console.warn(`gRPC poll failed for ${endpoint.host}:`, error);
+  for (const endpoint of GRPC_ENDPOINTS) {
+    try {
+      const client = new ConcordiumClient(endpoint.host, endpoint.port);
+      const peers = await client.getPeersInfo();
+      if (peers.length > 0) {
+        await pollService.processGrpcPeers(peers, `grpc:${endpoint.host}`);
+        grpcPeersTotal += peers.length;
       }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      grpcErrors.push(`${endpoint.host}: ${msg}`);
+      console.warn(`gRPC poll failed for ${endpoint.host}:`, error);
     }
   }
 
-  // NEW: Update geo locations (if enabled)
-  let geoStats = { attempted: 0, succeeded: 0, failed: 0 };
-  if (ENABLE_GEO_LOOKUP) {
-    geoStats = await pollService.updateGeoLocations();
-  }
+  // Update geo locations for peers with IPs
+  const geoStats = await pollService.updateGeoLocations();
 
-  // NEW: Run inference (if enabled)
-  let inferenceStats = { locationsInferred: 0, locationsFailed: 0, bootstrappersDetected: 0 };
-  if (ENABLE_INFERENCE) {
-    inferenceStats = await pollService.runInference();
-  }
+  // Run inference engine (location inference, bootstrapper detection)
+  const inferenceStats = await pollService.runInference();
 
   // Calculate network-wide metrics
   const now = Date.now();
@@ -324,10 +311,5 @@ export async function GET(request: Request) {
     method: 'GET (with auth) or POST',
     description: 'Poll Concordium nodes and track changes',
     protected: !!CRON_SECRET,
-    features: {
-      grpcPolling: ENABLE_GRPC_POLLING,
-      geoLookup: ENABLE_GEO_LOOKUP,
-      inference: ENABLE_INFERENCE,
-    },
   });
 }
