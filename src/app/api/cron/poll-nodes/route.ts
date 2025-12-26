@@ -1,14 +1,26 @@
 import { NextResponse } from 'next/server';
 import { getDbClient, initializeSchema, cleanupOldData } from '@/lib/db/client';
 import { NodeTracker, type NodeSummary } from '@/lib/db/NodeTracker';
+import { PollService } from '@/lib/poll-service';
+import { ConcordiumClient } from '@/lib/concordium-client';
 import { calculateNetworkPulse } from '@/lib/pulse';
 import type { HealthStatus } from '@/lib/db/schema';
 
 // Concordium dashboard API
 const NODES_SUMMARY_URL = 'https://dashboard.mainnet.concordium.software/nodesSummary';
 
+// Public gRPC endpoints for peer discovery
+const GRPC_ENDPOINTS = [
+  { host: 'grpc.mainnet.concordium.software', port: 20000 },
+];
+
 // Secret to protect the cron endpoint (set in Vercel env)
 const CRON_SECRET = process.env.CRON_SECRET;
+
+// Feature flags
+const ENABLE_GRPC_POLLING = process.env.ENABLE_GRPC_POLLING === 'true';
+const ENABLE_GEO_LOOKUP = process.env.ENABLE_GEO_LOOKUP === 'true';
+const ENABLE_INFERENCE = process.env.ENABLE_INFERENCE === 'true';
 
 /**
  * Fetch nodes from the Concordium dashboard API
@@ -46,6 +58,186 @@ async function fetchNodesSummary(): Promise<NodeSummary[]> {
 }
 
 /**
+ * Process the poll job (shared between GET and POST)
+ */
+async function processPollJob(verbose: boolean = false) {
+  // Initialize database (idempotent)
+  await initializeSchema();
+  const db = getDbClient();
+  const tracker = new NodeTracker(db);
+  const pollService = new PollService(db);
+
+  // Fetch current nodes from dashboard API
+  const nodes = await fetchNodesSummary();
+
+  if (nodes.length === 0) {
+    return {
+      error: 'No nodes returned from API',
+      status: 502,
+    };
+  }
+
+  // Calculate max height for health calculation
+  const maxHeight = Math.max(...nodes.map(n => n.finalizedBlockHeight));
+
+  // Process nodes and detect changes (existing behavior)
+  const result = await tracker.processNodes(nodes, maxHeight);
+
+  // NEW: Process reporting nodes in peers table
+  await pollService.processReportingNodes(nodes);
+
+  // NEW: Poll gRPC endpoints for peer data (if enabled)
+  let grpcPeersTotal = 0;
+  const grpcErrors: string[] = [];
+
+  if (ENABLE_GRPC_POLLING) {
+    for (const endpoint of GRPC_ENDPOINTS) {
+      try {
+        const client = new ConcordiumClient(endpoint.host, endpoint.port);
+        const peers = await client.getPeersInfo();
+        if (peers.length > 0) {
+          await pollService.processGrpcPeers(peers, `grpc:${endpoint.host}`);
+          grpcPeersTotal += peers.length;
+        }
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : 'Unknown error';
+        grpcErrors.push(`${endpoint.host}: ${msg}`);
+        console.warn(`gRPC poll failed for ${endpoint.host}:`, error);
+      }
+    }
+  }
+
+  // NEW: Update geo locations (if enabled)
+  let geoStats = { attempted: 0, succeeded: 0, failed: 0 };
+  if (ENABLE_GEO_LOOKUP) {
+    geoStats = await pollService.updateGeoLocations();
+  }
+
+  // NEW: Run inference (if enabled)
+  let inferenceStats = { locationsInferred: 0, locationsFailed: 0, bootstrappersDetected: 0 };
+  if (ENABLE_INFERENCE) {
+    inferenceStats = await pollService.runInference();
+  }
+
+  // Calculate network-wide metrics
+  const now = Date.now();
+  const totalNodes = nodes.length;
+
+  // Health counts based on finalization lag
+  const calculateHealth = (lag: number, consensusRunning: boolean): HealthStatus => {
+    if (!consensusRunning) return 'issue';
+    if (lag <= 2) return 'healthy';
+    if (lag <= 5) return 'lagging';
+    return 'issue';
+  };
+
+  let healthyNodes = 0;
+  let laggingNodes = 0;
+  let issueNodes = 0;
+
+  for (const node of nodes) {
+    const lag = maxHeight - node.finalizedBlockHeight;
+    const health = calculateHealth(lag, node.consensusRunning);
+    if (health === 'healthy') healthyNodes++;
+    else if (health === 'lagging') laggingNodes++;
+    else issueNodes++;
+  }
+
+  // Average peers
+  const avgPeers = nodes.reduce((sum, n) => sum + n.peersCount, 0) / totalNodes;
+
+  // Average latency (only from nodes with ping data)
+  const nodesWithPing = nodes.filter(n => n.averagePing !== null && n.averagePing > 0);
+  const avgLatency = nodesWithPing.length > 0
+    ? nodesWithPing.reduce((sum, n) => sum + (n.averagePing ?? 0), 0) / nodesWithPing.length
+    : null;
+
+  // Max finalization lag (95th percentile approach)
+  const heights = nodes.map(n => n.finalizedBlockHeight).sort((a, b) => b - a);
+  const percentile95Index = Math.max(0, Math.floor(heights.length * 0.05));
+  const maxFinalizationLag = maxHeight - heights[percentile95Index];
+
+  // Consensus participation
+  const consensusNodes = nodes.filter(n => n.consensusRunning);
+  const consensusParticipation = (consensusNodes.length / totalNodes) * 100;
+
+  // Calculate pulse score using raw values
+  const pulseScore = calculateNetworkPulse({
+    finalizationTime: maxFinalizationLag,
+    latency: avgLatency ?? 50,
+    consensusRunning: consensusNodes.length,
+    totalNodes,
+  });
+
+  // Store network snapshot
+  await db.execute(
+    `INSERT INTO network_snapshots
+     (timestamp, total_nodes, healthy_nodes, lagging_nodes, issue_nodes,
+      avg_peers, avg_latency, max_finalization_lag, consensus_participation, pulse_score)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [now, totalNodes, healthyNodes, laggingNodes, issueNodes,
+     avgPeers, avgLatency, maxFinalizationLag, consensusParticipation, pulseScore]
+  );
+
+  // Clean up old data (30-day rolling window)
+  const cleanup = await cleanupOldData();
+
+  // Get peer table stats
+  const peerCount = await db.execute('SELECT COUNT(*) as count FROM peers');
+  const peersTableCount = Number(peerCount.rows[0].count);
+
+  // Build response
+  const response = {
+    success: true,
+    timestamp: now,
+    nodesPolled: nodes.length,
+    maxHeight,
+    networkMetrics: {
+      totalNodes,
+      healthyNodes,
+      laggingNodes,
+      issueNodes,
+      avgPeers: Math.round(avgPeers),
+      avgLatency: avgLatency ? Math.round(avgLatency) : null,
+      maxFinalizationLag,
+      consensusParticipation: Math.round(consensusParticipation),
+      pulseScore: Math.round(pulseScore),
+    },
+    changes: {
+      newNodes: result.newNodes.length,
+      disappeared: result.disappeared.length,
+      reappeared: result.reappeared.length,
+      restarts: result.restarts.length,
+      healthChanges: result.healthChanges.length,
+      versionChanges: result.versionChanges.length,
+    },
+    // NEW: Peer tracking stats
+    peerTracking: {
+      peersTableCount,
+      grpcPeersPolled: grpcPeersTotal,
+      grpcErrors: grpcErrors.length > 0 ? grpcErrors : undefined,
+      geoLookupsAttempted: geoStats.attempted,
+      geoLookupsSucceeded: geoStats.succeeded,
+      locationsInferred: inferenceStats.locationsInferred,
+      bootstrappersDetected: inferenceStats.bootstrappersDetected,
+    },
+    snapshotsRecorded: result.snapshotsRecorded,
+    cleanedUp: cleanup,
+  };
+
+  // Add verbose details if requested
+  if (verbose) {
+    return {
+      ...response,
+      newNodeIds: result.newNodes,
+      restartedNodeIds: result.restarts,
+    };
+  }
+
+  return response;
+}
+
+/**
  * POST /api/cron/poll-nodes
  *
  * Called by Vercel Cron or external cron service to poll nodes
@@ -64,122 +256,16 @@ export async function POST(request: Request) {
   }
 
   try {
-    // Initialize database (idempotent)
-    await initializeSchema();
-    const db = getDbClient();
-    const tracker = new NodeTracker(db);
+    const result = await processPollJob(true);
 
-    // Fetch current nodes
-    const nodes = await fetchNodesSummary();
-
-    if (nodes.length === 0) {
+    if ('error' in result && result.status) {
       return NextResponse.json(
-        { error: 'No nodes returned from API' },
-        { status: 502 }
+        { error: result.error },
+        { status: result.status }
       );
     }
 
-    // Calculate max height for health calculation
-    const maxHeight = Math.max(...nodes.map(n => n.finalizedBlockHeight));
-
-    // Process nodes and detect changes
-    const result = await tracker.processNodes(nodes, maxHeight);
-
-    // Calculate network-wide metrics
-    const now = Date.now();
-    const totalNodes = nodes.length;
-
-    // Health counts based on finalization lag
-    const calculateHealth = (lag: number, consensusRunning: boolean): HealthStatus => {
-      if (!consensusRunning) return 'issue';
-      if (lag <= 2) return 'healthy';
-      if (lag <= 5) return 'lagging';
-      return 'issue';
-    };
-
-    let healthyNodes = 0;
-    let laggingNodes = 0;
-    let issueNodes = 0;
-
-    for (const node of nodes) {
-      const lag = maxHeight - node.finalizedBlockHeight;
-      const health = calculateHealth(lag, node.consensusRunning);
-      if (health === 'healthy') healthyNodes++;
-      else if (health === 'lagging') laggingNodes++;
-      else issueNodes++;
-    }
-
-    // Average peers
-    const avgPeers = nodes.reduce((sum, n) => sum + n.peersCount, 0) / totalNodes;
-
-    // Average latency (only from nodes with ping data)
-    const nodesWithPing = nodes.filter(n => n.averagePing !== null && n.averagePing > 0);
-    const avgLatency = nodesWithPing.length > 0
-      ? nodesWithPing.reduce((sum, n) => sum + (n.averagePing ?? 0), 0) / nodesWithPing.length
-      : null;
-
-    // Max finalization lag (95th percentile approach)
-    const heights = nodes.map(n => n.finalizedBlockHeight).sort((a, b) => b - a);
-    const percentile95Index = Math.max(0, Math.floor(heights.length * 0.05));
-    const maxFinalizationLag = maxHeight - heights[percentile95Index];
-
-    // Consensus participation
-    const consensusNodes = nodes.filter(n => n.consensusRunning);
-    const consensusParticipation = (consensusNodes.length / totalNodes) * 100;
-
-    // Calculate pulse score using raw values
-    const pulseScore = calculateNetworkPulse({
-      finalizationTime: maxFinalizationLag,
-      latency: avgLatency ?? 50,
-      consensusRunning: consensusNodes.length,
-      totalNodes,
-    });
-
-    // Store network snapshot
-    await db.execute(
-      `INSERT INTO network_snapshots
-       (timestamp, total_nodes, healthy_nodes, lagging_nodes, issue_nodes,
-        avg_peers, avg_latency, max_finalization_lag, consensus_participation, pulse_score)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [now, totalNodes, healthyNodes, laggingNodes, issueNodes,
-       avgPeers, avgLatency, maxFinalizationLag, consensusParticipation, pulseScore]
-    );
-
-    // Clean up old data (30-day rolling window)
-    const cleanup = await cleanupOldData();
-
-    // Return summary
-    return NextResponse.json({
-      success: true,
-      timestamp: now,
-      nodesPolled: nodes.length,
-      maxHeight,
-      networkMetrics: {
-        totalNodes,
-        healthyNodes,
-        laggingNodes,
-        issueNodes,
-        avgPeers: Math.round(avgPeers),
-        avgLatency: avgLatency ? Math.round(avgLatency) : null,
-        maxFinalizationLag,
-        consensusParticipation: Math.round(consensusParticipation),
-        pulseScore: Math.round(pulseScore),
-      },
-      changes: {
-        newNodes: result.newNodes.length,
-        disappeared: result.disappeared.length,
-        reappeared: result.reappeared.length,
-        restarts: result.restarts.length,
-        healthChanges: result.healthChanges.length,
-        versionChanges: result.versionChanges.length,
-      },
-      snapshotsRecorded: result.snapshotsRecorded,
-      // Include details for new nodes (for alerting)
-      newNodeIds: result.newNodes,
-      restartedNodeIds: result.restarts,
-      // Cleanup stats (30-day rolling window)
-      cleanedUp: cleanup,
-    });
+    return NextResponse.json(result);
   } catch (error) {
     console.error('Error polling nodes:', error);
     return NextResponse.json(
@@ -209,86 +295,17 @@ export async function GET(request: Request) {
       );
     }
 
-    // Process the cron job (same logic as POST)
     try {
-      await initializeSchema();
-      const db = getDbClient();
-      const tracker = new NodeTracker(db);
+      const result = await processPollJob(false);
 
-      const nodes = await fetchNodesSummary();
-
-      if (nodes.length === 0) {
+      if ('error' in result && result.status) {
         return NextResponse.json(
-          { error: 'No nodes returned from API' },
-          { status: 502 }
+          { error: result.error },
+          { status: result.status }
         );
       }
 
-      const maxHeight = Math.max(...nodes.map(n => n.finalizedBlockHeight));
-      const result = await tracker.processNodes(nodes, maxHeight);
-
-      // Calculate network-wide metrics
-      const now = Date.now();
-      const totalNodes = nodes.length;
-
-      const calculateHealth = (lag: number, consensusRunning: boolean): HealthStatus => {
-        if (!consensusRunning) return 'issue';
-        if (lag <= 2) return 'healthy';
-        if (lag <= 5) return 'lagging';
-        return 'issue';
-      };
-
-      let healthyNodes = 0;
-      let laggingNodes = 0;
-      let issueNodes = 0;
-
-      for (const node of nodes) {
-        const lag = maxHeight - node.finalizedBlockHeight;
-        const health = calculateHealth(lag, node.consensusRunning);
-        if (health === 'healthy') healthyNodes++;
-        else if (health === 'lagging') laggingNodes++;
-        else issueNodes++;
-      }
-
-      const avgPeers = nodes.reduce((sum, n) => sum + n.peersCount, 0) / totalNodes;
-      const nodesWithPing = nodes.filter(n => n.averagePing !== null && n.averagePing > 0);
-      const avgLatency = nodesWithPing.length > 0
-        ? nodesWithPing.reduce((sum, n) => sum + (n.averagePing ?? 0), 0) / nodesWithPing.length
-        : null;
-
-      const heights = nodes.map(n => n.finalizedBlockHeight).sort((a, b) => b - a);
-      const percentile95Index = Math.max(0, Math.floor(heights.length * 0.05));
-      const maxFinalizationLag = maxHeight - heights[percentile95Index];
-
-      const consensusNodes = nodes.filter(n => n.consensusRunning);
-      const consensusParticipation = (consensusNodes.length / totalNodes) * 100;
-
-      const pulseScore = calculateNetworkPulse({
-        finalizationTime: maxFinalizationLag,
-        latency: avgLatency ?? 50,
-        consensusRunning: consensusNodes.length,
-        totalNodes,
-      });
-
-      await db.execute(
-        `INSERT INTO network_snapshots
-         (timestamp, total_nodes, healthy_nodes, lagging_nodes, issue_nodes,
-          avg_peers, avg_latency, max_finalization_lag, consensus_participation, pulse_score)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [now, totalNodes, healthyNodes, laggingNodes, issueNodes,
-         avgPeers, avgLatency, maxFinalizationLag, consensusParticipation, pulseScore]
-      );
-
-      // Clean up old data (30-day rolling window)
-      const cleanup = await cleanupOldData();
-
-      return NextResponse.json({
-        success: true,
-        timestamp: now,
-        nodesPolled: nodes.length,
-        snapshotsRecorded: result.snapshotsRecorded,
-        cleanedUp: cleanup,
-      });
+      return NextResponse.json(result);
     } catch (error) {
       console.error('Error polling nodes:', error);
       return NextResponse.json(
@@ -307,5 +324,10 @@ export async function GET(request: Request) {
     method: 'GET (with auth) or POST',
     description: 'Poll Concordium nodes and track changes',
     protected: !!CRON_SECRET,
+    features: {
+      grpcPolling: ENABLE_GRPC_POLLING,
+      geoLookup: ENABLE_GEO_LOOKUP,
+      inference: ENABLE_INFERENCE,
+    },
   });
 }

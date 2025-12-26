@@ -36,6 +36,8 @@ describe('NodeTracker', () => {
     await db.execute(SCHEMA.snapshots);
     await db.execute(SCHEMA.events);
     await db.execute(SCHEMA.network_snapshots);
+    await db.execute(SCHEMA.peers);
+    await db.execute(SCHEMA.peer_connections);
     for (const indexSql of SCHEMA.indexes) {
       await db.execute(indexSql);
     }

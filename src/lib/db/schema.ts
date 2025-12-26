@@ -92,6 +92,60 @@ export const SCHEMA = {
   `,
 
   /**
+   * Peers table - tracks all known peers (reporting, gRPC, inferred)
+   * Unified view of network participants including EXT nodes
+   */
+  peers: `
+    CREATE TABLE IF NOT EXISTS peers (
+      peer_id TEXT PRIMARY KEY,
+
+      -- Source tracking
+      source TEXT NOT NULL,
+      first_seen INTEGER NOT NULL,
+      last_seen INTEGER NOT NULL,
+
+      -- Identity (for reporting nodes)
+      node_name TEXT,
+      client_version TEXT,
+
+      -- Network info (from gRPC)
+      ip_address TEXT,
+      port INTEGER,
+
+      -- Geolocation (from ip-api.com, cached)
+      geo_country TEXT,
+      geo_city TEXT,
+      geo_lat REAL,
+      geo_lon REAL,
+      geo_isp TEXT,
+      geo_updated INTEGER,
+
+      -- Inference data
+      seen_by_count INTEGER DEFAULT 0,
+      is_bootstrapper INTEGER DEFAULT 0,
+
+      -- gRPC-specific
+      catchup_status TEXT,
+      grpc_latency_ms INTEGER,
+      packets_sent INTEGER,
+      packets_received INTEGER
+    )
+  `,
+
+  /**
+   * Peer connections - tracks which reporting nodes see which peers
+   * Used for inference engine and connectivity analysis
+   */
+  peer_connections: `
+    CREATE TABLE IF NOT EXISTS peer_connections (
+      reporter_id TEXT NOT NULL,
+      peer_id TEXT NOT NULL,
+      last_seen INTEGER NOT NULL,
+      PRIMARY KEY (reporter_id, peer_id)
+    )
+  `,
+
+  /**
    * Indexes for common queries
    */
   indexes: [
@@ -102,6 +156,9 @@ export const SCHEMA = {
     'CREATE INDEX IF NOT EXISTS idx_events_node ON events(node_id)',
     'CREATE INDEX IF NOT EXISTS idx_sessions_node ON node_sessions(node_id)',
     'CREATE INDEX IF NOT EXISTS idx_network_snapshots_timestamp ON network_snapshots(timestamp)',
+    'CREATE INDEX IF NOT EXISTS idx_peers_source ON peers(source)',
+    'CREATE INDEX IF NOT EXISTS idx_peers_ip ON peers(ip_address)',
+    'CREATE INDEX IF NOT EXISTS idx_peer_connections_peer ON peer_connections(peer_id)',
   ],
 } as const;
 
@@ -178,4 +235,49 @@ export interface NetworkSnapshotRecord {
   max_finalization_lag: number | null;
   consensus_participation: number | null;
   pulse_score: number | null;
+}
+
+/**
+ * Peer source types
+ */
+export type PeerSource = 'reporting' | 'grpc' | 'inferred';
+
+/**
+ * Catchup status from gRPC
+ */
+export type CatchupStatus = 'UPTODATE' | 'PENDING' | 'CATCHINGUP';
+
+/**
+ * Peer record from database
+ */
+export interface PeerRecord {
+  peer_id: string;
+  source: PeerSource;
+  first_seen: number;
+  last_seen: number;
+  node_name: string | null;
+  client_version: string | null;
+  ip_address: string | null;
+  port: number | null;
+  geo_country: string | null;
+  geo_city: string | null;
+  geo_lat: number | null;
+  geo_lon: number | null;
+  geo_isp: string | null;
+  geo_updated: number | null;
+  seen_by_count: number;
+  is_bootstrapper: number;
+  catchup_status: CatchupStatus | null;
+  grpc_latency_ms: number | null;
+  packets_sent: number | null;
+  packets_received: number | null;
+}
+
+/**
+ * Peer connection record from database
+ */
+export interface PeerConnectionRecord {
+  reporter_id: string;
+  peer_id: string;
+  last_seen: number;
 }
