@@ -6,6 +6,18 @@ import type { HealthStatus } from './HealthTimeline';
 
 export type MiniMetricType = 'health' | 'latency' | 'bandwidth' | 'peers';
 
+// Bandwidth colors: contrasting for up/down traffic (network monitoring style)
+const BANDWIDTH_COLORS = {
+  outbound: {
+    stroke: '#ff9500', // warm orange (upload)
+    glow: 'rgba(255, 149, 0, 0.5)',
+  },
+  inbound: {
+    stroke: '#00d4ff', // cool cyan (download)
+    glow: 'rgba(0, 212, 255, 0.5)',
+  },
+};
+
 export interface MiniMetricTrackProps {
   label: string;
   metric: MiniMetricType;
@@ -46,7 +58,7 @@ function computeSummary(
   if (metric === 'bandwidth' && bandwidthData) {
     const lastIn = bandwidthData.inbound[bandwidthData.inbound.length - 1]?.value ?? 0;
     const lastOut = bandwidthData.outbound[bandwidthData.outbound.length - 1]?.value ?? 0;
-    return `↓${(lastIn / 1024).toFixed(0)} ↑${(lastOut / 1024).toFixed(0)}`;
+    return `▲${(lastOut / 1024).toFixed(0)} ▼${(lastIn / 1024).toFixed(0)}`;
   }
 
   if (data && data.length > 0) {
@@ -271,9 +283,20 @@ export function MiniMetricTrack({
               />
             ))}
 
-          {/* Bandwidth mirrored */}
+          {/* Bandwidth mirrored - network monitoring style */}
           {bandwidthPaths && (
             <>
+              {/* Grid lines */}
+              <line
+                x1={padding.left}
+                y1={chartHeight * 0.25}
+                x2={chartWidth - padding.right}
+                y2={chartHeight * 0.25}
+                stroke="var(--bb-border)"
+                strokeWidth="0.3"
+                strokeDasharray="1,1"
+                opacity={0.3}
+              />
               <line
                 x1={padding.left}
                 y1={chartHeight / 2}
@@ -281,22 +304,51 @@ export function MiniMetricTrack({
                 y2={chartHeight / 2}
                 stroke="var(--bb-gray)"
                 strokeWidth="0.5"
+                opacity={0.5}
+              />
+              <line
+                x1={padding.left}
+                y1={chartHeight * 0.75}
+                x2={chartWidth - padding.right}
+                y2={chartHeight * 0.75}
+                stroke="var(--bb-border)"
+                strokeWidth="0.3"
+                strokeDasharray="1,1"
                 opacity={0.3}
+              />
+              {/* Outbound (upload) - glow + line */}
+              <path
+                d={bandwidthPaths.outPath}
+                fill="none"
+                stroke={BANDWIDTH_COLORS.outbound.glow}
+                strokeWidth="2"
+                vectorEffect="non-scaling-stroke"
+                opacity={0.4}
               />
               <path
                 d={bandwidthPaths.outPath}
                 fill="none"
-                stroke="var(--bb-cyan)"
-                strokeWidth="1"
+                stroke={BANDWIDTH_COLORS.outbound.stroke}
+                strokeWidth="1.2"
                 vectorEffect="non-scaling-stroke"
+                strokeLinecap="round"
+              />
+              {/* Inbound (download) - glow + line */}
+              <path
+                d={bandwidthPaths.inPath}
+                fill="none"
+                stroke={BANDWIDTH_COLORS.inbound.glow}
+                strokeWidth="2"
+                vectorEffect="non-scaling-stroke"
+                opacity={0.4}
               />
               <path
                 d={bandwidthPaths.inPath}
                 fill="none"
-                stroke="var(--bb-cyan)"
-                strokeWidth="1"
-                strokeDasharray="2,2"
+                stroke={BANDWIDTH_COLORS.inbound.stroke}
+                strokeWidth="1.2"
                 vectorEffect="non-scaling-stroke"
+                strokeLinecap="round"
               />
             </>
           )}

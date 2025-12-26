@@ -13,6 +13,18 @@ const NODE_COLORS = {
   comparison2: 'var(--bb-green)',
 };
 
+// Bandwidth colors: contrasting for up/down traffic (network monitoring style)
+const BANDWIDTH_COLORS = {
+  outbound: {
+    stroke: '#ff9500', // warm orange (upload)
+    glow: 'rgba(255, 149, 0, 0.5)',
+  },
+  inbound: {
+    stroke: '#00d4ff', // cool cyan (download)
+    glow: 'rgba(0, 212, 255, 0.5)',
+  },
+};
+
 export interface MetricTrackProps {
   label: string;
   metric: MetricType;
@@ -296,37 +308,79 @@ export function MetricTrack({
                 />
               ))}
 
-            {/* Bandwidth mirrored paths */}
-            {bandwidthPaths &&
-              bandwidthPaths.map(({ nodeId, outPath, inPath, color }) => (
-                <g key={nodeId}>
-                  {/* Center line */}
-                  <line
-                    x1={padding.left}
-                    y1={chartHeight / 2}
-                    x2={chartWidth - padding.right}
-                    y2={chartHeight / 2}
-                    stroke="var(--bb-gray)"
-                    strokeWidth="0.5"
-                    opacity={0.3}
-                  />
-                  <path
-                    d={outPath}
-                    fill="none"
-                    stroke={color}
-                    strokeWidth="1"
-                    vectorEffect="non-scaling-stroke"
-                  />
-                  <path
-                    d={inPath}
-                    fill="none"
-                    stroke={color}
-                    strokeWidth="1"
-                    strokeDasharray="2,2"
-                    vectorEffect="non-scaling-stroke"
-                  />
-                </g>
-              ))}
+            {/* Bandwidth mirrored paths - network monitoring style */}
+            {bandwidthPaths && (
+              <g>
+                {/* Grid lines */}
+                <line
+                  x1={padding.left}
+                  y1={chartHeight * 0.25}
+                  x2={chartWidth - padding.right}
+                  y2={chartHeight * 0.25}
+                  stroke="var(--bb-border)"
+                  strokeWidth="0.3"
+                  strokeDasharray="2,2"
+                  opacity={0.3}
+                />
+                <line
+                  x1={padding.left}
+                  y1={chartHeight / 2}
+                  x2={chartWidth - padding.right}
+                  y2={chartHeight / 2}
+                  stroke="var(--bb-gray)"
+                  strokeWidth="0.8"
+                  opacity={0.5}
+                />
+                <line
+                  x1={padding.left}
+                  y1={chartHeight * 0.75}
+                  x2={chartWidth - padding.right}
+                  y2={chartHeight * 0.75}
+                  stroke="var(--bb-border)"
+                  strokeWidth="0.3"
+                  strokeDasharray="2,2"
+                  opacity={0.3}
+                />
+                {bandwidthPaths.map(({ nodeId, outPath, inPath }) => (
+                  <g key={nodeId}>
+                    {/* Outbound glow + line */}
+                    <path
+                      d={outPath}
+                      fill="none"
+                      stroke={BANDWIDTH_COLORS.outbound.glow}
+                      strokeWidth="2"
+                      vectorEffect="non-scaling-stroke"
+                      opacity={0.4}
+                    />
+                    <path
+                      d={outPath}
+                      fill="none"
+                      stroke={BANDWIDTH_COLORS.outbound.stroke}
+                      strokeWidth="1.2"
+                      vectorEffect="non-scaling-stroke"
+                      strokeLinecap="round"
+                    />
+                    {/* Inbound glow + line */}
+                    <path
+                      d={inPath}
+                      fill="none"
+                      stroke={BANDWIDTH_COLORS.inbound.glow}
+                      strokeWidth="2"
+                      vectorEffect="non-scaling-stroke"
+                      opacity={0.4}
+                    />
+                    <path
+                      d={inPath}
+                      fill="none"
+                      stroke={BANDWIDTH_COLORS.inbound.stroke}
+                      strokeWidth="1.2"
+                      vectorEffect="non-scaling-stroke"
+                      strokeLinecap="round"
+                    />
+                  </g>
+                ))}
+              </g>
+            )}
 
             {/* Line/step chart paths (latency, peers) */}
             {metric !== 'health' &&

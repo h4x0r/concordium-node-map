@@ -16,9 +16,20 @@ export interface MRTGMirroredChartProps {
   showGrid?: boolean;
 }
 
-const COLORS = {
-  outbound: { stroke: 'var(--bb-cyan)', fill: 'rgba(102, 204, 255, 0.2)' },
-  inbound: { stroke: 'var(--bb-orange)', fill: 'rgba(255, 102, 0, 0.15)' },
+// Network monitoring aesthetic: contrasting colors for up/down traffic
+// Outbound (upload, going UP) = warm orange/amber
+// Inbound (download, going DOWN) = cool cyan
+const BANDWIDTH_COLORS = {
+  outbound: {
+    stroke: '#ff9500', // warm orange
+    glow: 'rgba(255, 149, 0, 0.6)',
+    fill: 'rgba(255, 149, 0, 0.15)',
+  },
+  inbound: {
+    stroke: '#00d4ff', // cool cyan
+    glow: 'rgba(0, 212, 255, 0.6)',
+    fill: 'rgba(0, 212, 255, 0.15)',
+  },
 };
 
 function formatValue(value: number, unit?: string): string {
@@ -101,40 +112,76 @@ export function MRTGMirroredChart({
     return { outboundPath, inboundPath, outboundArea, inboundArea, yMax };
   }, [outboundData, inboundData, viewBoxHeight, centerY, padding.top, padding.bottom, padding.left, padding.right]);
 
+  // Calculate quarter grid positions
+  const chartHeight = (viewBoxHeight - padding.top - padding.bottom) / 2;
+  const quarterUp = centerY - chartHeight * 0.5;
+  const quarterDown = centerY + chartHeight * 0.5;
+
   return (
     <div className="bb-mrtg-chart" style={{ height }}>
       {/* Header */}
       <div className="bb-mrtg-header">
         <span className="bb-mrtg-label">{label}</span>
-        <div className="bb-mrtg-values" style={{ display: 'flex', gap: '8px', fontSize: '10px' }}>
-          <span style={{ color: COLORS.outbound.stroke }}>
-            OUT: {formatValue(latestOutbound, unit)}{unit}
+        <div className="bb-mrtg-values" style={{ display: 'flex', gap: '12px', fontSize: '10px' }}>
+          <span style={{ color: BANDWIDTH_COLORS.outbound.stroke, fontWeight: 600 }}>
+            ▲ OUT {formatValue(latestOutbound, unit)}{unit}
           </span>
-          <span style={{ color: COLORS.inbound.stroke }}>
-            IN: {formatValue(latestInbound, unit)}{unit}
+          <span style={{ color: BANDWIDTH_COLORS.inbound.stroke, fontWeight: 600 }}>
+            ▼ IN {formatValue(latestInbound, unit)}{unit}
           </span>
         </div>
       </div>
 
-      {/* Chart SVG - override CSS height since we don't have time axis */}
+      {/* Chart SVG */}
       <svg
         viewBox={`0 0 100 ${viewBoxHeight}`}
         preserveAspectRatio="none"
         className="bb-mrtg-svg"
         style={{ height: 'calc(100% - 22px)' }}
       >
+        {/* Gradient definitions for area fills */}
+        <defs>
+          <linearGradient id="outboundGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={BANDWIDTH_COLORS.outbound.stroke} stopOpacity="0.3" />
+            <stop offset="100%" stopColor={BANDWIDTH_COLORS.outbound.stroke} stopOpacity="0.05" />
+          </linearGradient>
+          <linearGradient id="inboundGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={BANDWIDTH_COLORS.inbound.stroke} stopOpacity="0.05" />
+            <stop offset="100%" stopColor={BANDWIDTH_COLORS.inbound.stroke} stopOpacity="0.3" />
+          </linearGradient>
+          {/* Glow filter for lines */}
+          <filter id="lineGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="1" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
         {/* Grid lines */}
         {showGrid && (
           <g className="bb-mrtg-grid">
-            {/* Top grid line */}
+            {/* Top boundary */}
             <line
               x1={padding.left}
               y1={padding.top}
               x2={100 - padding.right}
               y2={padding.top}
-              stroke="var(--bb-grid)"
+              stroke="var(--bb-border)"
               strokeWidth="0.3"
-              strokeDasharray="1,1"
+              opacity={0.5}
+            />
+            {/* Quarter line up */}
+            <line
+              x1={padding.left}
+              y1={quarterUp}
+              x2={100 - padding.right}
+              y2={quarterUp}
+              stroke="var(--bb-border)"
+              strokeWidth="0.3"
+              strokeDasharray="2,2"
+              opacity={0.3}
             />
             {/* Center line (origin) - prominent */}
             <line
@@ -143,52 +190,81 @@ export function MRTGMirroredChart({
               x2={100 - padding.right}
               y2={centerY}
               stroke="var(--bb-gray)"
-              strokeWidth="1"
-              opacity={0.8}
+              strokeWidth="0.8"
+              opacity={0.6}
             />
-            {/* Bottom grid line */}
+            {/* Quarter line down */}
+            <line
+              x1={padding.left}
+              y1={quarterDown}
+              x2={100 - padding.right}
+              y2={quarterDown}
+              stroke="var(--bb-border)"
+              strokeWidth="0.3"
+              strokeDasharray="2,2"
+              opacity={0.3}
+            />
+            {/* Bottom boundary */}
             <line
               x1={padding.left}
               y1={viewBoxHeight - padding.bottom}
               x2={100 - padding.right}
               y2={viewBoxHeight - padding.bottom}
-              stroke="var(--bb-grid)"
+              stroke="var(--bb-border)"
               strokeWidth="0.3"
-              strokeDasharray="1,1"
+              opacity={0.5}
             />
           </g>
         )}
 
-        {/* Outbound area (above center) */}
+        {/* Outbound area fill (above center) */}
         <path
           d={outboundArea}
-          fill={COLORS.outbound.fill}
-          opacity={0.5}
+          fill="url(#outboundGradient)"
         />
 
-        {/* Inbound area (below center) */}
+        {/* Inbound area fill (below center) */}
         <path
           d={inboundArea}
-          fill={COLORS.inbound.fill}
-          opacity={0.5}
+          fill="url(#inboundGradient)"
         />
 
-        {/* Outbound line */}
+        {/* Outbound line with glow */}
         <path
           d={outboundPath}
           fill="none"
-          stroke={COLORS.outbound.stroke}
-          strokeWidth="0.8"
+          stroke={BANDWIDTH_COLORS.outbound.glow}
+          strokeWidth="2"
           vectorEffect="non-scaling-stroke"
+          opacity={0.5}
+        />
+        <path
+          d={outboundPath}
+          fill="none"
+          stroke={BANDWIDTH_COLORS.outbound.stroke}
+          strokeWidth="1.2"
+          vectorEffect="non-scaling-stroke"
+          strokeLinecap="round"
+          strokeLinejoin="round"
         />
 
-        {/* Inbound line */}
+        {/* Inbound line with glow */}
         <path
           d={inboundPath}
           fill="none"
-          stroke={COLORS.inbound.stroke}
-          strokeWidth="0.8"
+          stroke={BANDWIDTH_COLORS.inbound.glow}
+          strokeWidth="2"
           vectorEffect="non-scaling-stroke"
+          opacity={0.5}
+        />
+        <path
+          d={inboundPath}
+          fill="none"
+          stroke={BANDWIDTH_COLORS.inbound.stroke}
+          strokeWidth="1.2"
+          vectorEffect="non-scaling-stroke"
+          strokeLinecap="round"
+          strokeLinejoin="round"
         />
 
         {/* Y-axis labels with direction indicators */}
@@ -197,15 +273,16 @@ export function MRTGMirroredChart({
           y={padding.top + 3}
           className="bb-mrtg-axis-label"
           textAnchor="start"
-          fill={COLORS.outbound.stroke}
+          fill={BANDWIDTH_COLORS.outbound.stroke}
         >
-          ↑{formatValue(yMax, unit)}
+          ▲{formatValue(yMax, unit)}
         </text>
         <text
           x={100 - padding.right + 2}
           y={centerY + 1}
           className="bb-mrtg-axis-label"
           textAnchor="start"
+          fill="var(--bb-gray)"
         >
           0
         </text>
@@ -214,9 +291,9 @@ export function MRTGMirroredChart({
           y={viewBoxHeight - padding.bottom}
           className="bb-mrtg-axis-label"
           textAnchor="start"
-          fill={COLORS.inbound.stroke}
+          fill={BANDWIDTH_COLORS.inbound.stroke}
         >
-          ↓{formatValue(yMax, unit)}
+          ▼{formatValue(yMax, unit)}
         </text>
       </svg>
     </div>
