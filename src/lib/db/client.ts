@@ -40,6 +40,8 @@ export async function initializeSchema(): Promise<void> {
   await db.execute(SCHEMA.network_snapshots);
   await db.execute(SCHEMA.peers);
   await db.execute(SCHEMA.peer_connections);
+  await db.execute(SCHEMA.shodan_scans);
+  await db.execute(SCHEMA.osint_cache);
 
   // Create indexes
   for (const indexSql of SCHEMA.indexes) {

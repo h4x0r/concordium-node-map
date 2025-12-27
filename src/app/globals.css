@@ -1983,3 +1983,432 @@
     padding: 6px 10px;
   }
 }
+
+/* ============================================
+   OSINT HOVER CARD
+   Cyber-forensic quick intel popup
+   ============================================ */
+
+.osint-hover-card {
+  min-width: 220px;
+  background: var(--bb-black);
+  border: 1px solid var(--bb-border);
+  box-shadow:
+    0 0 0 1px var(--bb-border),
+    0 4px 20px rgba(0, 0, 0, 0.8),
+    0 0 40px rgba(255, 102, 0, 0.1);
+  font-size: 11px;
+  animation: osint-card-appear 0.15s ease-out;
+}
+
+@keyframes osint-card-appear {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.osint-hover-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--bb-panel);
+  border-bottom: 1px solid var(--bb-border);
+}
+
+.osint-reputation-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 6px currentColor;
+}
+
+.osint-reputation-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.osint-hover-ip {
+  margin-left: auto;
+  font-size: 9px;
+  color: var(--bb-gray);
+  font-family: inherit;
+}
+
+.osint-hover-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--bb-border);
+}
+
+.osint-hover-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 6px;
+  background: var(--bb-black);
+  gap: 2px;
+}
+
+.osint-hover-stat-label {
+  font-size: 8px;
+  font-weight: 600;
+  color: var(--bb-gray);
+  letter-spacing: 0.1em;
+}
+
+.osint-hover-stat-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--bb-white);
+  font-variant-numeric: tabular-nums;
+}
+
+.osint-hover-stat-time {
+  font-size: 11px;
+  color: var(--bb-cyan);
+}
+
+.osint-hover-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px;
+  background: var(--bb-panel);
+  border: none;
+  border-top: 1px solid var(--bb-border);
+  color: var(--bb-orange);
+  font-size: 9px;
+  font-weight: 600;
+  font-family: inherit;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+.osint-hover-cta:hover {
+  background: var(--bb-orange);
+  color: var(--bb-black);
+}
+
+.osint-hover-cta-arrow {
+  font-size: 8px;
+  transition: transform 0.1s;
+}
+
+.osint-hover-cta:hover .osint-hover-cta-arrow {
+  transform: translateX(2px);
+}
+
+.osint-hover-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  color: var(--bb-gray);
+  font-size: 9px;
+  letter-spacing: 0.15em;
+}
+
+.osint-hover-loading-bar {
+  width: 100px;
+  height: 2px;
+  background: var(--bb-border);
+  position: relative;
+  overflow: hidden;
+}
+
+.osint-hover-loading-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 30px;
+  height: 100%;
+  background: var(--bb-cyan);
+  animation: osint-loading-scan 1s ease-in-out infinite;
+}
+
+@keyframes osint-loading-scan {
+  0% { transform: translateX(-30px); }
+  100% { transform: translateX(100px); }
+}
+
+.osint-hover-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px;
+  gap: 8px;
+  color: var(--bb-gray);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+
+/* ============================================
+   OSINT DRAWER
+   Full intel report slide-out panel
+   ============================================ */
+
+.osint-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 9998;
+  animation: osint-overlay-appear 0.2s ease-out;
+}
+
+@keyframes osint-overlay-appear {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.osint-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 420px;
+  max-width: 100vw;
+  background: var(--bb-black);
+  border-left: 1px solid var(--bb-border);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  animation: osint-drawer-slide 0.25s ease-out;
+  box-shadow: -10px 0 40px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes osint-drawer-slide {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.osint-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  height: 32px;
+  background: var(--bb-orange);
+  color: var(--bb-black);
+  flex-shrink: 0;
+}
+
+.osint-drawer-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.osint-drawer-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: none;
+  border: none;
+  color: var(--bb-black);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.1s;
+}
+
+.osint-drawer-close:hover {
+  transform: scale(1.2);
+}
+
+.osint-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+}
+
+/* Dashboard metrics grid at top */
+.osint-dashboard {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1px;
+  background: var(--bb-border);
+  border-bottom: 2px solid var(--bb-orange);
+}
+
+.osint-dashboard-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 8px;
+  background: var(--bb-black);
+  gap: 4px;
+}
+
+.osint-dashboard-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--bb-white);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.osint-dashboard-value.clean { color: var(--bb-green); }
+.osint-dashboard-value.suspicious { color: var(--bb-amber); }
+.osint-dashboard-value.malicious { color: var(--bb-red); }
+
+.osint-dashboard-label {
+  font-size: 8px;
+  font-weight: 600;
+  color: var(--bb-gray);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* Drawer sections */
+.osint-section {
+  border-bottom: 1px solid var(--bb-border);
+}
+
+.osint-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--bb-panel);
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--bb-orange);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.osint-section-badge {
+  font-size: 9px;
+  font-weight: 600;
+  padding: 2px 6px;
+  background: var(--bb-border);
+  color: var(--bb-white);
+}
+
+.osint-section-body {
+  padding: 8px 12px;
+}
+
+/* Data rows */
+.osint-row {
+  display: flex;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--bb-border);
+}
+
+.osint-row:last-child {
+  border-bottom: none;
+}
+
+.osint-label {
+  width: 100px;
+  flex-shrink: 0;
+  font-size: 10px;
+  color: var(--bb-gray);
+}
+
+.osint-value {
+  flex: 1;
+  font-size: 10px;
+  color: var(--bb-white);
+  word-break: break-all;
+}
+
+.osint-value.mono {
+  color: var(--bb-cyan);
+  font-size: 9px;
+}
+
+/* Tag lists */
+.osint-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.osint-tag {
+  font-size: 9px;
+  padding: 2px 6px;
+  background: var(--bb-panel);
+  border: 1px solid var(--bb-border);
+  color: var(--bb-white);
+}
+
+.osint-tag.port {
+  color: var(--bb-cyan);
+  border-color: var(--bb-cyan);
+}
+
+.osint-tag.vuln {
+  color: var(--bb-red);
+  border-color: var(--bb-red);
+  background: var(--bb-red-dim);
+}
+
+.osint-tag.cpe {
+  color: var(--bb-amber);
+  border-color: var(--bb-border);
+}
+
+.osint-tag.hostname {
+  color: var(--bb-magenta);
+  border-color: var(--bb-magenta);
+}
+
+/* Empty state */
+.osint-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  color: var(--bb-gray);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-align: center;
+  gap: 8px;
+}
+
+.osint-empty-icon {
+  font-size: 32px;
+  color: var(--bb-gray-dim);
+  margin-bottom: 8px;
+}
+
+/* Loading skeleton */
+.osint-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bb-panel) 25%,
+    var(--bb-border) 50%,
+    var(--bb-panel) 75%
+  );
+  background-size: 200% 100%;
+  animation: osint-skeleton-pulse 1.5s ease-in-out infinite;
+  height: 14px;
+  margin: 4px 0;
+}
+
+@keyframes osint-skeleton-pulse {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

@@ -19,6 +19,7 @@ import { type HealthStatus } from '@/components/dashboard/HealthTimeline';
 import { MobileHome } from '@/components/mobile/MobileHome';
 import { HelpPanel } from '@/components/help';
 import { CopyableTooltip } from '@/components/ui/CopyableTooltip';
+import { OsintHoverCard, OsintDrawer } from '@/components/osint';
 
 // Dynamic imports for heavy map components
 const TopologyGraph = dynamic(
@@ -98,6 +99,7 @@ function DesktopHome() {
   const [commandInput, setCommandInput] = useState('');
   const [sortColumn, setSortColumn] = useState<'name' | 'peers' | 'fin' | 'status'>('peers');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [osintDrawerIp, setOsintDrawerIp] = useState<string | null>(null);
   const commandInputRef = useRef<HTMLInputElement>(null);
 
   // Bloomberg-style: any typing focuses command input automatically
@@ -729,7 +731,14 @@ function DesktopHome() {
                     {selectedNodePeer?.ipAddress && (
                       <div className="bb-forensic-row">
                         <span className="bb-forensic-label">IP Address</span>
-                        <span className="bb-forensic-value text-[var(--bb-cyan)]">{selectedNodePeer.ipAddress}:{selectedNodePeer.port}</span>
+                        <OsintHoverCard
+                          ip={selectedNodePeer.ipAddress}
+                          onClickForFull={() => setOsintDrawerIp(selectedNodePeer.ipAddress)}
+                        >
+                          <span className="bb-forensic-value text-[var(--bb-cyan)]">
+                            {selectedNodePeer.ipAddress}:{selectedNodePeer.port}
+                          </span>
+                        </OsintHoverCard>
                       </div>
                     )}
                     {selectedNodePeer?.geoCountry && (
@@ -920,6 +929,14 @@ function DesktopHome() {
           </span>
         </div>
       </div>
+
+      {/* OSINT Drawer */}
+      {osintDrawerIp && (
+        <OsintDrawer
+          ip={osintDrawerIp}
+          onClose={() => setOsintDrawerIp(null)}
+        />
+      )}
 
     </main>
   );

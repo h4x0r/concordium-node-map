@@ -146,6 +146,46 @@ export const SCHEMA = {
   `,
 
   /**
+   * Shodan scans - cached results from bulk port:20000 search
+   * Refreshed weekly via cron, 30-day TTL
+   */
+  shodan_scans: `
+    CREATE TABLE IF NOT EXISTS shodan_scans (
+      ip TEXT PRIMARY KEY,
+      ports TEXT,
+      hostnames TEXT,
+      org TEXT,
+      isp TEXT,
+      asn TEXT,
+      country_code TEXT,
+      city TEXT,
+      vulns TEXT,
+      product TEXT,
+      os TEXT,
+      last_updated INTEGER,
+      cached_at INTEGER NOT NULL
+    )
+  `,
+
+  /**
+   * OSINT cache - InternetDB responses for hover cards
+   * 24-hour TTL, free unlimited lookups
+   */
+  osint_cache: `
+    CREATE TABLE IF NOT EXISTS osint_cache (
+      ip TEXT PRIMARY KEY,
+      source TEXT NOT NULL,
+      ports TEXT,
+      hostnames TEXT,
+      tags TEXT,
+      vulns TEXT,
+      cpes TEXT,
+      fetched_at INTEGER NOT NULL,
+      expires_at INTEGER NOT NULL
+    )
+  `,
+
+  /**
    * Indexes for common queries
    */
   indexes: [
@@ -159,6 +199,8 @@ export const SCHEMA = {
     'CREATE INDEX IF NOT EXISTS idx_peers_source ON peers(source)',
     'CREATE INDEX IF NOT EXISTS idx_peers_ip ON peers(ip_address)',
     'CREATE INDEX IF NOT EXISTS idx_peer_connections_peer ON peer_connections(peer_id)',
+    'CREATE INDEX IF NOT EXISTS idx_shodan_scans_cached ON shodan_scans(cached_at)',
+    'CREATE INDEX IF NOT EXISTS idx_osint_cache_expires ON osint_cache(expires_at)',
   ],
 } as const;
 
@@ -280,4 +322,38 @@ export interface PeerConnectionRecord {
   reporter_id: string;
   peer_id: string;
   last_seen: number;
+}
+
+/**
+ * Shodan scan record from database
+ */
+export interface ShodanScanRecord {
+  ip: string;
+  ports: string | null;       // JSON array
+  hostnames: string | null;   // JSON array
+  org: string | null;
+  isp: string | null;
+  asn: string | null;
+  country_code: string | null;
+  city: string | null;
+  vulns: string | null;       // JSON array
+  product: string | null;
+  os: string | null;
+  last_updated: number | null;
+  cached_at: number;
+}
+
+/**
+ * OSINT cache record from database
+ */
+export interface OsintCacheRecord {
+  ip: string;
+  source: 'internetdb' | 'shodan';
+  ports: string | null;       // JSON array
+  hostnames: string | null;   // JSON array
+  tags: string | null;        // JSON array
+  vulns: string | null;       // JSON array
+  cpes: string | null;        // JSON array
+  fetched_at: number;
+  expires_at: number;
 }
