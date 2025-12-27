@@ -288,6 +288,51 @@ export function HelpPanel({ isOpen, onClose }: HelpPanelProps) {
               </tbody>
             </table>
           </HelpSection>
+
+          {/* Contact Section */}
+          <HelpSection title="CONTACT">
+            <div style={{ padding: '0 8px' }}>
+              <p
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '10px',
+                  color: 'var(--bb-gray)',
+                  margin: '0 0 8px 0',
+                  lineHeight: '1.4',
+                }}
+              >
+                Security reports, feature requests, bug reports, or questions:
+              </p>
+              <a
+                href="mailto:org-security@concordium.com"
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '11px',
+                  color: 'var(--bb-cyan)',
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 10px',
+                  background: 'rgba(0, 255, 255, 0.05)',
+                  border: '1px solid rgba(0, 255, 255, 0.2)',
+                  borderRadius: '2px',
+                  transition: 'all 0.15s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(0, 255, 255, 0.1)';
+                  e.currentTarget.style.borderColor = 'rgba(0, 255, 255, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(0, 255, 255, 0.05)';
+                  e.currentTarget.style.borderColor = 'rgba(0, 255, 255, 0.2)';
+                }}
+              >
+                <span style={{ fontSize: '12px' }}>&#9993;</span>
+                org-security@concordium.com
+              </a>
+            </div>
+          </HelpSection>
         </div>
 
         {/* Footer */}
@@ -296,6 +341,9 @@ export function HelpPanel({ isOpen, onClose }: HelpPanelProps) {
             padding: '8px 16px',
             borderTop: '1px solid var(--bb-border)',
             background: 'var(--bb-panel)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
           }}
         >
           <span
@@ -308,6 +356,27 @@ export function HelpPanel({ isOpen, onClose }: HelpPanelProps) {
           >
             Press ESC or click outside to close
           </span>
+          <a
+            href="mailto:org-security@concordium.com"
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: '9px',
+              color: 'var(--bb-gray)',
+              textDecoration: 'none',
+              opacity: 0.7,
+              transition: 'opacity 0.15s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.opacity = '1';
+              e.currentTarget.style.color = 'var(--bb-cyan)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.opacity = '0.7';
+              e.currentTarget.style.color = 'var(--bb-gray)';
+            }}
+          >
+            Feedback?
+          </a>
         </div>
       </div>
     </>
