@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useOsintFull, getReputationColor, getReputationLabel } from '@/hooks/useOsint';
+import { useWebamon } from '@/hooks/useWebamon';
 
 interface OsintDrawerProps {
   ip: string;
@@ -10,6 +11,12 @@ interface OsintDrawerProps {
 
 export function OsintDrawer({ ip, onClose }: OsintDrawerProps) {
   const { data, isLoading, error } = useOsintFull(ip);
+
+  // Fetch Webamon data when we have ports info
+  const { data: webamonData, isLoading: webamonLoading } = useWebamon(
+    data ? ip : null,
+    data?.ports || []
+  );
 
   // Close on escape key
   useEffect(() => {
@@ -246,6 +253,96 @@ export function OsintDrawer({ ip, onClose }: OsintDrawerProps) {
                 </div>
               )}
 
+              {/* Web Screenshots Section (Webamon) */}
+              <div className="osint-section">
+                <div className="osint-section-header">
+                  <span>Web Screenshots</span>
+                  {webamonData?.total !== undefined && webamonData.total > 0 && (
+                    <span className="osint-section-badge">{webamonData.total}</span>
+                  )}
+                </div>
+                <div className="osint-section-body">
+                  {webamonLoading ? (
+                    <div className="osint-row">
+                      <div className="osint-skeleton" style={{ width: '100%', height: '80px' }} />
+                    </div>
+                  ) : !webamonData?.http_available ? (
+                    <div className="osint-row">
+                      <span className="osint-value" style={{ color: 'var(--bb-gray)' }}>
+                        No HTTP ports detected
+                      </span>
+                    </div>
+                  ) : webamonData.scans.length === 0 ? (
+                    <div className="osint-row">
+                      <span className="osint-value" style={{ color: 'var(--bb-gray)' }}>
+                        No web scans available
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="webamon-scans">
+                      {webamonData.scans.slice(0, 3).map((scan) => (
+                        <div key={scan.id} className="webamon-scan">
+                          {scan.screenshot_url && (
+                            <a
+                              href={scan.screenshot_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="webamon-screenshot"
+                            >
+                              <img
+                                src={scan.screenshot_url}
+                                alt={`Screenshot of ${scan.url}`}
+                                loading="lazy"
+                              />
+                            </a>
+                          )}
+                          <div className="webamon-scan-info">
+                            <a
+                              href={scan.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="webamon-url"
+                            >
+                              {scan.url}
+                            </a>
+                            {scan.title && (
+                              <span className="webamon-title">{scan.title}</span>
+                            )}
+                            {scan.status_code && (
+                              <span
+                                className="webamon-status"
+                                style={{
+                                  color:
+                                    scan.status_code >= 200 && scan.status_code < 300
+                                      ? 'var(--bb-green)'
+                                      : scan.status_code >= 400
+                                        ? 'var(--bb-red)'
+                                        : 'var(--bb-amber)',
+                                }}
+                              >
+                                HTTP {scan.status_code}
+                              </span>
+                            )}
+                            {scan.technologies && scan.technologies.length > 0 && (
+                              <div className="webamon-tech">
+                                {scan.technologies.slice(0, 5).map((tech) => (
+                                  <span key={tech} className="osint-tag">
+                                    {tech}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                            <span className="webamon-date">
+                              {new Date(scan.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Metadata Section */}
               <div className="osint-section">
                 <div className="osint-section-header">
@@ -272,6 +369,7 @@ export function OsintDrawer({ ip, onClose }: OsintDrawerProps) {
                     <span className="osint-label">Sources</span>
                     <span className="osint-value">
                       InternetDB{data.cached_at ? ', Shodan' : ''}
+                      {webamonData && webamonData.total > 0 ? ', Webamon' : ''}
                     </span>
                   </div>
                 </div>

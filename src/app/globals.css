@@ -2412,3 +2412,106 @@
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+/* ============================================
+   WEBAMON SCREENSHOT STYLES
+   ============================================ */
+
+.webamon-scans {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.webamon-scan {
+  display: flex;
+  gap: 12px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--bb-border);
+  border-radius: 2px;
+}
+
+.webamon-screenshot {
+  flex-shrink: 0;
+  width: 120px;
+  height: 80px;
+  overflow: hidden;
+  border: 1px solid var(--bb-border);
+  background: var(--bb-panel);
+  transition: border-color 0.15s ease;
+}
+
+.webamon-screenshot:hover {
+  border-color: var(--bb-cyan);
+}
+
+.webamon-screenshot img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.9;
+  transition: opacity 0.15s ease;
+}
+
+.webamon-screenshot:hover img {
+  opacity: 1;
+}
+
+.webamon-scan-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.webamon-url {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--bb-cyan);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 0.15s ease;
+}
+
+.webamon-url:hover {
+  color: var(--bb-white);
+  text-decoration: underline;
+}
+
+.webamon-title {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--bb-gray);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.webamon-status {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: bold;
+}
+
+.webamon-tech {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.webamon-tech .osint-tag {
+  font-size: 8px;
+  padding: 1px 4px;
+}
+
+.webamon-date {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--bb-gray-dim);
+  margin-top: auto;
+}
