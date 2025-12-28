@@ -19,7 +19,7 @@ import type { ConcordiumNode } from '@/lib/transforms';
  * Bloomberg terminal aesthetic with bright data visualization
  */
 export function TopologyAnalysisBar() {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
   const { data: nodes } = useNodes();
 
   const analysis = useMemo(() => {
