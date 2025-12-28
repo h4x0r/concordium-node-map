@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getDbClient, initializeSchema } from '@/lib/db/client';
 import { getInternetDBClient, type InternetDBResult } from '@/lib/shodan-client';
-import type { ShodanScanRecord, OsintCacheRecord } from '@/lib/db/schema';
+import type { OsintCacheRecord } from '@/lib/db/schema';
 
-// Cache TTLs
-const INTERNETDB_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+// Cache TTL: 24 hours
+const INTERNETDB_TTL_MS = 24 * 60 * 60 * 1000;
 
 export interface OsintQuickResponse {
   ip: string;
@@ -12,27 +12,16 @@ export interface OsintQuickResponse {
   ports: number[];
   vulns_count: number;
   last_scan: string | null;
-  has_full_report: boolean;
 }
 
 export interface OsintFullResponse {
   ip: string;
   reputation: 'clean' | 'suspicious' | 'malicious' | 'unknown';
-  // InternetDB data
   ports: number[];
   hostnames: string[];
   tags: string[];
   vulns: string[];
   cpes: string[];
-  // Shodan data (if available)
-  org: string | null;
-  isp: string | null;
-  asn: string | null;
-  country_code: string | null;
-  city: string | null;
-  product: string | null;
-  os: string | null;
-  last_updated: string | null;
   cached_at: string | null;
 }
 
@@ -69,12 +58,12 @@ function calculateReputation(vulns: string[], tags: string[]): 'clean' | 'suspic
 }
 
 /**
- * Get OSINT data for an IP address
+ * Get OSINT data for an IP address using InternetDB (free)
  *
  * GET /api/osint?ip=1.2.3.4&mode=quick|full
  *
- * quick: Returns minimal data for hover card (InternetDB, cached 24h)
- * full: Returns comprehensive data including Shodan cache
+ * quick: Returns minimal data for hover card
+ * full: Returns comprehensive data
  */
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -97,8 +86,10 @@ export async function GET(request: Request) {
 
     const now = Date.now();
 
-    // Check InternetDB cache first
+    // Check cache first
     let internetDBData: InternetDBResult | null = null;
+    let cachedAt: number | null = null;
+
     const cachedResult = await db.execute({
       sql: 'SELECT * FROM osint_cache WHERE ip = ? AND source = ? AND expires_at > ?',
       args: [ip, 'internetdb', now],
@@ -106,6 +97,7 @@ export async function GET(request: Request) {
 
     if (cachedResult.rows.length > 0) {
       const cached = cachedResult.rows[0] as unknown as OsintCacheRecord;
+      cachedAt = cached.fetched_at;
       internetDBData = {
         ip: cached.ip,
         ports: cached.ports ? JSON.parse(cached.ports) : [],
@@ -115,9 +107,10 @@ export async function GET(request: Request) {
         cpes: cached.cpes ? JSON.parse(cached.cpes) : [],
       };
     } else {
-      // Fetch from InternetDB
+      // Fetch from InternetDB (free, no API key needed)
       const internetDB = getInternetDBClient();
       internetDBData = await internetDB.lookup(ip);
+      cachedAt = now;
 
       if (internetDBData) {
         // Cache the result
@@ -150,14 +143,7 @@ export async function GET(request: Request) {
       }
     }
 
-    // Check Shodan cache
-    const shodanResult = await db.execute({
-      sql: 'SELECT * FROM shodan_scans WHERE ip = ?',
-      args: [ip],
-    });
-    const shodanData = shodanResult.rows[0] as unknown as ShodanScanRecord | undefined;
-
-    // Build response based on mode
+    // Build response
     const ports = internetDBData?.ports || [];
     const vulns = internetDBData?.vulns || [];
     const tags = internetDBData?.tags || [];
@@ -169,10 +155,7 @@ export async function GET(request: Request) {
         reputation,
         ports,
         vulns_count: vulns.length,
-        last_scan: shodanData?.cached_at
-          ? new Date(shodanData.cached_at).toISOString()
-          : (internetDBData ? 'InternetDB' : null),
-        has_full_report: !!shodanData,
+        last_scan: cachedAt ? new Date(cachedAt).toISOString() : null,
       };
       return NextResponse.json(response);
     }
@@ -181,26 +164,12 @@ export async function GET(request: Request) {
     const response: OsintFullResponse = {
       ip,
       reputation,
-      // InternetDB data
       ports,
       hostnames: internetDBData?.hostnames || [],
       tags,
       vulns,
       cpes: internetDBData?.cpes || [],
-      // Shodan data
-      org: shodanData?.org || null,
-      isp: shodanData?.isp || null,
-      asn: shodanData?.asn || null,
-      country_code: shodanData?.country_code || null,
-      city: shodanData?.city || null,
-      product: shodanData?.product || null,
-      os: shodanData?.os || null,
-      last_updated: shodanData?.last_updated
-        ? new Date(shodanData.last_updated).toISOString()
-        : null,
-      cached_at: shodanData?.cached_at
-        ? new Date(shodanData.cached_at).toISOString()
-        : null,
+      cached_at: cachedAt ? new Date(cachedAt).toISOString() : null,
     };
 
     return NextResponse.json(response);

@@ -4,10 +4,6 @@
     {
       "path": "/api/cron/poll-nodes",
       "schedule": "*/5 * * * *"
-    },
-    {
-      "path": "/api/cron/refresh-shodan",
-      "schedule": "0 0 * * 0"
     }
   ]
 }

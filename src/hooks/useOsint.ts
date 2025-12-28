@@ -6,27 +6,16 @@ export interface OsintQuickData {
   ports: number[];
   vulns_count: number;
   last_scan: string | null;
-  has_full_report: boolean;
 }
 
 export interface OsintFullData {
   ip: string;
   reputation: 'clean' | 'suspicious' | 'malicious' | 'unknown';
-  // InternetDB data
   ports: number[];
   hostnames: string[];
   tags: string[];
   vulns: string[];
   cpes: string[];
-  // Shodan data
-  org: string | null;
-  isp: string | null;
-  asn: string | null;
-  country_code: string | null;
-  city: string | null;
-  product: string | null;
-  os: string | null;
-  last_updated: string | null;
   cached_at: string | null;
 }
 
@@ -69,7 +58,7 @@ export function useOsintQuick(ip: string | null) {
 
 /**
  * Hook for full OSINT data (drawer)
- * Uses both InternetDB and cached Shodan data
+ * Uses InternetDB (free, cached 24h)
  */
 export function useOsintFull(ip: string | null) {
   const { data, error, isLoading, refetch } = useQuery({
@@ -101,22 +90,6 @@ export function getReputationColor(reputation: OsintQuickData['reputation']): st
       return 'var(--bb-red)';
     default:
       return 'var(--bb-gray)';
-  }
-}
-
-/**
- * Get reputation emoji for display
- */
-export function getReputationEmoji(reputation: OsintQuickData['reputation']): string {
-  switch (reputation) {
-    case 'clean':
-      return '\u{1F7E2}'; // green circle
-    case 'suspicious':
-      return '\u{1F7E1}'; // yellow circle
-    case 'malicious':
-      return '\u{1F534}'; // red circle
-    default:
-      return '\u{26AA}'; // white circle
   }
 }
 

@@ -90,50 +90,16 @@ export function OsintDrawer({ ip, onClose }: OsintDrawerProps) {
                 </div>
               </div>
 
-              {/* Infrastructure Section */}
+              {/* IP Info Section */}
               <div className="osint-section">
                 <div className="osint-section-header">
-                  <span>Infrastructure</span>
-                  {data.org && <span className="osint-section-badge">{data.org}</span>}
+                  <span>Target</span>
                 </div>
                 <div className="osint-section-body">
                   <div className="osint-row">
                     <span className="osint-label">IP Address</span>
                     <span className="osint-value mono">{data.ip}</span>
                   </div>
-                  {data.isp && (
-                    <div className="osint-row">
-                      <span className="osint-label">ISP</span>
-                      <span className="osint-value">{data.isp}</span>
-                    </div>
-                  )}
-                  {data.asn && (
-                    <div className="osint-row">
-                      <span className="osint-label">ASN</span>
-                      <span className="osint-value mono">{data.asn}</span>
-                    </div>
-                  )}
-                  {(data.city || data.country_code) && (
-                    <div className="osint-row">
-                      <span className="osint-label">Location</span>
-                      <span className="osint-value">
-                        {data.city ? `${data.city}, ` : ''}
-                        {data.country_code || ''}
-                      </span>
-                    </div>
-                  )}
-                  {data.os && (
-                    <div className="osint-row">
-                      <span className="osint-label">OS</span>
-                      <span className="osint-value">{data.os}</span>
-                    </div>
-                  )}
-                  {data.product && (
-                    <div className="osint-row">
-                      <span className="osint-label">Product</span>
-                      <span className="osint-value">{data.product}</span>
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -349,14 +315,6 @@ export function OsintDrawer({ ip, onClose }: OsintDrawerProps) {
                   <span>Scan Metadata</span>
                 </div>
                 <div className="osint-section-body">
-                  {data.last_updated && (
-                    <div className="osint-row">
-                      <span className="osint-label">Last Updated</span>
-                      <span className="osint-value">
-                        {new Date(data.last_updated).toLocaleString()}
-                      </span>
-                    </div>
-                  )}
                   {data.cached_at && (
                     <div className="osint-row">
                       <span className="osint-label">Cached At</span>
@@ -368,7 +326,7 @@ export function OsintDrawer({ ip, onClose }: OsintDrawerProps) {
                   <div className="osint-row">
                     <span className="osint-label">Sources</span>
                     <span className="osint-value">
-                      InternetDB{data.cached_at ? ', Shodan' : ''}
+                      InternetDB
                       {webamonData && webamonData.total > 0 ? ', Webamon' : ''}
                     </span>
                   </div>
