@@ -1,12 +1,10 @@
 'use client';
 
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useState } from 'react';
 import { useNodes } from '@/hooks/useNodes';
-import { LcarsPanel } from './LcarsPanel';
 import {
   buildAdjacencyList,
   getNetworkSummary,
-  calculateBetweennessCentrality,
   identifyBottlenecks,
   identifyBridges,
   calculateDegreeDistribution,
@@ -16,152 +14,17 @@ import {
 } from '@/lib/topology-analysis';
 import type { ConcordiumNode } from '@/lib/transforms';
 
-interface MetricRowProps {
-  label: string;
-  value: string | number;
-  highlight?: boolean;
-  warning?: boolean;
-}
-
-function MetricRow({ label, value, highlight, warning }: MetricRowProps) {
-  return (
-    <div className="flex justify-between py-1.5 text-sm font-mono border-b border-[var(--bb-gray)]/30 last:border-0">
-      <span className="text-muted-foreground text-xs">{label}</span>
-      <span
-        className={`font-medium ${
-          warning
-            ? 'text-[var(--bb-amber)]'
-            : highlight
-              ? 'text-[var(--bb-cyan)]'
-              : 'text-foreground'
-        }`}
-      >
-        {value}
-      </span>
-    </div>
-  );
-}
-
-function DegreeDistributionChart({
-  distribution,
-}: {
-  distribution: Map<number, number>;
-}) {
-  const sorted = Array.from(distribution.entries()).sort((a, b) => a[0] - b[0]);
-  const maxCount = Math.max(...sorted.map(([, count]) => count));
-
-  return (
-    <div className="space-y-1 mt-2">
-      <div className="text-[10px] font-mono text-muted-foreground mb-1">
-        DEGREE DISTRIBUTION
-      </div>
-      <div className="flex items-end gap-0.5 h-12">
-        {sorted.map(([degree, count]) => (
-          <div key={degree} className="flex flex-col items-center flex-1">
-            <div
-              className="w-full bg-[var(--bb-cyan)]/60 rounded-t"
-              style={{ height: `${(count / maxCount) * 100}%` }}
-              title={`Degree ${degree}: ${count} nodes`}
-            />
-            <span className="text-[8px] text-muted-foreground mt-0.5">
-              {degree}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function BottleneckList({
-  bottlenecks,
-  nodes,
-}: {
-  bottlenecks: string[];
-  nodes: ConcordiumNode[];
-}) {
-  const nodeMap = useMemo(() => {
-    const map = new Map<string, ConcordiumNode>();
-    for (const node of nodes) {
-      map.set(node.nodeId, node);
-    }
-    return map;
-  }, [nodes]);
-
-  return (
-    <div className="space-y-1 mt-2">
-      <div className="text-[10px] font-mono text-muted-foreground mb-1">
-        CRITICAL BOTTLENECKS
-      </div>
-      {bottlenecks.length === 0 ? (
-        <div className="text-xs text-muted-foreground italic">
-          No bottlenecks detected
-        </div>
-      ) : (
-        <div className="space-y-1">
-          {bottlenecks.map((nodeId) => {
-            const node = nodeMap.get(nodeId);
-            return (
-              <div
-                key={nodeId}
-                className="flex items-center gap-2 px-2 py-1 bg-[var(--bb-amber)]/10 rounded border border-[var(--bb-amber)]/30"
-              >
-                <span className="h-2 w-2 rounded-full bg-[var(--bb-amber)]" />
-                <span className="text-xs font-mono truncate flex-1">
-                  {node?.nodeName || nodeId.slice(0, 12)}
-                </span>
-                <span className="text-[10px] text-muted-foreground">
-                  {node?.peersCount ?? '?'} peers
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function BridgesList({ bridges }: { bridges: [string, string][] }) {
-  return (
-    <div className="space-y-1 mt-2">
-      <div className="text-[10px] font-mono text-muted-foreground mb-1">
-        BRIDGE EDGES ({bridges.length})
-      </div>
-      {bridges.length === 0 ? (
-        <div className="text-xs text-muted-foreground italic">
-          No bridge edges - network is resilient
-        </div>
-      ) : (
-        <div className="space-y-1 max-h-20 overflow-y-auto">
-          {bridges.slice(0, 5).map(([a, b], i) => (
-            <div
-              key={i}
-              className="flex items-center gap-1 px-2 py-0.5 bg-[var(--bb-red)]/10 rounded border border-[var(--bb-red)]/30 text-xs font-mono"
-            >
-              <span className="truncate">{a.slice(0, 8)}</span>
-              <span className="text-[var(--bb-red)]">⟷</span>
-              <span className="truncate">{b.slice(0, 8)}</span>
-            </div>
-          ))}
-          {bridges.length > 5 && (
-            <div className="text-[10px] text-muted-foreground">
-              +{bridges.length - 5} more
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-export function TopologyAnalysisPanel() {
+/**
+ * Collapsible topology analysis bar - overlays top of topology canvas
+ * Bloomberg terminal aesthetic with bright data visualization
+ */
+export function TopologyAnalysisBar() {
+  const [isExpanded, setIsExpanded] = useState(false);
   const { data: nodes } = useNodes();
 
   const analysis = useMemo(() => {
     if (!nodes || nodes.length === 0) return null;
 
-    // Convert to graph format
     const graphNodes: GraphNode[] = nodes.map((n) => ({ id: n.nodeId }));
     const graphEdges: GraphEdge[] = [];
     const nodeIds = new Set(nodes.map((n) => n.nodeId));
@@ -169,7 +32,6 @@ export function TopologyAnalysisPanel() {
     for (const node of nodes) {
       for (const peerId of node.peersList) {
         if (nodeIds.has(peerId)) {
-          // Canonical edge (avoid duplicates)
           const [a, b] = [node.nodeId, peerId].sort();
           const edgeId = `${a}-${b}`;
           if (!graphEdges.some((e) => `${e.source}-${e.target}` === edgeId)) {
@@ -182,31 +44,21 @@ export function TopologyAnalysisPanel() {
     const adj = buildAdjacencyList(graphNodes, graphEdges);
     const summary = getNetworkSummary(adj);
     const distribution = calculateDegreeDistribution(adj);
-    const bottlenecks = identifyBottlenecks(adj, 5);
+    const bottlenecks = identifyBottlenecks(adj, 3);
     const bridges = identifyBridges(adj);
 
-    return {
-      summary,
-      distribution,
-      bottlenecks,
-      bridges,
-      graphNodes,
-      graphEdges,
-    };
+    return { summary, distribution, bottlenecks, bridges, graphNodes, graphEdges };
   }, [nodes]);
 
-  const handleExportGraphML = useCallback(() => {
+  const handleExport = useCallback(() => {
     if (!nodes || !analysis) return;
 
-    // Create enriched nodes with metadata
     const enrichedNodes = nodes.map((n) => ({
       id: n.nodeId,
       label: n.nodeName || n.nodeId.slice(0, 12),
       peersCount: n.peersCount,
       client: n.client,
-      isBaker:
-        n.bakingCommitteeMember === 'ActiveInCommittee' &&
-        n.consensusBakerId !== null,
+      isBaker: n.bakingCommitteeMember === 'ActiveInCommittee' && n.consensusBakerId !== null,
       finalizedBlockHeight: n.finalizedBlockHeight,
     }));
 
@@ -222,83 +74,160 @@ export function TopologyAnalysisPanel() {
     URL.revokeObjectURL(url);
   }, [nodes, analysis]);
 
-  if (!analysis) {
-    return (
-      <LcarsPanel title="TOPOLOGY ANALYSIS" accent="cyan">
-        <div className="text-sm text-muted-foreground p-4">
-          Loading network data...
-        </div>
-      </LcarsPanel>
-    );
-  }
+  if (!analysis) return null;
 
   const { summary, distribution, bottlenecks, bridges } = analysis;
 
-  // Determine network health status
-  const getStatus = () => {
-    if (!summary.isConnected) return 'critical' as const;
-    if (bridges.length > 0) return 'elevated' as const;
-    if (summary.globalClusteringCoefficient < 0.3) return 'degraded' as const;
-    return 'nominal' as const;
-  };
+  // Network health indicator
+  const healthStatus = !summary.isConnected
+    ? { label: 'FRAGMENTED', color: 'var(--bb-red)' }
+    : bridges.length > 0
+      ? { label: 'VULNERABLE', color: 'var(--bb-amber)' }
+      : { label: 'RESILIENT', color: 'var(--bb-green)' };
 
   return (
-    <LcarsPanel title="TOPOLOGY ANALYSIS" accent="cyan" status={getStatus()}>
-      <div className="space-y-3 p-2">
-        {/* Network Summary */}
-        <div>
-          <MetricRow
-            label="Nodes"
-            value={summary.nodeCount}
-            highlight
-          />
-          <MetricRow
-            label="Edges"
-            value={summary.edgeCount}
-          />
-          <MetricRow
-            label="Avg Degree"
-            value={summary.avgDegree.toFixed(1)}
-          />
-          <MetricRow
-            label="Max Degree"
-            value={summary.maxDegree}
-            highlight
-          />
-          <MetricRow
-            label="Network Diameter"
-            value={summary.diameter === Infinity ? '∞ (disconnected)' : summary.diameter}
-            warning={summary.diameter === Infinity}
-          />
-          <MetricRow
-            label="Clustering Coeff"
-            value={summary.globalClusteringCoefficient.toFixed(3)}
-            warning={summary.globalClusteringCoefficient < 0.3}
-          />
-          <MetricRow
-            label="Connected"
-            value={summary.isConnected ? 'YES' : 'NO'}
-            warning={!summary.isConnected}
-          />
+    <div className="topo-analysis-bar">
+      {/* Collapsed state - minimal metrics strip */}
+      <div
+        className="topo-analysis-collapsed"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div className="topo-analysis-toggle">
+          <span className="topo-analysis-toggle-icon">{isExpanded ? '▼' : '▶'}</span>
+          <span className="topo-analysis-toggle-label">TOPOLOGY ANALYSIS</span>
         </div>
 
-        {/* Degree Distribution Chart */}
-        <DegreeDistributionChart distribution={distribution} />
+        <div className="topo-analysis-quick-stats">
+          <div className="topo-stat">
+            <span className="topo-stat-value" style={{ color: 'var(--bb-cyan)' }}>
+              {summary.nodeCount}
+            </span>
+            <span className="topo-stat-label">NODES</span>
+          </div>
+          <div className="topo-stat">
+            <span className="topo-stat-value">{summary.edgeCount}</span>
+            <span className="topo-stat-label">EDGES</span>
+          </div>
+          <div className="topo-stat">
+            <span className="topo-stat-value">{summary.avgDegree.toFixed(1)}</span>
+            <span className="topo-stat-label">AVG DEG</span>
+          </div>
+          <div className="topo-stat">
+            <span className="topo-stat-value" style={{ color: 'var(--bb-amber)' }}>
+              {summary.diameter === Infinity ? '∞' : summary.diameter}
+            </span>
+            <span className="topo-stat-label">DIAMETER</span>
+          </div>
+          <div className="topo-stat">
+            <span className="topo-stat-value">{summary.globalClusteringCoefficient.toFixed(2)}</span>
+            <span className="topo-stat-label">CLUSTER</span>
+          </div>
+          <div className="topo-stat status">
+            <span className="topo-stat-value" style={{ color: healthStatus.color }}>
+              ●
+            </span>
+            <span className="topo-stat-label" style={{ color: healthStatus.color }}>
+              {healthStatus.label}
+            </span>
+          </div>
+        </div>
 
-        {/* Bottlenecks */}
-        <BottleneckList bottlenecks={bottlenecks} nodes={nodes ?? []} />
-
-        {/* Bridge Edges */}
-        <BridgesList bridges={bridges} />
-
-        {/* Export Button */}
         <button
-          onClick={handleExportGraphML}
-          className="w-full mt-2 px-3 py-2 text-xs font-mono uppercase bg-[var(--bb-cyan)]/20 hover:bg-[var(--bb-cyan)]/30 border border-[var(--bb-cyan)]/50 rounded transition-colors"
+          onClick={(e) => { e.stopPropagation(); handleExport(); }}
+          className="topo-export-btn"
+          title="Export GraphML"
         >
-          Export GraphML
+          ⬇ EXPORT
         </button>
       </div>
-    </LcarsPanel>
+
+      {/* Expanded state - full analysis dashboard */}
+      {isExpanded && (
+        <div className="topo-analysis-expanded">
+          {/* Degree Distribution Chart */}
+          <div className="topo-section">
+            <div className="topo-section-header">DEGREE DISTRIBUTION</div>
+            <DegreeChart distribution={distribution} />
+          </div>
+
+          {/* Bottlenecks */}
+          <div className="topo-section">
+            <div className="topo-section-header">
+              CRITICAL NODES
+              <span className="topo-section-count">{bottlenecks.length}</span>
+            </div>
+            <div className="topo-bottlenecks">
+              {bottlenecks.map((nodeId) => {
+                const node = nodes?.find((n) => n.nodeId === nodeId);
+                return (
+                  <div key={nodeId} className="topo-bottleneck">
+                    <span className="topo-bottleneck-indicator">◆</span>
+                    <span className="topo-bottleneck-name">
+                      {node?.nodeName || nodeId.slice(0, 12)}
+                    </span>
+                    <span className="topo-bottleneck-peers">{node?.peersCount ?? '?'}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Bridge Edges */}
+          <div className="topo-section">
+            <div className="topo-section-header">
+              BRIDGE EDGES
+              <span className="topo-section-count" style={{ color: bridges.length > 0 ? 'var(--bb-red)' : 'var(--bb-green)' }}>
+                {bridges.length}
+              </span>
+            </div>
+            {bridges.length === 0 ? (
+              <div className="topo-bridges-ok">No single points of failure</div>
+            ) : (
+              <div className="topo-bridges">
+                {bridges.slice(0, 4).map(([a, b], i) => (
+                  <div key={i} className="topo-bridge">
+                    <span>{a.slice(0, 6)}</span>
+                    <span className="topo-bridge-arrow">⟷</span>
+                    <span>{b.slice(0, 6)}</span>
+                  </div>
+                ))}
+                {bridges.length > 4 && (
+                  <div className="topo-bridges-more">+{bridges.length - 4} more</div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
+
+function DegreeChart({ distribution }: { distribution: Map<number, number> }) {
+  const sorted = Array.from(distribution.entries()).sort((a, b) => a[0] - b[0]);
+  const maxCount = Math.max(...sorted.map(([, count]) => count), 1);
+  const totalNodes = sorted.reduce((sum, [, count]) => sum + count, 0);
+
+  return (
+    <div className="topo-degree-chart">
+      {sorted.map(([degree, count]) => {
+        const height = (count / maxCount) * 100;
+        const percentage = ((count / totalNodes) * 100).toFixed(0);
+        return (
+          <div key={degree} className="topo-degree-bar-wrapper" title={`Degree ${degree}: ${count} nodes (${percentage}%)`}>
+            <div
+              className="topo-degree-bar"
+              style={{ height: `${height}%` }}
+            >
+              <span className="topo-degree-bar-count">{count}</span>
+            </div>
+            <span className="topo-degree-label">{degree}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// Legacy export for backwards compatibility
+export { TopologyAnalysisBar as TopologyAnalysisPanel };

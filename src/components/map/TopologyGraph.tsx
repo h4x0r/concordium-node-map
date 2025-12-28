@@ -31,6 +31,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { HUDReticle, type NodeHealth, type NodeTier } from './HUDReticle';
+import { TopologyAnalysisBar } from '@/components/dashboard/TopologyAnalysisPanel';
 
 function ConcordiumNodeComponent({ data, selected }: NodeProps) {
   const nodeData = data as unknown as ConcordiumNodeData;
@@ -366,7 +367,9 @@ export function TopologyGraph({ onNodeSelect }: TopologyGraphProps = {}) {
   }
 
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full relative">
+      {/* Topology Analysis Bar - overlays top of canvas */}
+      <TopologyAnalysisBar />
       <ReactFlow
         nodes={nodes.map((n) => ({
           ...n,

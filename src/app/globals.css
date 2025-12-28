@@ -3065,3 +3065,271 @@
   font-size: 9px;
   color: var(--bb-cyan);
 }
+
+/* ============================================
+   TOPOLOGY ANALYSIS BAR
+   Collapsible overlay for graph metrics
+   ============================================ */
+
+.topo-analysis-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  pointer-events: auto;
+}
+
+.topo-analysis-collapsed {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 6px 12px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.85) 100%);
+  border-bottom: 1px solid var(--bb-border);
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.topo-analysis-collapsed:hover {
+  background: linear-gradient(180deg, rgba(20, 20, 20, 0.98) 0%, rgba(10, 10, 10, 0.9) 100%);
+}
+
+.topo-analysis-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.topo-analysis-toggle-icon {
+  font-size: 8px;
+  color: var(--bb-cyan);
+  transition: transform 0.2s ease;
+}
+
+.topo-analysis-toggle-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--bb-orange);
+  letter-spacing: 0.15em;
+}
+
+.topo-analysis-quick-stats {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex: 1;
+  overflow-x: auto;
+}
+
+.topo-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.topo-stat.status {
+  margin-left: auto;
+}
+
+.topo-stat-value {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--bb-white);
+  font-variant-numeric: tabular-nums;
+}
+
+.topo-stat-label {
+  font-size: 8px;
+  font-weight: 600;
+  color: var(--bb-gray);
+  letter-spacing: 0.1em;
+}
+
+.topo-export-btn {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--bb-cyan);
+  background: rgba(0, 170, 204, 0.1);
+  border: 1px solid var(--bb-cyan);
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.topo-export-btn:hover {
+  background: rgba(0, 170, 204, 0.25);
+  box-shadow: 0 0 12px rgba(0, 170, 204, 0.3);
+}
+
+/* Expanded Panel */
+.topo-analysis-expanded {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 16px;
+  padding: 12px 16px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.92) 0%, rgba(0, 0, 0, 0.88) 100%);
+  border-bottom: 1px solid var(--bb-border);
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.topo-section {
+  min-width: 0;
+}
+
+.topo-section-header {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--bb-orange);
+  letter-spacing: 0.12em;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.topo-section-count {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--bb-cyan);
+}
+
+/* Degree Distribution Chart */
+.topo-degree-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 60px;
+  padding: 4px 0;
+}
+
+.topo-degree-bar-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-width: 20px;
+  max-width: 40px;
+  height: 100%;
+}
+
+.topo-degree-bar {
+  width: 100%;
+  min-height: 4px;
+  background: linear-gradient(180deg, #00FFFF 0%, #00AACC 50%, #007799 100%);
+  box-shadow: 0 0 8px rgba(0, 255, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.topo-degree-bar:hover {
+  background: linear-gradient(180deg, #33FFFF 0%, #00CCEE 50%, #0099BB 100%);
+  box-shadow: 0 0 16px rgba(0, 255, 255, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transform: scaleX(1.1);
+}
+
+.topo-degree-bar-count {
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--bb-black);
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+  padding-top: 2px;
+}
+
+.topo-degree-label {
+  font-size: 8px;
+  font-weight: 600;
+  color: var(--bb-gray);
+  margin-top: 2px;
+}
+
+/* Bottlenecks */
+.topo-bottlenecks {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.topo-bottleneck {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: rgba(255, 170, 0, 0.08);
+  border-left: 2px solid var(--bb-amber);
+}
+
+.topo-bottleneck-indicator {
+  font-size: 8px;
+  color: var(--bb-amber);
+}
+
+.topo-bottleneck-name {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--bb-white);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topo-bottleneck-peers {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--bb-cyan);
+}
+
+/* Bridge Edges */
+.topo-bridges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.topo-bridge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px;
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--bb-white);
+  background: rgba(255, 68, 68, 0.1);
+  border: 1px solid rgba(255, 68, 68, 0.3);
+}
+
+.topo-bridge-arrow {
+  color: var(--bb-red);
+  font-size: 10px;
+}
+
+.topo-bridges-ok {
+  font-size: 10px;
+  color: var(--bb-green);
+  font-style: italic;
+}
+
+.topo-bridges-more {
+  font-size: 9px;
+  color: var(--bb-gray);
+  padding: 3px 6px;
+}

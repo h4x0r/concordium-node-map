@@ -20,7 +20,6 @@ import { MobileHome } from '@/components/mobile/MobileHome';
 import { HelpPanel } from '@/components/help';
 import { CopyableTooltip } from '@/components/ui/CopyableTooltip';
 import { OsintHoverCard, OsintDrawer } from '@/components/osint';
-import { TopologyAnalysisPanel } from '@/components/dashboard/TopologyAnalysisPanel';
 
 // Dynamic imports for heavy map components
 const TopologyGraph = dynamic(
@@ -77,7 +76,7 @@ export default function Home() {
 }
 
 function DesktopHome() {
-  const { currentView, setView, selectedNodeId, selectNode, isDeepDiveOpen, openDeepDive, closeDeepDive, isHelpOpen, openHelp, closeHelp, isTopologyAnalysisOpen, openTopologyAnalysis, closeTopologyAnalysis } = useAppStore();
+  const { currentView, setView, selectedNodeId, selectNode, isDeepDiveOpen, openDeepDive, closeDeepDive, isHelpOpen, openHelp, closeHelp } = useAppStore();
   const { metrics: networkMetrics, dataUpdatedAt } = useNetworkMetrics();
   const { data: nodes } = useNodes();
   const { peers } = usePeers();
@@ -316,7 +315,6 @@ function DesktopHome() {
         <div className="flex items-center gap-2">
           <button className="bb-function-key">F1</button>
           <button className="bb-function-key">F2</button>
-          <button className="bb-function-key secondary" onClick={openTopologyAnalysis}>TOPO</button>
           <button className="bb-function-key secondary" onClick={openHelp}>HELP</button>
         </div>
 
@@ -896,21 +894,6 @@ function DesktopHome() {
 
       {/* ===== HELP PANEL ===== */}
       <HelpPanel isOpen={isHelpOpen} onClose={closeHelp} />
-
-      {/* ===== TOPOLOGY ANALYSIS PANEL ===== */}
-      {isTopologyAnalysisOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-          <div className="relative max-w-md max-h-[80vh] overflow-auto">
-            <button
-              onClick={closeTopologyAnalysis}
-              className="absolute top-2 right-2 z-10 text-[var(--bb-gray)] hover:text-white text-xl"
-            >
-              ×
-            </button>
-            <TopologyAnalysisPanel />
-          </div>
-        </div>
-      )}
 
       {/* ===== STATUS BAR ===== */}
       <div className="bb-status-bar">
