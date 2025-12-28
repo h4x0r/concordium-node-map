@@ -17,25 +17,7 @@ import { PeerTypeBadge, type PeerSource } from '@/components/ui/PeerTypeBadge';
 import type { PeerData } from '@/hooks/usePeers';
 import { useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
-
-function formatUptime(ms: number): string {
-  const days = Math.floor(ms / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((ms % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  if (days > 0) return `${days}d ${hours}h`;
-  return `${hours}h`;
-}
-
-function formatBytes(bytes: number | null): string {
-  if (bytes === null || bytes === undefined) return 'N/A';
-  if (bytes < 1024) return `${bytes} B/s`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB/s`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB/s`;
-}
-
-function formatNumber(value: number | null, decimals: number = 0, suffix: string = ''): string {
-  if (value === null || value === undefined) return 'N/A';
-  return `${value.toFixed(decimals)}${suffix}`;
-}
+import { formatUptime, formatBytesPerSecond, formatNumber } from '@/lib/formatting';
 
 interface SectionProps {
   title: string;
@@ -138,8 +120,8 @@ function NodeDetails({ node, maxHeight, peerData }: { node: ConcordiumNode; maxH
         )}
         <DetailRow label="Peers" value={node.peersCount} />
         <DetailRow label="Avg Ping" value={formatNumber(node.averagePing, 0, 'ms')} />
-        <DetailRow label="Bandwidth In" value={formatBytes(node.averageBytesPerSecondIn)} />
-        <DetailRow label="Bandwidth Out" value={formatBytes(node.averageBytesPerSecondOut)} />
+        <DetailRow label="Bandwidth In" value={formatBytesPerSecond(node.averageBytesPerSecondIn)} />
+        <DetailRow label="Bandwidth Out" value={formatBytesPerSecond(node.averageBytesPerSecondOut)} />
         {node.peersList.length > 0 && (
           <div className="mt-3">
             <div className="text-[10px] font-mono text-muted-foreground mb-2 tracking-wider">

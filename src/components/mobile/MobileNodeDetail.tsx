@@ -4,6 +4,7 @@ import { useEffect, useMemo } from 'react';
 import { useNodes } from '@/hooks/useNodes';
 import type { ConcordiumNode } from '@/lib/transforms';
 import type { PeerData } from '@/hooks/usePeers';
+import { formatUptime, formatBytesPerSecond } from '@/lib/formatting';
 
 interface MobileNodeDetailProps {
   node: ConcordiumNode;
@@ -50,24 +51,6 @@ export function MobileNodeDetail({ node, peer, onClose }: MobileNodeDetailProps)
       .filter((n): n is ConcordiumNode => n !== undefined)
       .slice(0, 5); // Limit for mobile
   }, [allNodes, node.peersList]);
-
-  // Format uptime
-  const formatUptime = (seconds: number): string => {
-    const days = Math.floor(seconds / 86400);
-    const hours = Math.floor((seconds % 86400) / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    if (days > 0) return `${days}d ${hours}h`;
-    if (hours > 0) return `${hours}h ${mins}m`;
-    return `${mins}m`;
-  };
-
-  // Format bytes
-  const formatBytes = (bytes: number | null): string => {
-    if (bytes === null || bytes === 0) return '0 B/s';
-    if (bytes < 1024) return `${bytes.toFixed(0)} B/s`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB/s`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB/s`;
-  };
 
   return (
     <>
@@ -139,11 +122,11 @@ export function MobileNodeDetail({ node, peer, onClose }: MobileNodeDetailProps)
           </div>
           <div className="mobile-sheet-row">
             <span className="mobile-sheet-label">Bandwidth In</span>
-            <span className="mobile-sheet-value">{formatBytes(node.averageBytesPerSecondIn)}</span>
+            <span className="mobile-sheet-value">{formatBytesPerSecond(node.averageBytesPerSecondIn)}</span>
           </div>
           <div className="mobile-sheet-row">
             <span className="mobile-sheet-label">Bandwidth Out</span>
-            <span className="mobile-sheet-value">{formatBytes(node.averageBytesPerSecondOut)}</span>
+            <span className="mobile-sheet-value">{formatBytesPerSecond(node.averageBytesPerSecondOut)}</span>
           </div>
           {peer?.geoCountry && (
             <div className="mobile-sheet-row">
