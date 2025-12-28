@@ -3333,3 +3333,19 @@
   color: var(--bb-gray);
   padding: 3px 6px;
 }
+
+/* Clickable elements in topology analysis */
+.topo-clickable {
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.topo-clickable:hover {
+  color: var(--bb-cyan);
+  text-shadow: 0 0 8px rgba(0, 204, 255, 0.6);
+}
+
+.topo-bottleneck.topo-clickable:hover {
+  background: rgba(0, 204, 255, 0.15);
+  border-left-color: var(--bb-cyan);
+}

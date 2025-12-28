@@ -2,6 +2,8 @@
 
 import { useMemo, useCallback, useState } from 'react';
 import { useNodes } from '@/hooks/useNodes';
+import { useAppStore } from '@/hooks/useAppStore';
+import { useAudio } from '@/hooks/useAudio';
 import {
   buildAdjacencyList,
   getNetworkSummary,
@@ -21,6 +23,13 @@ import type { ConcordiumNode } from '@/lib/transforms';
 export function TopologyAnalysisBar() {
   const [isExpanded, setIsExpanded] = useState(true);
   const { data: nodes } = useNodes();
+  const { selectNode } = useAppStore();
+  const { playAcquisitionSequence } = useAudio();
+
+  const handleNodeClick = useCallback((nodeId: string) => {
+    playAcquisitionSequence();
+    selectNode(nodeId);
+  }, [playAcquisitionSequence, selectNode]);
 
   const analysis = useMemo(() => {
     if (!nodes || nodes.length === 0) return null;
@@ -160,7 +169,12 @@ export function TopologyAnalysisBar() {
               {bottlenecks.map((nodeId) => {
                 const node = nodes?.find((n) => n.nodeId === nodeId);
                 return (
-                  <div key={nodeId} className="topo-bottleneck">
+                  <div
+                    key={nodeId}
+                    className="topo-bottleneck topo-clickable"
+                    onClick={() => handleNodeClick(nodeId)}
+                    title="Click to select node"
+                  >
                     <span className="topo-bottleneck-indicator">◆</span>
                     <span className="topo-bottleneck-name">
                       {node?.nodeName || nodeId.slice(0, 12)}
@@ -186,9 +200,21 @@ export function TopologyAnalysisBar() {
               <div className="topo-bridges">
                 {bridges.slice(0, 4).map(([a, b], i) => (
                   <div key={i} className="topo-bridge">
-                    <span>{a.slice(0, 6)}</span>
+                    <span
+                      className="topo-clickable"
+                      onClick={() => handleNodeClick(a)}
+                      title="Click to select node"
+                    >
+                      {a.slice(0, 6)}
+                    </span>
                     <span className="topo-bridge-arrow">⟷</span>
-                    <span>{b.slice(0, 6)}</span>
+                    <span
+                      className="topo-clickable"
+                      onClick={() => handleNodeClick(b)}
+                      title="Click to select node"
+                    >
+                      {b.slice(0, 6)}
+                    </span>
                   </div>
                 ))}
                 {bridges.length > 4 && (
