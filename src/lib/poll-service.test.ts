@@ -46,6 +46,8 @@ describe('PollService', () => {
     await db.execute(SCHEMA.network_snapshots);
     await db.execute(SCHEMA.peers);
     await db.execute(SCHEMA.peer_connections);
+    await db.execute(SCHEMA.shodan_scans);
+    await db.execute(SCHEMA.osint_cache);
     for (const indexSql of SCHEMA.indexes) {
       await db.execute(indexSql);
     }
