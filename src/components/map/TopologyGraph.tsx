@@ -21,6 +21,13 @@ import { useAppStore } from '@/hooks/useAppStore';
 import { useAudio } from '@/hooks/useAudio';
 import { toReactFlowNodes, toReactFlowEdges, type ConcordiumNodeData, type ConcordiumNode } from '@/lib/transforms';
 import { getLayoutedElements, type TierLabelInfo } from '@/lib/layout';
+import {
+  buildAdjacencyList,
+  identifyBottlenecks,
+  identifyBridges,
+  type GraphNode,
+  type GraphEdge,
+} from '@/lib/topology-analysis';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -36,6 +43,7 @@ import { TopologyAnalysisBar } from '@/components/dashboard/TopologyAnalysisPane
 function ConcordiumNodeComponent({ data, selected }: NodeProps) {
   const nodeData = data as unknown as ConcordiumNodeData;
   const isConnectedPeer = nodeData.isConnectedPeer;
+  const isCritical = nodeData.isCritical;
   const tier = nodeData.tier || 'standard';
 
   // Health colors - consistent across all tiers
@@ -108,6 +116,15 @@ function ConcordiumNodeComponent({ data, selected }: NodeProps) {
               {nodeData.isBaker && (
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-purple-500 rounded-full border border-background shadow-[0_0_8px_rgba(168,85,247,0.6)]" />
               )}
+              {isCritical && (
+                <div
+                  className="absolute -top-1 -left-1 w-3 h-3 flex items-center justify-center text-[8px] font-bold text-amber-900 bg-amber-500 border border-background shadow-[0_0_8px_rgba(251,191,36,0.6)]"
+                  style={{ transform: 'rotate(45deg)' }}
+                  title="Critical node (network bottleneck)"
+                >
+                  <span style={{ transform: 'rotate(-45deg)' }}>!</span>
+                </div>
+              )}
             </div>
           </div>
         </TooltipTrigger>
@@ -143,6 +160,11 @@ function ConcordiumNodeComponent({ data, selected }: NodeProps) {
               )}>
                 {nodeData.health.toUpperCase()}
               </span>
+              {isCritical && (
+                <span className="text-[10px] font-mono px-1 text-amber-400 bg-amber-500/20">
+                  CRITICAL
+                </span>
+              )}
             </div>
           </div>
         </TooltipContent>
@@ -276,11 +298,39 @@ export function TopologyGraph({ onNodeSelect }: TopologyGraphProps = {}) {
   const { selectedNodeId, selectNode } = useAppStore();
   const { playAcquisitionSequence, isMuted, toggleMute } = useAudio();
 
-  const { initialNodes, initialEdges, tierLabels, tierSeparators } = useMemo(() => {
-    if (!apiNodes) return { initialNodes: [], initialEdges: [], tierLabels: [], tierSeparators: [] };
+  const { initialNodes, initialEdges, tierLabels, tierSeparators, criticalNodeIds, bridgeEdgeKeys } = useMemo(() => {
+    if (!apiNodes) return { initialNodes: [], initialEdges: [], tierLabels: [], tierSeparators: [], criticalNodeIds: new Set<string>(), bridgeEdgeKeys: new Set<string>() };
 
     const rawNodes = toReactFlowNodes(apiNodes);
     const rawEdges = toReactFlowEdges(apiNodes);
+
+    // Compute topology analysis for visual indicators
+    const graphNodes: GraphNode[] = apiNodes.map((n) => ({ id: n.nodeId }));
+    const graphEdges: GraphEdge[] = [];
+    const nodeIds = new Set(apiNodes.map((n) => n.nodeId));
+
+    for (const node of apiNodes) {
+      for (const peerId of node.peersList) {
+        if (nodeIds.has(peerId)) {
+          const [a, b] = [node.nodeId, peerId].sort();
+          const edgeId = `${a}-${b}`;
+          if (!graphEdges.some((e) => `${e.source}-${e.target}` === edgeId)) {
+            graphEdges.push({ source: a, target: b });
+          }
+        }
+      }
+    }
+
+    const adj = buildAdjacencyList(graphNodes, graphEdges);
+    const bottlenecks = identifyBottlenecks(adj, 5); // Top 5 critical nodes
+    const bridges = identifyBridges(adj);
+
+    // Create sets for fast lookup
+    const criticalIds = new Set(bottlenecks);
+    const bridgeKeys = new Set(bridges.map(([a, b]) => {
+      const [src, tgt] = [a, b].sort();
+      return `${src}-${tgt}`;
+    }));
 
     // Apply tiered "Mission Control" layout
     const { nodes: layoutedNodes, edges: layoutedEdges, tierLabels: labels, tierSeparators: separators } = getLayoutedElements(
@@ -294,6 +344,8 @@ export function TopologyGraph({ onNodeSelect }: TopologyGraphProps = {}) {
       initialEdges: layoutedEdges,
       tierLabels: labels,
       tierSeparators: separators,
+      criticalNodeIds: criticalIds,
+      bridgeEdgeKeys: bridgeKeys,
     };
   }, [apiNodes]);
 
@@ -342,25 +394,37 @@ export function TopologyGraph({ onNodeSelect }: TopologyGraphProps = {}) {
         (edge.source === selectedNodeId || edge.target === selectedNodeId)
       );
 
+      // Check if this is a bridge edge (single point of failure)
+      const [src, tgt] = [edge.source, edge.target].sort();
+      const isBridge = bridgeEdgeKeys.has(`${src}-${tgt}`);
+
       // For connected edges, let CSS handle styling via energy-active class
+      // For bridge edges, use red dashed stroke
       // For non-connected edges, apply inline styles
       return {
         ...edge,
-        className: isConnectedToSelected ? 'energy-active' : '',
+        className: isConnectedToSelected ? 'energy-active' : (isBridge ? 'bridge-edge' : ''),
         style: isConnectedToSelected
           ? { opacity: 1 }  // Let CSS animation handle the rest
-          : {
-              stroke: 'rgba(100, 116, 139, 0.5)',
-              strokeWidth: 1,
-              opacity: selectedNodeId ? 0.15 : 0.5,
-            },
+          : isBridge
+            ? {
+                stroke: 'rgba(255, 68, 68, 0.7)',
+                strokeWidth: 2,
+                strokeDasharray: '5,3',
+                opacity: selectedNodeId ? 0.3 : 0.8,
+              }
+            : {
+                stroke: 'rgba(100, 116, 139, 0.5)',
+                strokeWidth: 1,
+                opacity: selectedNodeId ? 0.15 : 0.5,
+              },
         animated: false,
         // Reduce interaction width to minimize cursor capture area
         // Active edges get slightly larger hit area, inactive edges minimal
         interactionWidth: isConnectedToSelected ? 10 : 1,
       };
     });
-  }, [edges, selectedNodeId]);
+  }, [edges, selectedNodeId, bridgeEdgeKeys]);
 
   if (isLoading) {
     return <LoadingSkeleton />;
@@ -377,6 +441,7 @@ export function TopologyGraph({ onNodeSelect }: TopologyGraphProps = {}) {
           data: {
             ...n.data,
             isConnectedPeer: !!(selectedNodeId && selectedPeerIds.has(n.id) && n.id !== selectedNodeId),
+            isCritical: criticalNodeIds.has(n.id),
           },
           style: {
             opacity: selectedNodeId

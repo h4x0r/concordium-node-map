@@ -89,6 +89,8 @@ export interface ConcordiumNodeData extends Record<string, unknown> {
   isConnectedPeer?: boolean;
   /** Node tier for layout - set by layout algorithm */
   tier?: NodeTier;
+  /** True if this node is a network bottleneck (high betweenness centrality) */
+  isCritical?: boolean;
 }
 
 export function calculateNodeHealth(node: ConcordiumNode, maxHeight: number): NodeHealth {
