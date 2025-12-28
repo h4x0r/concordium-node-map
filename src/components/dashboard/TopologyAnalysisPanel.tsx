@@ -56,7 +56,20 @@ export function TopologyAnalysisBar() {
     const bottlenecks = identifyBottlenecks(adj, 3);
     const bridges = identifyBridges(adj);
 
-    return { summary, distribution, bottlenecks, bridges, graphNodes, graphEdges };
+    // Build degree -> nodes mapping for clickable tooltips
+    const nodesByDegree = new Map<number, Array<{ id: string; name: string }>>();
+    for (const node of nodes) {
+      const degree = adj.get(node.nodeId)?.size ?? 0;
+      if (!nodesByDegree.has(degree)) {
+        nodesByDegree.set(degree, []);
+      }
+      nodesByDegree.get(degree)!.push({
+        id: node.nodeId,
+        name: node.nodeName || node.nodeId.slice(0, 12),
+      });
+    }
+
+    return { summary, distribution, bottlenecks, bridges, graphNodes, graphEdges, nodesByDegree };
   }, [nodes]);
 
   const handleExport = useCallback(() => {
@@ -85,7 +98,7 @@ export function TopologyAnalysisBar() {
 
   if (!analysis) return null;
 
-  const { summary, distribution, bottlenecks, bridges } = analysis;
+  const { summary, distribution, bottlenecks, bridges, nodesByDegree } = analysis;
 
   // Network health indicator
   const healthStatus = !summary.isConnected
@@ -156,7 +169,11 @@ export function TopologyAnalysisBar() {
           {/* Degree Distribution Chart */}
           <div className="topo-section">
             <div className="topo-section-header">DEGREE DISTRIBUTION</div>
-            <DegreeChart distribution={distribution} />
+            <DegreeChart
+              distribution={distribution}
+              nodesByDegree={nodesByDegree}
+              onNodeClick={handleNodeClick}
+            />
           </div>
 
           {/* Bottlenecks */}
@@ -229,7 +246,14 @@ export function TopologyAnalysisBar() {
   );
 }
 
-function DegreeChart({ distribution }: { distribution: Map<number, number> }) {
+interface DegreeChartProps {
+  distribution: Map<number, number>;
+  nodesByDegree: Map<number, Array<{ id: string; name: string }>>;
+  onNodeClick: (nodeId: string) => void;
+}
+
+function DegreeChart({ distribution, nodesByDegree, onNodeClick }: DegreeChartProps) {
+  const [hoveredDegree, setHoveredDegree] = useState<number | null>(null);
   const sorted = Array.from(distribution.entries()).sort((a, b) => a[0] - b[0]);
   const maxCount = Math.max(...sorted.map(([, count]) => count), 1);
   const totalNodes = sorted.reduce((sum, [, count]) => sum + count, 0);
@@ -239,15 +263,48 @@ function DegreeChart({ distribution }: { distribution: Map<number, number> }) {
       {sorted.map(([degree, count]) => {
         const height = (count / maxCount) * 100;
         const percentage = ((count / totalNodes) * 100).toFixed(0);
+        const nodesAtDegree = nodesByDegree.get(degree) || [];
+        const isHovered = hoveredDegree === degree;
+
         return (
-          <div key={degree} className="topo-degree-bar-wrapper" title={`Degree ${degree}: ${count} nodes (${percentage}%)`}>
+          <div
+            key={degree}
+            className="topo-degree-bar-wrapper"
+            onMouseEnter={() => setHoveredDegree(degree)}
+            onMouseLeave={() => setHoveredDegree(null)}
+          >
             <div
-              className="topo-degree-bar"
+              className={`topo-degree-bar ${degree === 0 ? 'topo-degree-bar-zero' : ''}`}
               style={{ height: `${height}%` }}
             >
               <span className="topo-degree-bar-count">{count}</span>
             </div>
             <span className="topo-degree-label">{degree}</span>
+
+            {/* Hover dropdown with clickable nodes */}
+            {isHovered && nodesAtDegree.length > 0 && (
+              <div className="topo-degree-dropdown">
+                <div className="topo-degree-dropdown-header">
+                  Degree {degree}: {count} nodes ({percentage}%)
+                </div>
+                <div className="topo-degree-dropdown-list">
+                  {nodesAtDegree.slice(0, 10).map((node) => (
+                    <div
+                      key={node.id}
+                      className="topo-degree-dropdown-item topo-clickable"
+                      onClick={() => onNodeClick(node.id)}
+                    >
+                      {node.name}
+                    </div>
+                  ))}
+                  {nodesAtDegree.length > 10 && (
+                    <div className="topo-degree-dropdown-more">
+                      +{nodesAtDegree.length - 10} more
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         );
       })}

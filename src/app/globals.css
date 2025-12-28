@@ -3246,6 +3246,17 @@
   transform: scaleX(1.1);
 }
 
+/* Degree 0 (isolated nodes) - orange warning color */
+.topo-degree-bar-zero {
+  background: linear-gradient(180deg, #FFAA00 0%, #CC8800 50%, #996600 100%);
+  box-shadow: 0 0 8px rgba(255, 170, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.topo-degree-bar-zero:hover {
+  background: linear-gradient(180deg, #FFCC33 0%, #DDAA00 50%, #AA8800 100%);
+  box-shadow: 0 0 16px rgba(255, 170, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
 .topo-degree-bar-count {
   font-size: 8px;
   font-weight: 700;
@@ -3348,4 +3359,77 @@
 .topo-bottleneck.topo-clickable:hover {
   background: rgba(0, 204, 255, 0.15);
   border-left-color: var(--bb-cyan);
+}
+
+/* Degree Distribution Dropdown */
+.topo-degree-bar-wrapper {
+  position: relative;
+}
+
+.topo-degree-dropdown {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 160px;
+  max-width: 220px;
+  background: var(--bb-black);
+  border: 1px solid var(--bb-cyan);
+  box-shadow: 0 0 12px rgba(0, 204, 255, 0.3);
+  z-index: 100;
+  margin-bottom: 8px;
+}
+
+.topo-degree-dropdown::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--bb-cyan);
+}
+
+.topo-degree-dropdown-header {
+  padding: 6px 8px;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--bb-cyan);
+  background: rgba(0, 204, 255, 0.1);
+  border-bottom: 1px solid rgba(0, 204, 255, 0.2);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.topo-degree-dropdown-list {
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.topo-degree-dropdown-item {
+  padding: 5px 8px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--bb-white);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topo-degree-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.topo-degree-dropdown-item:hover {
+  background: rgba(0, 204, 255, 0.15);
+  color: var(--bb-cyan);
+}
+
+.topo-degree-dropdown-more {
+  padding: 5px 8px;
+  font-size: 9px;
+  color: var(--bb-gray);
+  font-style: italic;
+  text-align: center;
 }
