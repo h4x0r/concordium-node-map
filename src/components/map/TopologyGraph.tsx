@@ -117,7 +117,10 @@ function ConcordiumNodeComponent({ data, selected }: NodeProps) {
               <Handle type="target" position={Position.Top} className="opacity-0" />
               <Handle type="source" position={Position.Bottom} className="opacity-0" />
               {nodeData.isBaker && (
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-purple-500 rounded-full border border-background shadow-[0_0_8px_rgba(168,85,247,0.6)]" />
+                <div
+                  className="validator-badge"
+                  title="Validator (Baker)"
+                />
               )}
               {isCritical && (
                 <div
