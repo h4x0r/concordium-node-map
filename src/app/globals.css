@@ -3336,7 +3336,9 @@
 .topo-bridges-ok {
   font-size: 10px;
   color: var(--bb-green);
-  font-style: italic;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .topo-bridges-more {
