@@ -3379,7 +3379,7 @@
 }
 
 .validator-badge::after {
-  content: '✓';
+  content: '✔';
   font-weight: 900;
 }
 
