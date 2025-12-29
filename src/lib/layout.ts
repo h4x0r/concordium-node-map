@@ -385,8 +385,15 @@ export function getForceDirectedTierLayout(
   // Layout constants
   const layoutPadding = 60;
   const layoutUsableWidth = mainSectionWidth - layoutPadding * 2;
-  const layoutMinNodeSpacing = 70;
   const layoutRowSpacing = 60;
+
+  // Tier-specific minimum spacing (larger nodes need more space)
+  const tierSpacing: Record<NodeTier, number> = {
+    baker: 100,
+    hub: 100,
+    standard: 70,
+    edge: 60,
+  };
 
   // Tier configuration - base heights (will be adjusted for row count)
   const tierConfig: Record<NodeTier, {
@@ -401,7 +408,13 @@ export function getForceDirectedTierLayout(
   };
 
   // Calculate actual tier heights based on node count (multiple rows if needed)
-  const nodesPerRow = Math.max(1, Math.floor(layoutUsableWidth / layoutMinNodeSpacing));
+  const tierNodesPerRow: Record<NodeTier, number> = {
+    baker: Math.max(1, Math.floor(layoutUsableWidth / tierSpacing.baker)),
+    hub: Math.max(1, Math.floor(layoutUsableWidth / tierSpacing.hub)),
+    standard: Math.max(1, Math.floor(layoutUsableWidth / tierSpacing.standard)),
+    edge: Math.max(1, Math.floor(layoutUsableWidth / tierSpacing.edge)),
+  };
+
   const tierHeights: Record<NodeTier, number> = {
     baker: 0, hub: 0, standard: 0, edge: 0,
   };
@@ -411,7 +424,7 @@ export function getForceDirectedTierLayout(
     if (nodeCount === 0) {
       tierHeights[tier] = 0;
     } else {
-      const numRows = Math.ceil(nodeCount / nodesPerRow);
+      const numRows = Math.ceil(nodeCount / tierNodesPerRow[tier]);
       tierHeights[tier] = numRows * layoutRowSpacing + 20; // Extra padding
     }
   }
@@ -450,6 +463,8 @@ export function getForceDirectedTierLayout(
 
     const baseY = tierY[tier];
     const nodeCount = tierNodes.length;
+    const nodesPerRow = tierNodesPerRow[tier];
+    const nodeSpacing = tierSpacing[tier];
 
     tierNodes.forEach((node, index) => {
       const row = Math.floor(index / nodesPerRow);
@@ -457,11 +472,11 @@ export function getForceDirectedTierLayout(
       const nodesInThisRow = Math.min(nodesPerRow, nodeCount - row * nodesPerRow);
 
       // Calculate spacing for this row
-      const rowWidth = nodesInThisRow * layoutMinNodeSpacing;
+      const rowWidth = nodesInThisRow * nodeSpacing;
       const startX = layoutPadding + (layoutUsableWidth - rowWidth) / 2; // Center the row
 
       // Position within row
-      const x = startX + indexInRow * layoutMinNodeSpacing + layoutMinNodeSpacing / 2;
+      const x = startX + indexInRow * nodeSpacing + nodeSpacing / 2;
       const y = baseY + row * layoutRowSpacing + 30; // 30px offset from tier top
 
       // Small jitter for visual interest

@@ -175,12 +175,12 @@ const nodeTypes = {
   concordiumNode: ConcordiumNodeComponent,
 };
 
-// Tier colors for labels and separators
+// Tier colors for labels and separators - high visibility
 const TIER_COLORS: Record<string, { color: string; opacity: number; separatorOpacity: number }> = {
-  'BAKERS': { color: 'rgb(168, 85, 247)', opacity: 0.6, separatorOpacity: 0.2 },
-  'HUBS': { color: 'var(--bb-cyan)', opacity: 0.4, separatorOpacity: 0.15 },
-  'STANDARD': { color: 'var(--bb-gray)', opacity: 0.3, separatorOpacity: 0.1 },
-  'EDGE': { color: 'var(--bb-gray)', opacity: 0.2, separatorOpacity: 0.1 },
+  'BAKERS': { color: 'rgb(168, 85, 247)', opacity: 1, separatorOpacity: 0.4 },
+  'HUBS': { color: 'var(--bb-cyan)', opacity: 0.9, separatorOpacity: 0.3 },
+  'STANDARD': { color: 'var(--bb-green)', opacity: 0.8, separatorOpacity: 0.25 },
+  'EDGE': { color: 'var(--bb-amber)', opacity: 0.7, separatorOpacity: 0.2 },
 };
 
 interface TierLabelsProps {
@@ -249,15 +249,19 @@ function TierLabels({ tierLabels, tierSeparators, disconnectedSection }: TierLab
         return (
           <div
             key={tier}
-            className="absolute font-mono font-bold tracking-widest"
+            className="absolute font-mono font-black tracking-widest"
             style={{
-              left: -60,
-              top: y - 5,
+              left: 10,
+              top: y + 5,
               color: colors.color,
               opacity: colors.opacity,
-              fontSize: `${fontSize}px`,
+              fontSize: `${Math.max(11, fontSize + 2)}px`,
               whiteSpace: 'nowrap',
               pointerEvents: 'none',
+              textShadow: '0 0 10px currentColor, 0 0 20px currentColor',
+              background: 'linear-gradient(90deg, rgba(0,0,0,0.6) 0%, transparent 100%)',
+              padding: '2px 8px 2px 4px',
+              borderLeft: `3px solid ${colors.color}`,
             }}
           >
             {tier}
