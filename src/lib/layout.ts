@@ -382,26 +382,48 @@ export function getForceDirectedTierLayout(
 
   const tierOrder: NodeTier[] = ['baker', 'hub', 'standard', 'edge'];
 
-  // Tier configuration
+  // Layout constants
+  const layoutPadding = 60;
+  const layoutUsableWidth = mainSectionWidth - layoutPadding * 2;
+  const layoutMinNodeSpacing = 70;
+  const layoutRowSpacing = 60;
+
+  // Tier configuration - base heights (will be adjusted for row count)
   const tierConfig: Record<NodeTier, {
-    tierHeight: number;
+    baseHeight: number;
     tierGap: number;
     label: string;
   }> = {
-    baker: { tierHeight: 100, tierGap: 40, label: 'BAKERS' },
-    hub: { tierHeight: 90, tierGap: 35, label: 'HUBS' },
-    standard: { tierHeight: 80, tierGap: 30, label: 'STANDARD' },
-    edge: { tierHeight: 70, tierGap: 0, label: 'EDGE' },
+    baker: { baseHeight: 80, tierGap: 30, label: 'BAKERS' },
+    hub: { baseHeight: 80, tierGap: 30, label: 'HUBS' },
+    standard: { baseHeight: 80, tierGap: 30, label: 'STANDARD' },
+    edge: { baseHeight: 80, tierGap: 0, label: 'EDGE' },
   };
+
+  // Calculate actual tier heights based on node count (multiple rows if needed)
+  const nodesPerRow = Math.max(1, Math.floor(layoutUsableWidth / layoutMinNodeSpacing));
+  const tierHeights: Record<NodeTier, number> = {
+    baker: 0, hub: 0, standard: 0, edge: 0,
+  };
+
+  for (const tier of tierOrder) {
+    const nodeCount = tiers[tier].length;
+    if (nodeCount === 0) {
+      tierHeights[tier] = 0;
+    } else {
+      const numRows = Math.ceil(nodeCount / nodesPerRow);
+      tierHeights[tier] = numRows * layoutRowSpacing + 20; // Extra padding
+    }
+  }
 
   // Calculate tier Y positions
   const tierY: Record<NodeTier, number> = { baker: 0, hub: 0, standard: 0, edge: 0 };
-  let currentY = 80;
+  let currentY = 60;
 
   for (const tier of tierOrder) {
     tierY[tier] = currentY;
     if (tiers[tier].length > 0) {
-      currentY += tierConfig[tier].tierHeight + tierConfig[tier].tierGap;
+      currentY += tierHeights[tier] + tierConfig[tier].tierGap;
     }
   }
 
@@ -419,36 +441,38 @@ export function getForceDirectedTierLayout(
     nodePeers.set(node.id, peers);
   }
 
-  // Simple even distribution - no force simulation needed
-  // Just spread nodes evenly across the width within each tier
-  const padding = 60;
-  const usableWidth = mainSectionWidth - padding * 2;
-
+  // Even distribution with multiple rows if needed
   const layoutedNodes: Node<ConcordiumNodeData>[] = [];
 
   for (const tier of tierOrder) {
     const tierNodes = tiers[tier];
     if (tierNodes.length === 0) continue;
 
-    const baseY = tierY[tier] + tierConfig[tier].tierHeight / 2;
+    const baseY = tierY[tier];
     const nodeCount = tierNodes.length;
 
-    // Calculate spacing to evenly distribute nodes
-    // Each node gets an equal slice of the width
-    const sliceWidth = usableWidth / nodeCount;
-
     tierNodes.forEach((node, index) => {
-      // Center each node in its slice
-      const x = padding + sliceWidth * index + sliceWidth / 2;
+      const row = Math.floor(index / nodesPerRow);
+      const indexInRow = index % nodesPerRow;
+      const nodesInThisRow = Math.min(nodesPerRow, nodeCount - row * nodesPerRow);
 
-      // Small Y jitter for visual interest (but keep within tier band)
-      const jitterY = ((hashCode(node.id + 'y') % 30) - 15);
+      // Calculate spacing for this row
+      const rowWidth = nodesInThisRow * layoutMinNodeSpacing;
+      const startX = layoutPadding + (layoutUsableWidth - rowWidth) / 2; // Center the row
+
+      // Position within row
+      const x = startX + indexInRow * layoutMinNodeSpacing + layoutMinNodeSpacing / 2;
+      const y = baseY + row * layoutRowSpacing + 30; // 30px offset from tier top
+
+      // Small jitter for visual interest
+      const jitterX = ((hashCode(node.id) % 12) - 6);
+      const jitterY = ((hashCode(node.id + 'y') % 12) - 6);
 
       layoutedNodes.push({
         ...node,
         position: {
-          x,
-          y: baseY + jitterY,
+          x: x + jitterX,
+          y: y + jitterY,
         },
         data: {
           ...node.data,
@@ -488,7 +512,7 @@ export function getForceDirectedTierLayout(
     .map(tier => ({
       tier: tierConfig[tier].label,
       y: tierY[tier],
-      endY: tierY[tier] + tierConfig[tier].tierHeight,
+      endY: tierY[tier] + tierHeights[tier],
     }));
 
   // Generate tier separators
@@ -497,7 +521,7 @@ export function getForceDirectedTierLayout(
     const currentTier = tierOrder[i];
     const nextTier = tierOrder[i + 1];
     if (tiers[currentTier].length > 0 && tiers[nextTier].length > 0) {
-      const separatorY = tierY[currentTier] + tierConfig[currentTier].tierHeight + tierConfig[currentTier].tierGap / 2;
+      const separatorY = tierY[currentTier] + tierHeights[currentTier] + tierConfig[currentTier].tierGap / 2;
       tierSeparators.push({ y: separatorY });
     }
   }
