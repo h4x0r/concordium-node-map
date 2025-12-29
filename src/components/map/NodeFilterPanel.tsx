@@ -23,7 +23,7 @@ export function NodeFilterPanel() {
   return (
     <div
       className="absolute z-10 flex items-center gap-2 px-2 py-1 bg-[var(--bb-black)]/90 border border-[var(--bb-border)] rounded"
-      style={{ bottom: 40, left: 20 }}
+      style={{ bottom: 140, left: 20 }}
     >
       {/* Tier filters */}
       <div className="flex items-center gap-1">
