@@ -419,154 +419,42 @@ export function getForceDirectedTierLayout(
     nodePeers.set(node.id, peers);
   }
 
-  // Simple force simulation for horizontal positioning
-  interface SimNode {
-    id: string;
-    x: number;
-    y: number;
-    tier: NodeTier;
-    vx: number;
-  }
-
-  const simNodes: SimNode[] = [];
-  const padding = 80;
+  // Simple even distribution - no force simulation needed
+  // Just spread nodes evenly across the width within each tier
+  const padding = 60;
   const usableWidth = mainSectionWidth - padding * 2;
 
-  // Initialize positions: spread evenly within tier
+  const layoutedNodes: Node<ConcordiumNodeData>[] = [];
+
   for (const tier of tierOrder) {
     const tierNodes = tiers[tier];
+    if (tierNodes.length === 0) continue;
+
     const baseY = tierY[tier] + tierConfig[tier].tierHeight / 2;
+    const nodeCount = tierNodes.length;
+
+    // Calculate spacing to evenly distribute nodes
+    // Each node gets an equal slice of the width
+    const sliceWidth = usableWidth / nodeCount;
 
     tierNodes.forEach((node, index) => {
-      const progress = tierNodes.length === 1 ? 0.5 : index / (tierNodes.length - 1);
-      const x = padding + progress * usableWidth;
+      // Center each node in its slice
+      const x = padding + sliceWidth * index + sliceWidth / 2;
 
-      simNodes.push({
-        id: node.id,
-        x,
-        y: baseY,
-        tier,
-        vx: 0,
+      // Small Y jitter for visual interest (but keep within tier band)
+      const jitterY = ((hashCode(node.id + 'y') % 30) - 15);
+
+      layoutedNodes.push({
+        ...node,
+        position: {
+          x,
+          y: baseY + jitterY,
+        },
+        data: {
+          ...node.data,
+          tier,
+        },
       });
-    });
-  }
-
-  // Run force simulation iterations
-  // Much stronger repulsion to prevent overlap
-  const iterations = 300;
-  const minNodeSpacing = 80; // Minimum pixels between node centers
-  const repulsionStrength = 5000;
-  const attractionStrength = 0.05; // Reduced - only subtle clustering
-  const damping = 0.85;
-
-  for (let iter = 0; iter < iterations; iter++) {
-    // Calculate forces
-    for (let i = 0; i < simNodes.length; i++) {
-      let fx = 0;
-
-      // Strong repulsion from other nodes in same tier
-      for (let j = 0; j < simNodes.length; j++) {
-        if (i === j) continue;
-        if (simNodes[i].tier !== simNodes[j].tier) continue;
-
-        const dx = simNodes[i].x - simNodes[j].x;
-        const dist = Math.abs(dx);
-
-        // Very strong repulsion when closer than minimum spacing
-        if (dist < minNodeSpacing) {
-          const overlap = minNodeSpacing - dist;
-          fx += Math.sign(dx || 1) * overlap * 2; // Strong push apart
-        } else {
-          // Normal inverse-square repulsion
-          const force = repulsionStrength / (dist * dist);
-          fx += Math.sign(dx) * force;
-        }
-      }
-
-      // Weak attraction to nodes with shared peers (subtle clustering)
-      const myPeers = nodePeers.get(simNodes[i].id) || new Set();
-      for (let j = 0; j < simNodes.length; j++) {
-        if (i === j) continue;
-        if (simNodes[i].tier !== simNodes[j].tier) continue;
-
-        const theirPeers = nodePeers.get(simNodes[j].id) || new Set();
-        let sharedCount = 0;
-        for (const peer of myPeers) {
-          if (theirPeers.has(peer)) sharedCount++;
-        }
-
-        if (sharedCount > 0) {
-          const dx = simNodes[j].x - simNodes[i].x;
-          // Only attract if already far enough apart
-          if (Math.abs(dx) > minNodeSpacing * 1.5) {
-            fx += dx * attractionStrength * Math.min(sharedCount / 10, 1);
-          }
-        }
-      }
-
-      // Boundary forces - push away from edges
-      if (simNodes[i].x < padding + 50) {
-        fx += (padding + 50 - simNodes[i].x) * 0.8;
-      }
-      if (simNodes[i].x > mainSectionWidth - padding - 50) {
-        fx += (mainSectionWidth - padding - 50 - simNodes[i].x) * 0.8;
-      }
-
-      // Center attraction to spread nodes across width
-      const centerX = mainSectionWidth / 2;
-      const distFromCenter = simNodes[i].x - centerX;
-      // Slight push away from center to use full width
-      fx += Math.sign(distFromCenter) * 0.5;
-
-      simNodes[i].vx = (simNodes[i].vx + fx * 0.1) * damping;
-    }
-
-    // Apply velocities
-    for (const node of simNodes) {
-      node.x += node.vx;
-      // Clamp to bounds
-      node.x = Math.max(padding, Math.min(mainSectionWidth - padding, node.x));
-    }
-
-    // Post-iteration: enforce minimum spacing by direct adjustment
-    if (iter % 10 === 0) {
-      for (const tier of tierOrder) {
-        const tierNodes = simNodes.filter(n => n.tier === tier);
-        tierNodes.sort((a, b) => a.x - b.x);
-
-        // Push overlapping nodes apart
-        for (let i = 1; i < tierNodes.length; i++) {
-          const gap = tierNodes[i].x - tierNodes[i - 1].x;
-          if (gap < minNodeSpacing) {
-            const push = (minNodeSpacing - gap) / 2;
-            tierNodes[i - 1].x -= push;
-            tierNodes[i].x += push;
-          }
-        }
-      }
-    }
-  }
-
-  // Create positioned nodes from simulation
-  const layoutedNodes: Node<ConcordiumNodeData>[] = [];
-  const simNodeMap = new Map(simNodes.map(sn => [sn.id, sn]));
-
-  for (const node of connectedNodes) {
-    const simNode = simNodeMap.get(node.id)!;
-    // Add small jitter for visual interest
-    const jitterX = ((hashCode(node.id) % 10) - 5);
-    const jitterY = ((hashCode(node.id + 'y') % 20) - 10);
-
-    layoutedNodes.push({
-      ...node,
-      position: {
-        x: simNode.x + jitterX,
-        y: simNode.y + jitterY,
-      },
-      data: {
-        ...node.data,
-        tier: simNode.tier,
-      },
     });
   }
 
