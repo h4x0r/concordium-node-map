@@ -375,9 +375,9 @@ export function getForceDirectedTierLayout(
     tiers[tier].push(node);
   }
 
-  // Sort nodes within each tier by peer count (highest first)
+  // Sort nodes within each tier by centrality (highest first = leftmost position)
   for (const tier of Object.keys(tiers) as NodeTier[]) {
-    tiers[tier].sort((a, b) => b.data.peersCount - a.data.peersCount);
+    tiers[tier].sort((a, b) => (b.data.centrality ?? 0) - (a.data.centrality ?? 0));
   }
 
   const tierOrder: NodeTier[] = ['baker', 'hub', 'standard', 'edge'];

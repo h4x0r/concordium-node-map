@@ -217,6 +217,32 @@ function TierLabels({ tierLabels, tierSeparators, disconnectedSection }: TierLab
         zIndex: 0,
       }}
     >
+      {/* Centrality Spectrum Header */}
+      <div
+        className="absolute font-mono text-center"
+        style={{
+          left: 60,
+          top: 15,
+          right: disconnectedSection ? disconnectedSection.x + 20 : 100,
+          fontSize: `${Math.max(9, fontSize)}px`,
+          pointerEvents: 'none',
+        }}
+      >
+        <div className="flex justify-between items-center px-4">
+          <span style={{ color: 'var(--bb-cyan)', opacity: 0.8 }}>HIGH CENTRALITY</span>
+          <span style={{ color: 'var(--bb-gray)', opacity: 0.5 }}>← BETWEENNESS CENTRALITY →</span>
+          <span style={{ color: 'var(--bb-amber)', opacity: 0.8 }}>LOW CENTRALITY</span>
+        </div>
+        <div
+          style={{
+            height: 2,
+            marginTop: 4,
+            background: 'linear-gradient(90deg, var(--bb-cyan), var(--bb-gray) 50%, var(--bb-amber))',
+            opacity: 0.4,
+          }}
+        />
+      </div>
+
       {/* Disconnected Section Separator and Label */}
       {disconnectedSection && (
         <>
@@ -368,6 +394,18 @@ export function TopologyGraph({ onNodeSelect }: TopologyGraphProps = {}) {
     const bottlenecks = identifyBottlenecks(adj, 5); // Top 5 critical nodes
     const bridges = identifyBridges(adj);
 
+    // Calculate betweenness centrality for positioning nodes on spectrum
+    const centralityMap = calculateBetweennessCentrality(adj);
+
+    // Inject centrality into node data
+    const nodesWithCentrality = rawNodes.map((node) => ({
+      ...node,
+      data: {
+        ...node.data,
+        centrality: centralityMap.get(node.id) ?? 0,
+      },
+    }));
+
     // Create sets for fast lookup
     const criticalIds = new Set(bottlenecks);
     const bridgeKeys = new Set(bridges.map(([a, b]) => {
@@ -375,9 +413,9 @@ export function TopologyGraph({ onNodeSelect }: TopologyGraphProps = {}) {
       return `${src}-${tgt}`;
     }));
 
-    // Apply force-directed tier layout
+    // Apply force-directed tier layout with centrality-based X positioning
     const { nodes: layoutedNodes, edges: layoutedEdges, tierLabels: labels, tierSeparators: separators, disconnectedSection: discSection } = getForceDirectedTierLayout(
-      rawNodes,
+      nodesWithCentrality,
       rawEdges,
       { width: 1400, height: 900 }
     );
