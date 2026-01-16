@@ -1,0 +1,29 @@
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#ff9800', 'primaryTextColor': '#fff', 'primaryBorderColor': '#ff9800', 'lineColor': '#00bcd4', 'secondaryColor': '#1a1a2e', 'tertiaryColor': '#16213e'}}}%%
+flowchart TD
+    subgraph DC["Data Collection Layer"]
+        A1[Dashboard API<br/>Node Summary]
+        A2[gRPC Endpoints<br/>Peer Discovery]
+        A3[OSINT Sources<br/>IP Intelligence]
+    end
+
+    subgraph IE["Inference Engine"]
+        B1[Peer Location<br/>Estimation]
+        B2[Bootstrapper<br/>Detection]
+    end
+
+    subgraph DB["Turso Edge Database"]
+        C1[(Serverless SQLite<br/>Historical Storage)]
+    end
+
+    subgraph UI["React Dashboard"]
+        D1[Bloomberg-style UX<br/>Real-time Updates]
+    end
+
+    DC --> IE
+    IE --> DB
+    DB --> UI
+
+    style DC fill:#1a1a2e,stroke:#ff9800,stroke-width:2px
+    style IE fill:#1a1a2e,stroke:#00bcd4,stroke-width:2px
+    style DB fill:#1a1a2e,stroke:#4caf50,stroke-width:2px
+    style UI fill:#1a1a2e,stroke:#9c27b0,stroke-width:2px
