@@ -14,6 +14,7 @@ import { calculateNetworkPulse, getPulseStatus, THRESHOLDS, calculateFinalizatio
 import { Sparkline } from '@/components/dashboard/Sparkline';
 import { MRTGChart, type MRTGDataPoint } from '@/components/dashboard/MRTGChart';
 import { NodeDetailPanel } from '@/components/dashboard/NodeDetailPanel';
+import { ConsensusVisibilityBar } from '@/components/dashboard/ConsensusVisibilityBar';
 import { DeepDivePanel } from '@/components/deep-dive';
 import { type HealthStatus } from '@/components/dashboard/HealthTimeline';
 import { MobileHome } from '@/components/mobile/MobileHome';
@@ -317,6 +318,8 @@ function DesktopHome() {
           <button className="bb-function-key">F2</button>
           <button className="bb-function-key secondary" onClick={openHelp}>HELP</button>
         </div>
+
+        <ConsensusVisibilityBar />
 
         <div className="bb-time">
           <span className="bb-time-value">{formatTime(currentTime)}</span>

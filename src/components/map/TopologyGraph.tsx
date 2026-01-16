@@ -21,6 +21,7 @@ import '@xyflow/react/dist/style.css';
 import { useNodes } from '@/hooks/useNodes';
 import { useAppStore } from '@/hooks/useAppStore';
 import { useAudio } from '@/hooks/useAudio';
+import { useConsensusVisibility } from '@/hooks/useValidators';
 import { toReactFlowNodes, toReactFlowEdges, type ConcordiumNodeData, type ConcordiumNode } from '@/lib/transforms';
 import { getForceDirectedTierLayout, type TierLabelInfo, type ForceDirectedLayoutResult } from '@/lib/layout';
 import {
@@ -46,6 +47,7 @@ import { TopologyAnalysisBar } from '@/components/dashboard/TopologyAnalysisPane
 import { NodeFilterPanel } from './NodeFilterPanel';
 import { useNodeFilter } from '@/hooks/useNodeFilter';
 import { filterNodes, type FilterableNode } from '@/lib/node-filters';
+import type { PhantomValidator } from '@/lib/types/validators';
 
 function ConcordiumNodeComponent({ data, selected }: NodeProps) {
   const nodeData = data as unknown as ConcordiumNodeData;
@@ -180,8 +182,69 @@ function ConcordiumNodeComponent({ data, selected }: NodeProps) {
   );
 }
 
+/**
+ * PhantomNodeComponent - Ghost-styled node for phantom validators
+ * Validators registered on-chain but not reporting to dashboard
+ */
+interface PhantomNodeData {
+  phantom: PhantomValidator;
+}
+
+function PhantomNodeComponent({ data }: NodeProps) {
+  const nodeData = data as unknown as PhantomNodeData;
+  const { phantom } = nodeData;
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="relative phantom-node">
+            <div className="phantom-node-circle rounded-full w-8 h-8 flex items-center justify-center">
+              <Handle type="target" position={Position.Top} className="opacity-0" />
+              <Handle type="source" position={Position.Bottom} className="opacity-0" />
+            </div>
+            <div className="phantom-badge">PHM</div>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent
+          side="top"
+          className="max-w-xs bg-[var(--bb-black)] border border-[#ff00ff] p-2 z-50"
+        >
+          <div className="space-y-1">
+            <div className="font-mono font-bold text-[#ff00ff]">
+              Phantom Validator
+            </div>
+            <div className="font-mono text-[10px] text-[var(--bb-gray)]">
+              Baker #{phantom.bakerId}
+            </div>
+            <div className="font-mono text-[10px] text-[var(--bb-gray)] truncate max-w-[200px]">
+              {phantom.accountAddress}
+            </div>
+            <div className="flex gap-2 flex-wrap pt-1">
+              <span className="text-[10px] font-mono px-1 text-[#ff00ff] bg-[#ff00ff]/20">
+                PHANTOM
+              </span>
+              {phantom.lotteryPower !== null && (
+                <span className="text-[10px] font-mono text-[var(--bb-cyan)]">
+                  {(phantom.lotteryPower * 100).toFixed(3)}% LOTTERY
+                </span>
+              )}
+              {phantom.openStatus && (
+                <span className="text-[10px] font-mono text-[var(--bb-gray)]">
+                  {phantom.openStatus}
+                </span>
+              )}
+            </div>
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
 const nodeTypes = {
   concordiumNode: ConcordiumNodeComponent,
+  phantomNode: PhantomNodeComponent,
 };
 
 // Tier colors for labels and separators - high visibility
@@ -375,6 +438,7 @@ export function TopologyGraph({ onNodeSelect }: TopologyGraphProps = {}) {
   const { selectedNodeId, selectNode } = useAppStore();
   const { playAcquisitionSequence, isMuted, toggleMute } = useAudio();
   const filterCriteria = useNodeFilter();
+  const { phantoms } = useConsensusVisibility();
 
   // Compute which node IDs pass the current filter
   const filteredNodeIds = useMemo(() => {
@@ -471,6 +535,32 @@ export function TopologyGraph({ onNodeSelect }: TopologyGraphProps = {}) {
       bridgeEdgeKeys: bridgeKeys,
     };
   }, [apiNodes]);
+
+  // Generate phantom nodes when showPhantoms is enabled
+  const phantomNodes: Node[] = useMemo(() => {
+    if (!filterCriteria.showPhantoms || phantoms.length === 0) return [];
+
+    // Position phantoms in a cluster at the right side of the graph
+    const startX = 1500; // Right side, past main graph
+    const startY = 200;
+    const spacing = 50;
+    const perRow = 8;
+
+    return phantoms.map((phantom, index) => {
+      const row = Math.floor(index / perRow);
+      const col = index % perRow;
+
+      return {
+        id: `phantom-${phantom.bakerId}`,
+        type: 'phantomNode',
+        position: {
+          x: startX + col * spacing,
+          y: startY + row * spacing,
+        },
+        data: { phantom },
+      };
+    });
+  }, [filterCriteria.showPhantoms, phantoms]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
@@ -579,37 +669,42 @@ export function TopologyGraph({ onNodeSelect }: TopologyGraphProps = {}) {
       {/* Topology Analysis Bar - overlays top of canvas */}
       <TopologyAnalysisBar />
       <ReactFlow
-        nodes={nodes.map((n) => {
-          const passesFilter = filteredNodeIds.has(n.id);
+        nodes={[
+          // Regular nodes with filtering applied
+          ...nodes.map((n) => {
+            const passesFilter = filteredNodeIds.has(n.id);
 
-          // Calculate opacity based on filter and selection states
-          let opacity = 1;
-          if (!passesFilter) {
-            // Filtered out - very dim
-            opacity = 0.08;
-          } else if (selectedNodeId) {
-            opacity = n.id === selectedNodeId || selectedPeerIds.has(n.id) ? 1 : 0.2;
-          }
+            // Calculate opacity based on filter and selection states
+            let opacity = 1;
+            if (!passesFilter) {
+              // Filtered out - very dim
+              opacity = 0.08;
+            } else if (selectedNodeId) {
+              opacity = n.id === selectedNodeId || selectedPeerIds.has(n.id) ? 1 : 0.2;
+            }
 
-          return {
-            ...n,
-            selected: n.id === selectedNodeId,
-            data: {
-              ...n.data,
-              isConnectedPeer: !!(selectedNodeId && selectedPeerIds.has(n.id) && n.id !== selectedNodeId),
-              isCritical: criticalNodeIds.has(n.id),
-            },
-            style: {
-              opacity,
-              transition: 'opacity 0.3s ease',
-              // Disable interaction for filtered-out nodes
-              pointerEvents: passesFilter ? 'auto' : 'none',
-            },
-          };
-        })}
+            return {
+              ...n,
+              selected: n.id === selectedNodeId,
+              data: {
+                ...n.data,
+                isConnectedPeer: !!(selectedNodeId && selectedPeerIds.has(n.id) && n.id !== selectedNodeId),
+                isCritical: criticalNodeIds.has(n.id),
+              },
+              style: {
+                opacity,
+                transition: 'opacity 0.3s ease',
+                // Disable interaction for filtered-out nodes
+                pointerEvents: passesFilter ? 'auto' : 'none',
+              },
+            };
+          }),
+          // Phantom nodes (only when showPhantoms is enabled)
+          ...phantomNodes,
+        ] as Node[]}
         edges={styledEdges}
         nodeTypes={nodeTypes}
-        onNodesChange={onNodesChange}
+        onNodesChange={onNodesChange as (changes: unknown) => void}
         onEdgesChange={onEdgesChange}
         onNodeClick={onNodeClick}
         onPaneClick={onPaneClick}

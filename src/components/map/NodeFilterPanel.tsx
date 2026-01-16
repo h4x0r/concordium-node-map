@@ -1,6 +1,7 @@
 'use client';
 
 import { useNodeFilter } from '@/hooks/useNodeFilter';
+import { useConsensusVisibility } from '@/hooks/useValidators';
 import { cn } from '@/lib/utils';
 import type { NodeTier, NodeHealth } from '@/lib/transforms';
 
@@ -18,7 +19,8 @@ const HEALTH_OPTIONS: { value: NodeHealth; label: string; color: string }[] = [
 ];
 
 export function NodeFilterPanel() {
-  const { tiers, health, toggleTier, toggleHealth, clearFilters, hasActiveFilters } = useNodeFilter();
+  const { tiers, health, showPhantoms, toggleTier, toggleHealth, togglePhantoms, clearFilters, hasActiveFilters } = useNodeFilter();
+  const { phantoms } = useConsensusVisibility();
 
   return (
     <div
@@ -78,6 +80,22 @@ export function NodeFilterPanel() {
           );
         })}
       </div>
+
+      <div className="w-px h-4 bg-[var(--bb-border)]" />
+
+      {/* Phantom validators toggle */}
+      <button
+        onClick={togglePhantoms}
+        className={cn(
+          'px-1.5 py-0.5 text-[9px] font-mono font-bold rounded transition-all',
+          showPhantoms
+            ? 'filter-btn phantom-active'
+            : 'opacity-40 hover:opacity-70 border border-[#ff00ff] text-[#ff00ff]'
+        )}
+        title={`${showPhantoms ? 'Hide' : 'Show'} phantom validators (${phantoms.length})`}
+      >
+        PHM ({phantoms.length})
+      </button>
 
       {/* Clear button */}
       {hasActiveFilters() && (
