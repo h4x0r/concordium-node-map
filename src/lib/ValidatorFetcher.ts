@@ -26,7 +26,7 @@ export interface ValidatorFetcherOptions {
 
 // Default configuration
 const DEFAULT_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
-const DEFAULT_TIMEOUT = 60000; // 60 seconds (increased for stream)
+const DEFAULT_TIMEOUT = 15000; // 15 seconds - fail fast on Vercel if gRPC hangs
 
 /**
  * Baker reward period info from gRPC getBakersRewardPeriod

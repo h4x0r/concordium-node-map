@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
-    "api/cron/poll-nodes": {
+    "app/api/cron/poll-nodes/route.ts": {
       "maxDuration": 120
     }
   },
