@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { createClient, type Client } from '@libsql/client';
+import type { Client } from '@libsql/client';
 import { PollService } from './poll-service';
-import { SCHEMA } from './db/schema';
+import { createTestDb } from './db/test-helpers';
 
 // Mock the ConcordiumClient
 vi.mock('./concordium-client', () => ({
@@ -36,22 +36,7 @@ describe('PollService', () => {
   let pollService: PollService;
 
   beforeEach(async () => {
-    db = createClient({ url: ':memory:' });
-
-    // Initialize schema
-    await db.execute(SCHEMA.nodes);
-    await db.execute(SCHEMA.node_sessions);
-    await db.execute(SCHEMA.snapshots);
-    await db.execute(SCHEMA.events);
-    await db.execute(SCHEMA.network_snapshots);
-    await db.execute(SCHEMA.peers);
-    await db.execute(SCHEMA.peer_connections);
-    await db.execute(SCHEMA.shodan_scans);
-    await db.execute(SCHEMA.osint_cache);
-    for (const indexSql of SCHEMA.indexes) {
-      await db.execute(indexSql);
-    }
-
+    db = await createTestDb();
     pollService = new PollService(db);
   });
 

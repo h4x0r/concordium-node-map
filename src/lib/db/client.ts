@@ -42,6 +42,12 @@ export async function initializeSchema(): Promise<void> {
   await db.execute(SCHEMA.peer_connections);
   await db.execute(SCHEMA.shodan_scans);
   await db.execute(SCHEMA.osint_cache);
+  await db.execute(SCHEMA.validators);
+  await db.execute(SCHEMA.validator_transitions);
+  await db.execute(SCHEMA.consensus_snapshots);
+  await db.execute(SCHEMA.blocks);
+  await db.execute(SCHEMA.consensus_alerts);
+  await db.execute(SCHEMA.quorum_health_history);
 
   // Create indexes
   for (const indexSql of SCHEMA.indexes) {

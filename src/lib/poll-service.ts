@@ -2,6 +2,8 @@ import type { Client } from '@libsql/client';
 import { PeerTracker } from './db/PeerTracker';
 import { InferenceEngine } from './db/InferenceEngine';
 import { GeoLookupService } from './geo-lookup';
+import { ValidatorTracker, type ConsensusVisibility, type ReportingPeer } from './db/ValidatorTracker';
+import { ValidatorFetcher, type FetchResult } from './ValidatorFetcher';
 import type { PeerInfo } from './concordium-client';
 import type { NodeSummary } from './db/NodeTracker';
 
@@ -28,19 +30,37 @@ export interface InferenceStats {
   bootstrappersDetected: number;
 }
 
+export interface ValidatorPollStats {
+  totalValidators: number;
+  visibleValidators: number;
+  phantomValidators: number;
+  newValidators: number;
+  stakeVisibilityPct: number;
+  quorumHealth: 'healthy' | 'degraded' | 'critical';
+  fetchErrors: string[];
+}
+
 /**
  * Orchestrates polling of all data sources and processing.
- * Integrates reporting nodes, gRPC peers, geo lookup, and inference.
+ * Integrates reporting nodes, gRPC peers, geo lookup, inference, and validators.
  */
 export class PollService {
   private peerTracker: PeerTracker;
   private inferenceEngine: InferenceEngine;
   private geoLookup: GeoLookupService;
+  private validatorTracker: ValidatorTracker;
+  private validatorFetcher: ValidatorFetcher;
 
   constructor(db: Client) {
     this.peerTracker = new PeerTracker(db);
     this.inferenceEngine = new InferenceEngine(db, this.peerTracker);
     this.geoLookup = new GeoLookupService();
+    this.validatorTracker = new ValidatorTracker(db);
+    this.validatorFetcher = new ValidatorFetcher(
+      'grpc.mainnet.concordium.software',
+      20000,
+      { cacheTtlMs: 5 * 60 * 1000 } // 5 minute cache
+    );
   }
 
   /**
@@ -183,6 +203,94 @@ export class PollService {
       locationsFailed: locationResults.failed,
       bootstrappersDetected: Number(bootstrapperCount.rows[0].count),
     };
+  }
+
+  /**
+   * Process validators from chain data.
+   * Fetches all bakers from gRPC and links to reporting peers.
+   */
+  async processValidators(reportingNodes: NodeSummary[]): Promise<ValidatorPollStats> {
+    const errors: string[] = [];
+
+    try {
+      // Fetch all validators from chain
+      const fetchResult: FetchResult = await this.validatorFetcher.fetchAllValidators();
+
+      if (fetchResult.errors.length > 0) {
+        errors.push(...fetchResult.errors);
+      }
+
+      // Build reporting peer list from nodes with consensus baker IDs
+      // Get baker IDs from the peers table where we have them
+      const db = this.getDb();
+      const peersWithBakers = await db.execute(`
+        SELECT peer_id, consensus_baker_id, node_name
+        FROM peers
+        WHERE consensus_baker_id IS NOT NULL
+      `);
+
+      const reportingPeers: ReportingPeer[] = peersWithBakers.rows.map((row) => ({
+        peerId: row.peer_id as string,
+        consensusBakerId: row.consensus_baker_id as number | null,
+        nodeName: row.node_name as string,
+      }));
+
+      // Also include reporting nodes that have baker IDs in their nodeId
+      // (Dashboard API includes some consensus info)
+      for (const node of reportingNodes) {
+        // Skip if already in the list
+        if (reportingPeers.some(p => p.peerId === node.nodeId)) continue;
+
+        // For now, we don't have baker IDs from dashboard, but we'll track the nodes
+        reportingPeers.push({
+          peerId: node.nodeId,
+          consensusBakerId: null,
+          nodeName: node.nodeName,
+        });
+      }
+
+      // Process validators with the ValidatorTracker
+      const result = await this.validatorTracker.processValidators(
+        fetchResult.validators,
+        reportingPeers
+      );
+
+      // Record a consensus snapshot
+      await this.validatorTracker.recordConsensusSnapshot();
+
+      // Get visibility metrics
+      const visibility: ConsensusVisibility = await this.validatorTracker.calculateConsensusVisibility();
+
+      return {
+        totalValidators: result.totalProcessed,
+        visibleValidators: result.visibleCount,
+        phantomValidators: result.phantomCount,
+        newValidators: result.newValidators.length,
+        stakeVisibilityPct: visibility.stakeVisibilityPct,
+        quorumHealth: visibility.quorumHealth,
+        fetchErrors: errors,
+      };
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      errors.push(`Validator processing failed: ${msg}`);
+
+      return {
+        totalValidators: 0,
+        visibleValidators: 0,
+        phantomValidators: 0,
+        newValidators: 0,
+        stakeVisibilityPct: 0,
+        quorumHealth: 'critical',
+        fetchErrors: errors,
+      };
+    }
+  }
+
+  /**
+   * Get the ValidatorTracker instance for direct access
+   */
+  getValidatorTracker(): ValidatorTracker {
+    return this.validatorTracker;
   }
 
   /**

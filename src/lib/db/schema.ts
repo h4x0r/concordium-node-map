@@ -186,6 +186,152 @@ export const SCHEMA = {
   `,
 
   /**
+   * Validators table - ALL registered bakers from chain
+   * Includes both reporting (visible) and phantom validators
+   */
+  validators: `
+    CREATE TABLE IF NOT EXISTS validators (
+      baker_id INTEGER PRIMARY KEY,
+
+      -- Chain identity (authoritative)
+      account_address TEXT NOT NULL,
+
+      -- Visibility status
+      source TEXT NOT NULL,              -- 'reporting' | 'chain_only' (phantom)
+      linked_peer_id TEXT,               -- FK to peers.peer_id if reporting
+
+      -- Stake data (from getPoolStatus) - stored as TEXT for bigint
+      equity_capital TEXT,
+      delegated_capital TEXT,
+      total_stake TEXT,
+      lottery_power REAL,                -- 0.0 to 1.0
+
+      -- Pool config
+      open_status TEXT,                  -- 'openForAll' | 'closedForNew' | 'closedForAll'
+      commission_baking REAL,
+      commission_finalization REAL,
+      commission_transaction REAL,
+
+      -- Payday status
+      in_current_payday INTEGER DEFAULT 0,
+      effective_stake TEXT,
+
+      -- Block production evidence
+      last_block_height INTEGER,
+      last_block_time INTEGER,
+      blocks_24h INTEGER DEFAULT 0,
+      blocks_7d INTEGER DEFAULT 0,
+
+      -- Forensic tracking
+      first_observed INTEGER NOT NULL,
+      last_chain_update INTEGER,
+      state_transition_count INTEGER DEFAULT 0,
+
+      -- Computed fields
+      data_completeness REAL
+      -- Note: linked_peer_id is NOT a foreign key because validators from chain
+      -- may reference peers that don't exist in our database yet
+    )
+  `,
+
+  /**
+   * Validator state transitions - forensic audit trail
+   * Tracks phantom→visible, stake changes, suspension events
+   */
+  validator_transitions: `
+    CREATE TABLE IF NOT EXISTS validator_transitions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      baker_id INTEGER NOT NULL,
+      timestamp INTEGER NOT NULL,
+      transition_type TEXT NOT NULL,
+      old_value TEXT,
+      new_value TEXT,
+      evidence TEXT,
+
+      FOREIGN KEY (baker_id) REFERENCES validators(baker_id)
+    )
+  `,
+
+  /**
+   * Consensus snapshots - periodic visibility metrics
+   * For tracking consensus health over time
+   */
+  consensus_snapshots: `
+    CREATE TABLE IF NOT EXISTS consensus_snapshots (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      timestamp INTEGER NOT NULL,
+
+      -- Validator counts
+      total_registered INTEGER NOT NULL,
+      visible_reporting INTEGER NOT NULL,
+      phantom_chain_only INTEGER NOT NULL,
+      validator_coverage_pct REAL,
+
+      -- Stake metrics (stored as TEXT for bigint)
+      total_network_stake TEXT,
+      visible_stake TEXT,
+      phantom_stake TEXT,
+      stake_visibility_pct REAL,
+
+      -- Lottery power
+      visible_lottery_power REAL,
+      phantom_lottery_power REAL,
+
+      -- Block production (last period)
+      blocks_by_visible INTEGER,
+      blocks_by_phantom INTEGER,
+      block_visibility_pct REAL,
+
+      -- Health indicators
+      quorum_health TEXT,
+      phantom_block_alert INTEGER DEFAULT 0
+    )
+  `,
+
+  /**
+   * Blocks table - tracks block production for forensic analysis
+   * Records which baker produced each block
+   */
+  blocks: `
+    CREATE TABLE IF NOT EXISTS blocks (
+      height INTEGER PRIMARY KEY,
+      hash TEXT NOT NULL UNIQUE,
+      baker_id INTEGER NOT NULL,
+      timestamp INTEGER NOT NULL,
+      recorded_at INTEGER NOT NULL
+    )
+  `,
+
+  /**
+   * Consensus alerts table - tracks alerts for forensic audit trail
+   * Records alerts about phantom blocks, stake visibility, quorum health
+   */
+  consensus_alerts: `
+    CREATE TABLE IF NOT EXISTS consensus_alerts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      alert_type TEXT NOT NULL,
+      severity TEXT NOT NULL,
+      message TEXT NOT NULL,
+      timestamp INTEGER NOT NULL,
+      metadata TEXT,
+      acknowledged INTEGER DEFAULT 0,
+      acknowledged_at INTEGER,
+      acknowledged_by TEXT
+    )
+  `,
+
+  /**
+   * Quorum health history - tracks quorum health changes for transition detection
+   */
+  quorum_health_history: `
+    CREATE TABLE IF NOT EXISTS quorum_health_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      timestamp INTEGER NOT NULL,
+      health TEXT NOT NULL
+    )
+  `,
+
+  /**
    * Indexes for common queries
    */
   indexes: [
@@ -201,6 +347,16 @@ export const SCHEMA = {
     'CREATE INDEX IF NOT EXISTS idx_peer_connections_peer ON peer_connections(peer_id)',
     'CREATE INDEX IF NOT EXISTS idx_shodan_scans_cached ON shodan_scans(cached_at)',
     'CREATE INDEX IF NOT EXISTS idx_osint_cache_expires ON osint_cache(expires_at)',
+    'CREATE INDEX IF NOT EXISTS idx_validators_source ON validators(source)',
+    'CREATE INDEX IF NOT EXISTS idx_validators_lottery ON validators(lottery_power)',
+    'CREATE INDEX IF NOT EXISTS idx_validator_transitions_baker ON validator_transitions(baker_id)',
+    'CREATE INDEX IF NOT EXISTS idx_validator_transitions_type ON validator_transitions(transition_type)',
+    'CREATE INDEX IF NOT EXISTS idx_consensus_snapshots_timestamp ON consensus_snapshots(timestamp)',
+    'CREATE INDEX IF NOT EXISTS idx_blocks_baker ON blocks(baker_id)',
+    'CREATE INDEX IF NOT EXISTS idx_blocks_timestamp ON blocks(timestamp)',
+    'CREATE INDEX IF NOT EXISTS idx_consensus_alerts_type ON consensus_alerts(alert_type)',
+    'CREATE INDEX IF NOT EXISTS idx_consensus_alerts_timestamp ON consensus_alerts(timestamp)',
+    'CREATE INDEX IF NOT EXISTS idx_quorum_health_history_timestamp ON quorum_health_history(timestamp)',
   ],
 } as const;
 
@@ -356,4 +512,90 @@ export interface OsintCacheRecord {
   cpes: string | null;        // JSON array
   fetched_at: number;
   expires_at: number;
+}
+
+/**
+ * Validator source types
+ */
+export type ValidatorSource = 'reporting' | 'chain_only';
+
+/**
+ * Validator transition types
+ */
+export type ValidatorTransitionType =
+  | 'phantom_to_visible'
+  | 'visible_to_phantom'
+  | 'stake_changed'
+  | 'suspended'
+  | 'reactivated'
+  | 'delegation_changed'
+  | 'commission_changed';
+
+/**
+ * Quorum health status
+ */
+export type QuorumHealth = 'healthy' | 'degraded' | 'critical';
+
+/**
+ * Validator record from database
+ */
+export interface ValidatorRecord {
+  baker_id: number;
+  account_address: string;
+  source: ValidatorSource;
+  linked_peer_id: string | null;
+  equity_capital: string | null;
+  delegated_capital: string | null;
+  total_stake: string | null;
+  lottery_power: number | null;
+  open_status: string | null;
+  commission_baking: number | null;
+  commission_finalization: number | null;
+  commission_transaction: number | null;
+  in_current_payday: number;
+  effective_stake: string | null;
+  last_block_height: number | null;
+  last_block_time: number | null;
+  blocks_24h: number;
+  blocks_7d: number;
+  first_observed: number;
+  last_chain_update: number | null;
+  state_transition_count: number;
+  data_completeness: number | null;
+}
+
+/**
+ * Validator transition record from database
+ */
+export interface ValidatorTransitionRecord {
+  id: number;
+  baker_id: number;
+  timestamp: number;
+  transition_type: ValidatorTransitionType;
+  old_value: string | null;
+  new_value: string | null;
+  evidence: string | null;
+}
+
+/**
+ * Consensus snapshot record from database
+ */
+export interface ConsensusSnapshotRecord {
+  id: number;
+  timestamp: number;
+  total_registered: number;
+  visible_reporting: number;
+  phantom_chain_only: number;
+  validator_coverage_pct: number | null;
+  total_network_stake: string | null;
+  visible_stake: string | null;
+  phantom_stake: string | null;
+  stake_visibility_pct: number | null;
+  visible_lottery_power: number | null;
+  phantom_lottery_power: number | null;
+  blocks_by_visible: number | null;
+  blocks_by_phantom: number | null;
+  block_visibility_pct: number | null;
+  quorum_health: QuorumHealth | null;
+  phantom_block_alert: number;
 }

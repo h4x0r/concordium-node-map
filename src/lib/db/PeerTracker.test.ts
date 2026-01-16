@@ -1,30 +1,14 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { createClient, type Client } from '@libsql/client';
+import type { Client } from '@libsql/client';
 import { PeerTracker, type PeerRecord, type PeerSource } from './PeerTracker';
-import { SCHEMA } from './schema';
+import { createTestDb } from './test-helpers';
 
 describe('PeerTracker', () => {
   let db: Client;
   let tracker: PeerTracker;
 
   beforeEach(async () => {
-    // Create in-memory database for testing
-    db = createClient({ url: ':memory:' });
-
-    // Initialize all schema including new peer tables
-    await db.execute(SCHEMA.nodes);
-    await db.execute(SCHEMA.node_sessions);
-    await db.execute(SCHEMA.snapshots);
-    await db.execute(SCHEMA.events);
-    await db.execute(SCHEMA.network_snapshots);
-    await db.execute(SCHEMA.peers);
-    await db.execute(SCHEMA.peer_connections);
-    await db.execute(SCHEMA.shodan_scans);
-    await db.execute(SCHEMA.osint_cache);
-    for (const indexSql of SCHEMA.indexes) {
-      await db.execute(indexSql);
-    }
-
+    db = await createTestDb();
     tracker = new PeerTracker(db);
   });
 

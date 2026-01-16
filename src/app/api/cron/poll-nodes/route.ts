@@ -106,6 +106,9 @@ async function processPollJob(verbose: boolean = false) {
   // Run inference engine (location inference, bootstrapper detection)
   const inferenceStats = await pollService.runInference();
 
+  // Process validators (fetch from chain, link to reporting peers)
+  const validatorStats = await pollService.processValidators(nodes);
+
   // Calculate network-wide metrics
   const now = Date.now();
   const totalNodes = nodes.length;
@@ -198,7 +201,7 @@ async function processPollJob(verbose: boolean = false) {
       healthChanges: result.healthChanges.length,
       versionChanges: result.versionChanges.length,
     },
-    // NEW: Peer tracking stats
+    // Peer tracking stats
     peerTracking: {
       peersTableCount,
       grpcPeersPolled: grpcPeersTotal,
@@ -207,6 +210,16 @@ async function processPollJob(verbose: boolean = false) {
       geoLookupsSucceeded: geoStats.succeeded,
       locationsInferred: inferenceStats.locationsInferred,
       bootstrappersDetected: inferenceStats.bootstrappersDetected,
+    },
+    // Validator tracking stats
+    validatorTracking: {
+      totalValidators: validatorStats.totalValidators,
+      visibleValidators: validatorStats.visibleValidators,
+      phantomValidators: validatorStats.phantomValidators,
+      newValidators: validatorStats.newValidators,
+      stakeVisibilityPct: Math.round(validatorStats.stakeVisibilityPct * 10) / 10,
+      quorumHealth: validatorStats.quorumHealth,
+      fetchErrors: validatorStats.fetchErrors.length > 0 ? validatorStats.fetchErrors : undefined,
     },
     snapshotsRecorded: result.snapshotsRecorded,
     cleanedUp: cleanup,
