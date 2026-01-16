@@ -63,14 +63,20 @@ async function fetchNodesSummary(): Promise<NodeSummary[]> {
  * Process the poll job (shared between GET and POST)
  */
 async function processPollJob(verbose: boolean = false) {
+  const timings: Record<string, number> = {};
+  const startTime = Date.now();
+
   // Initialize database (idempotent)
   await initializeSchema();
   const db = getDbClient();
   const tracker = new NodeTracker(db);
   const pollService = new PollService(db);
+  timings['init'] = Date.now() - startTime;
 
   // Fetch current nodes from dashboard API
+  const fetchStart = Date.now();
   const nodes = await fetchNodesSummary();
+  timings['fetchNodes'] = Date.now() - fetchStart;
 
   if (nodes.length === 0) {
     return {
@@ -83,13 +89,18 @@ async function processPollJob(verbose: boolean = false) {
   const maxHeight = Math.max(...nodes.map(n => n.finalizedBlockHeight));
 
   // Process nodes and detect changes (existing behavior)
+  const processStart = Date.now();
   const result = await tracker.processNodes(nodes, maxHeight);
+  timings['processNodes'] = Date.now() - processStart;
 
   // NEW: Process reporting nodes in peers table
+  const reportingStart = Date.now();
   await pollService.processReportingNodes(nodes);
+  timings['processReporting'] = Date.now() - reportingStart;
 
   // Poll gRPC endpoints for peer data (IPs, network stats)
   // Can be skipped via SKIP_GRPC_PEERS=true env var for debugging timeouts
+  const grpcStart = Date.now();
   let grpcPeersTotal = 0;
   const grpcErrors: string[] = [];
 
@@ -111,15 +122,21 @@ async function processPollJob(verbose: boolean = false) {
       }
     }
   }
+  timings['grpcPeers'] = Date.now() - grpcStart;
 
   // Update geo locations for peers with IPs
+  const geoStart = Date.now();
   const geoStats = await pollService.updateGeoLocations();
+  timings['geoLookup'] = Date.now() - geoStart;
 
   // Run inference engine (location inference, bootstrapper detection)
+  const inferenceStart = Date.now();
   const inferenceStats = await pollService.runInference();
+  timings['inference'] = Date.now() - inferenceStart;
 
   // Process validators (fetch from chain, link to reporting peers)
   // Can be skipped via SKIP_VALIDATORS=true env var for debugging timeouts
+  const validatorStart = Date.now();
   const validatorStats = SKIP_VALIDATORS
     ? {
         totalValidators: 0,
@@ -131,9 +148,11 @@ async function processPollJob(verbose: boolean = false) {
         fetchErrors: ['Skipped: SKIP_VALIDATORS=true'],
       }
     : await pollService.processValidators(nodes);
+  timings['validators'] = Date.now() - validatorStart;
 
   // Calculate network-wide metrics
   const now = Date.now();
+  timings['total'] = now - startTime;
   const totalNodes = nodes.length;
 
   // Health counts based on finalization lag
@@ -246,6 +265,8 @@ async function processPollJob(verbose: boolean = false) {
     },
     snapshotsRecorded: result.snapshotsRecorded,
     cleanedUp: cleanup,
+    // Timing breakdown for debugging
+    timings,
   };
 
   // Add verbose details if requested
