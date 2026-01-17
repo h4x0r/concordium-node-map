@@ -10,6 +10,10 @@
     {
       "path": "/api/cron/poll-nodes-simple",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/poll-validators",
+      "schedule": "*/5 * * * *"
     }
   ]
 }
