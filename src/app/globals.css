@@ -3605,6 +3605,373 @@
   }
 }
 
+/* Clickable bar styles */
+.cvb-clickable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cvb-clickable:hover {
+  background: rgba(0, 0, 0, 0.6);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.cvb-clickable:focus {
+  outline: 2px solid var(--bb-blue);
+  outline-offset: 2px;
+}
+
+.cvb-clickable:active {
+  transform: translateY(0);
+}
+
+/* ==========================================================================
+   VALIDATOR INVESTIGATION PANEL
+   ========================================================================== */
+
+.vip-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: vip-fade-in 0.2s ease-out;
+}
+
+@keyframes vip-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.vip-panel {
+  background: #0a0a0a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: vip-slide-up 0.25s ease-out;
+}
+
+@keyframes vip-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.vip-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: sticky;
+  top: 0;
+  background: #0a0a0a;
+  z-index: 1;
+}
+
+.vip-header h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--bb-white);
+  margin: 0;
+}
+
+.vip-close {
+  background: none;
+  border: none;
+  color: var(--bb-gray);
+  font-size: 24px;
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+  transition: color 0.15s;
+}
+
+.vip-close:hover {
+  color: var(--bb-white);
+}
+
+/* Summary Cards */
+.vip-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  padding: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vip-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 16px;
+  text-align: center;
+}
+
+.vip-card-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--bb-white);
+  font-family: var(--font-mono);
+}
+
+.vip-card.positive .vip-card-value {
+  color: #22c55e;
+}
+
+.vip-card.warning .vip-card-value {
+  color: var(--bb-orange);
+}
+
+.vip-card.negative .vip-card-value {
+  color: #ef4444;
+}
+
+.vip-card-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--bb-white);
+  margin-top: 4px;
+}
+
+.vip-card-sub {
+  font-size: 10px;
+  color: var(--bb-gray);
+  margin-top: 2px;
+}
+
+.vip-card-badge {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 3px 8px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-radius: 3px;
+  border: 1px solid;
+}
+
+.vip-card-badge.positive {
+  color: #22c55e;
+  border-color: #22c55e;
+  background: rgba(34, 197, 94, 0.15);
+}
+
+.vip-card-badge.warning {
+  color: var(--bb-orange);
+  border-color: var(--bb-orange);
+  background: rgba(255, 136, 0, 0.15);
+}
+
+.vip-card-badge.negative {
+  color: #ef4444;
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
+}
+
+/* Sections */
+.vip-section {
+  padding: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vip-section:last-child {
+  border-bottom: none;
+}
+
+.vip-section h3 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--bb-white);
+  margin: 0 0 12px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Explanation */
+.vip-explanation {
+  font-size: 13px;
+  color: var(--bb-gray);
+  line-height: 1.6;
+}
+
+.vip-explanation p {
+  margin: 0 0 12px 0;
+}
+
+.vip-explanation ul {
+  margin: 0 0 12px 0;
+  padding-left: 20px;
+}
+
+.vip-explanation li {
+  margin-bottom: 6px;
+}
+
+.vip-highlight {
+  background: rgba(239, 68, 68, 0.1);
+  border-left: 3px solid #ef4444;
+  padding: 12px 16px;
+  border-radius: 0 4px 4px 0;
+  color: var(--bb-white);
+}
+
+/* Table */
+.vip-table-container {
+  overflow-x: auto;
+}
+
+.vip-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.vip-table th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--bb-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.vip-table td {
+  padding: 10px 12px;
+  color: var(--bb-white);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.vip-table tr:hover td {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.vip-baker-id {
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.vip-address {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vip-copy-btn {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--bb-gray);
+  padding: 2px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px;
+  transition: all 0.15s;
+}
+
+.vip-copy-btn:hover {
+  border-color: var(--bb-blue);
+  color: var(--bb-blue);
+}
+
+.vip-lottery {
+  font-family: var(--font-mono);
+  color: var(--bb-gray);
+}
+
+.vip-status {
+  text-transform: capitalize;
+}
+
+.vip-table-note {
+  padding: 12px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--bb-gray);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.vip-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: #22c55e;
+  font-size: 13px;
+}
+
+/* Recommendations */
+.vip-recommendations {
+  font-size: 13px;
+  color: var(--bb-gray);
+  line-height: 1.6;
+}
+
+.vip-recommendations p {
+  margin: 0 0 12px 0;
+}
+
+.vip-recommendations ol {
+  margin: 0 0 12px 0;
+  padding-left: 20px;
+}
+
+.vip-recommendations li {
+  margin-bottom: 8px;
+}
+
+.vip-recommendations code {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--bb-white);
+}
+
+.vip-note {
+  font-style: italic;
+  color: var(--bb-gray);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .vip-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .vip-panel {
+    max-height: 95vh;
+    margin: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .vip-summary {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ==========================================================================
    PHANTOM NODE STYLES
    ========================================================================== */
