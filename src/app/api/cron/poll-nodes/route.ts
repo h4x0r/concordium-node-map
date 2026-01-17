@@ -6,8 +6,16 @@ import { ConcordiumClient } from '@/lib/concordium-client';
 import { calculateNetworkPulse } from '@/lib/pulse';
 import type { HealthStatus } from '@/lib/db/schema';
 
-// Allow longer execution time for validator fetching (Pro plan: up to 300s)
-export const maxDuration = 120; // 2 minutes
+// Fluid Compute (Pro plan): up to 800s max
+// Setting to 300s to test if Fluid Compute is actually applying
+// If still times out at 60s, Fluid Compute isn't working
+export const maxDuration = 300;
+
+// Force Node.js runtime (not Edge) for gRPC support
+export const runtime = 'nodejs';
+
+// Prevent caching
+export const dynamic = 'force-dynamic';
 
 // Concordium dashboard API
 const NODES_SUMMARY_URL = 'https://dashboard.mainnet.concordium.software/nodesSummary';

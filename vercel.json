@@ -1,8 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "fluid": true,
   "crons": [
     {
-      "path": "/api/cron/poll-nodes-simple",
+      "path": "/api/cron/poll-nodes",
       "schedule": "*/5 * * * *"
     }
   ]

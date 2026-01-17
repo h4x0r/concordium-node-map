@@ -1,5 +1,19 @@
 # Concordium Node Map - Project Instructions
 
+## Vercel Pro Plan + Fluid Compute
+
+**IMPORTANT**: This project uses Vercel Pro plan with Fluid Compute enabled:
+- **Function duration limit**: 800 seconds max (with Fluid Compute)
+- **Cron jobs**: Use the full `/api/cron/poll-nodes` endpoint, NOT the simple version
+- **maxDuration**: Can be set up to 800s in API routes with Fluid Compute
+
+### Fluid Compute (CRITICAL)
+Without Fluid Compute, even Pro plan is limited to 60s! Ensure:
+1. `"fluid": true` is set in `vercel.json`
+2. Fluid Compute is enabled in Dashboard: Project Settings → Functions → Fluid Compute → ON
+
+Do NOT suggest switching to "simple" endpoints or splitting crons due to timeout concerns.
+
 ## Vercel Environment Variables
 
 **IMPORTANT**: When environment variables need to be added to Vercel, do NOT tell the user to do it. Add them directly using the Vercel CLI which is already authenticated.
@@ -28,7 +42,7 @@ The 'n' after the value answers "no" to the "Mark as sensitive?" prompt.
 - **Database**: Turso (libSQL edge database)
 - **Styling**: Tailwind CSS
 - **Testing**: Vitest
-- **Deployment**: Vercel with Cron Jobs
+- **Deployment**: Vercel Pro with Cron Jobs (300s function limit)
 
 ## Development Commands
 
