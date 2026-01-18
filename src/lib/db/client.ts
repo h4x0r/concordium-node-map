@@ -58,6 +58,8 @@ export async function initializeSchema(): Promise<void> {
   // SQLite doesn't support IF NOT EXISTS for ADD COLUMN, so catch errors
   const migrations = [
     'ALTER TABLE peers ADD COLUMN consensus_baker_id INTEGER',
+    'ALTER TABLE nodes ADD COLUMN consensus_baker_id INTEGER',
+    'ALTER TABLE nodes ADD COLUMN baking_committee_member TEXT',
   ];
 
   for (const migration of migrations) {
