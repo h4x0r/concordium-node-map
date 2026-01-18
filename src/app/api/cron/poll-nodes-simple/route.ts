@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getDbClient, initializeSchema, cleanupOldData } from '@/lib/db/client';
 import { NodeTracker, type NodeSummary } from '@/lib/db/NodeTracker';
+import { ValidatorTracker } from '@/lib/db/ValidatorTracker';
 import { calculateNetworkPulse } from '@/lib/pulse';
 import type { HealthStatus } from '@/lib/db/schema';
 
@@ -41,6 +42,9 @@ async function fetchNodesSummary(): Promise<NodeSummary[]> {
     consensusRunning: node.consensusRunning as boolean,
     averageBytesPerSecondIn: node.averageBytesPerSecondIn as number | null,
     averageBytesPerSecondOut: node.averageBytesPerSecondOut as number | null,
+    // Validator linkage - links reporting nodes to on-chain bakers
+    consensusBakerId: node.consensusBakerId as number | undefined,
+    bakingCommitteeMember: node.bakingCommitteeMember as string | undefined,
   }));
 }
 
@@ -74,6 +78,20 @@ async function processPollJobSimple() {
   const processStart = Date.now();
   const result = await tracker.processNodes(nodes, maxHeight);
   timings['processNodes'] = Date.now() - processStart;
+
+  // Update validator visibility from nodes with baker IDs
+  // This links reporting nodes to validators without needing gRPC
+  const validatorStart = Date.now();
+  const validatorTracker = new ValidatorTracker(db);
+  const reportingPeers = nodes
+    .filter((n) => n.consensusBakerId !== undefined)
+    .map((n) => ({
+      peerId: n.nodeId,
+      consensusBakerId: n.consensusBakerId ?? null,
+      nodeName: n.nodeName,
+    }));
+  const validatorUpdate = await validatorTracker.updateVisibilityFromNodes(reportingPeers);
+  timings['validatorUpdate'] = Date.now() - validatorStart;
 
   // Calculate metrics
   const now = Date.now();
@@ -162,7 +180,13 @@ async function processPollJobSimple() {
       healthChanges: result.healthChanges.length,
       versionChanges: result.versionChanges.length,
     },
-    note: 'gRPC operations skipped (validators, peers) for faster response',
+    validatorVisibility: {
+      nodesWithBakerId: reportingPeers.length,
+      validatorsUpdated: validatorUpdate.updated,
+      alreadyVisible: validatorUpdate.alreadyVisible,
+      noMatchingValidator: validatorUpdate.noValidator,
+    },
+    note: 'gRPC operations skipped (validator fetch, peer fetch) but baker linkage from dashboard API processed',
     snapshotsRecorded: result.snapshotsRecorded,
     cleanedUp: cleanup,
     timings,

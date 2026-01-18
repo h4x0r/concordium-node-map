@@ -480,4 +480,69 @@ export class ValidatorTracker {
       })),
     };
   }
+
+  /**
+   * Update validator visibility from reporting nodes (lightweight, no gRPC needed)
+   *
+   * This can run in the simple poll - when a dashboard-reporting node has
+   * consensusBakerId, we can link it to the validator without full chain data.
+   *
+   * Returns the number of validators that were updated from phantom to visible.
+   */
+  async updateVisibilityFromNodes(
+    reportingNodes: ReportingPeer[]
+  ): Promise<{ updated: number; alreadyVisible: number; noValidator: number }> {
+    let updated = 0;
+    let alreadyVisible = 0;
+    let noValidator = 0;
+    const now = Date.now();
+
+    for (const node of reportingNodes) {
+      if (node.consensusBakerId === null) {
+        continue; // Node is not a validator
+      }
+
+      // Check if validator exists in database
+      const existing = await this.db.execute(
+        'SELECT baker_id, source, linked_peer_id FROM validators WHERE baker_id = ?',
+        [node.consensusBakerId]
+      );
+
+      if (existing.rows.length === 0) {
+        noValidator++;
+        continue; // Validator not in database yet (needs gRPC poll first)
+      }
+
+      const prev = existing.rows[0] as unknown as { baker_id: number; source: string; linked_peer_id: string | null };
+
+      if (prev.source === 'reporting') {
+        alreadyVisible++;
+        continue; // Already visible
+      }
+
+      // Update from chain_only to reporting
+      await this.db.execute(
+        `UPDATE validators SET
+          source = 'reporting',
+          linked_peer_id = ?,
+          data_completeness = 1.0,
+          state_transition_count = state_transition_count + 1
+        WHERE baker_id = ?`,
+        [node.peerId, node.consensusBakerId]
+      );
+
+      // Record the transition
+      await this.recordTransition(
+        node.consensusBakerId,
+        'phantom_to_visible',
+        'chain_only',
+        'reporting',
+        { linkedPeerId: node.peerId, timestamp: now }
+      );
+
+      updated++;
+    }
+
+    return { updated, alreadyVisible, noValidator };
+  }
 }

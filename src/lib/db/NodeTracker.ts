@@ -17,6 +17,9 @@ export interface NodeSummary {
   consensusRunning: boolean;
   averageBytesPerSecondIn: number | null;
   averageBytesPerSecondOut: number | null;
+  // Validator linkage - from dashboard API consensusBakerId field
+  consensusBakerId?: number;
+  bakingCommitteeMember?: string; // 'ActiveInCommittee' | 'NotInCommittee' | etc
 }
 
 /**
@@ -117,9 +120,9 @@ export class NodeTracker {
         result.newNodes.push(node.nodeId);
 
         await this.db.execute(
-          `INSERT INTO nodes (node_id, node_name, client, peer_type, first_seen, last_seen, is_active)
-           VALUES (?, ?, ?, ?, ?, ?, 1)`,
-          [node.nodeId, node.nodeName, node.client, node.peerType, now, now]
+          `INSERT INTO nodes (node_id, node_name, client, peer_type, first_seen, last_seen, is_active, consensus_baker_id, baking_committee_member)
+           VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)`,
+          [node.nodeId, node.nodeName, node.client, node.peerType, now, now, node.consensusBakerId ?? null, node.bakingCommitteeMember ?? null]
         );
 
         await this.recordEvent(now, node.nodeId, 'node_appeared', null, node.nodeName);
@@ -152,10 +155,10 @@ export class NodeTracker {
             [node.nodeId, sessionStart]
           );
         } else {
-          // Update last_seen
+          // Update last_seen and baker ID (may have changed)
           await this.db.execute(
-            `UPDATE nodes SET last_seen = ? WHERE node_id = ?`,
-            [now, node.nodeId]
+            `UPDATE nodes SET last_seen = ?, consensus_baker_id = ?, baking_committee_member = ? WHERE node_id = ?`,
+            [now, node.consensusBakerId ?? null, node.bakingCommitteeMember ?? null, node.nodeId]
           );
 
           // Check for restart (uptime decreased)
@@ -302,5 +305,36 @@ export class NodeTracker {
     );
 
     return result.rows as unknown as SnapshotRecord[];
+  }
+
+  /**
+   * Get all nodes that are validators (have a consensus baker ID)
+   * These are nodes actively participating in block production
+   */
+  async getValidatorNodes(): Promise<NodeRecord[]> {
+    const result = await this.db.execute(
+      `SELECT * FROM nodes
+       WHERE consensus_baker_id IS NOT NULL AND is_active = 1
+       ORDER BY consensus_baker_id ASC`
+    );
+
+    return result.rows as unknown as NodeRecord[];
+  }
+
+  /**
+   * Get a node by its consensus baker ID
+   * Used to link validators to their reporting nodes
+   */
+  async getNodeByBakerId(bakerId: number): Promise<NodeRecord | null> {
+    const result = await this.db.execute(
+      `SELECT * FROM nodes WHERE consensus_baker_id = ?`,
+      [bakerId]
+    );
+
+    if (result.rows.length === 0) {
+      return null;
+    }
+
+    return result.rows[0] as unknown as NodeRecord;
   }
 }

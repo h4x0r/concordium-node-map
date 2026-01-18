@@ -16,7 +16,10 @@ export const SCHEMA = {
       peer_type TEXT,
       first_seen INTEGER NOT NULL,
       last_seen INTEGER NOT NULL,
-      is_active INTEGER DEFAULT 1
+      is_active INTEGER DEFAULT 1,
+      -- Validator linkage (from dashboard API consensusBakerId)
+      consensus_baker_id INTEGER,
+      baking_committee_member TEXT
     )
   `,
 
@@ -390,6 +393,8 @@ export interface NodeRecord {
   first_seen: number;
   last_seen: number;
   is_active: number;
+  consensus_baker_id: number | null;
+  baking_committee_member: string | null;
 }
 
 /**

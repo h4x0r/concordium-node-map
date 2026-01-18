@@ -22,6 +22,8 @@ describe('NodeTracker', () => {
       consensusRunning: true,
       averageBytesPerSecondIn: 1000,
       averageBytesPerSecondOut: 500,
+      consensusBakerId: undefined, // Optional: validator baker ID
+      bakingCommitteeMember: undefined, // Optional: committee status
       ...overrides,
     };
   }
@@ -310,6 +312,115 @@ describe('NodeTracker', () => {
 
       expect(history.length).toBeGreaterThanOrEqual(5);
       expect(history.every((h) => h.node_id === 'history-node')).toBe(true);
+    });
+  });
+
+  describe('consensusBakerId tracking', () => {
+    it('stores consensusBakerId when node has baker ID', async () => {
+      const validatorNode = createMockNode({
+        nodeId: 'validator-node-1',
+        nodeName: 'Thyfoon_CCD',
+        consensusBakerId: 82184,
+        bakingCommitteeMember: 'ActiveInCommittee',
+      });
+
+      await tracker.processNodes([validatorNode], 1000000);
+
+      // Verify baker ID was stored in nodes table
+      const stored = await db.execute(
+        'SELECT consensus_baker_id, baking_committee_member FROM nodes WHERE node_id = ?',
+        ['validator-node-1']
+      );
+      expect(stored.rows).toHaveLength(1);
+      expect(stored.rows[0].consensus_baker_id).toBe(82184);
+      expect(stored.rows[0].baking_committee_member).toBe('ActiveInCommittee');
+    });
+
+    it('handles nodes without baker ID (null)', async () => {
+      const regularNode = createMockNode({
+        nodeId: 'regular-node-1',
+        nodeName: 'Regular Node',
+        // No consensusBakerId - not a validator
+      });
+
+      await tracker.processNodes([regularNode], 1000000);
+
+      const stored = await db.execute(
+        'SELECT consensus_baker_id, baking_committee_member FROM nodes WHERE node_id = ?',
+        ['regular-node-1']
+      );
+      expect(stored.rows).toHaveLength(1);
+      expect(stored.rows[0].consensus_baker_id).toBeNull();
+      expect(stored.rows[0].baking_committee_member).toBeNull();
+    });
+
+    it('can query nodes that are validators', async () => {
+      const validatorNode = createMockNode({
+        nodeId: 'validator-1',
+        consensusBakerId: 100,
+        bakingCommitteeMember: 'ActiveInCommittee',
+      });
+      const regularNode = createMockNode({
+        nodeId: 'regular-1',
+        // No baker ID
+      });
+
+      await tracker.processNodes([validatorNode, regularNode], 1000000);
+
+      const validators = await tracker.getValidatorNodes();
+      expect(validators).toHaveLength(1);
+      expect(validators[0].node_id).toBe('validator-1');
+      expect(validators[0].consensus_baker_id).toBe(100);
+    });
+
+    it('can get node by baker ID', async () => {
+      const node1 = createMockNode({
+        nodeId: 'node-baker-82184',
+        consensusBakerId: 82184,
+      });
+      const node2 = createMockNode({
+        nodeId: 'node-baker-83075',
+        consensusBakerId: 83075,
+      });
+
+      await tracker.processNodes([node1, node2], 1000000);
+
+      const found = await tracker.getNodeByBakerId(82184);
+      expect(found).not.toBeNull();
+      expect(found!.node_id).toBe('node-baker-82184');
+
+      const notFound = await tracker.getNodeByBakerId(99999);
+      expect(notFound).toBeNull();
+    });
+
+    it('updates baker ID when it changes', async () => {
+      // First: node not a validator
+      const node = createMockNode({
+        nodeId: 'becoming-validator',
+        consensusBakerId: undefined,
+      });
+      await tracker.processNodes([node], 1000000);
+
+      let stored = await db.execute(
+        'SELECT consensus_baker_id FROM nodes WHERE node_id = ?',
+        ['becoming-validator']
+      );
+      expect(stored.rows[0].consensus_baker_id).toBeNull();
+
+      // Second: node becomes a validator
+      const validatorNode = createMockNode({
+        nodeId: 'becoming-validator',
+        consensusBakerId: 12345,
+        bakingCommitteeMember: 'ActiveInCommittee',
+      });
+      await tracker.processNodes([validatorNode], 1000000);
+
+      stored = await db.execute(
+        'SELECT consensus_baker_id, baking_committee_member FROM nodes WHERE node_id = ?',
+        ['becoming-validator']
+      );
+      expect(stored.rows[0].consensus_baker_id).toBe(12345);
+      expect(stored.rows[0].baking_committee_member).toBe('ActiveInCommittee');
     });
   });
 });
