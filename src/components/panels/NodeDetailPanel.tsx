@@ -55,9 +55,9 @@ interface DetailRowProps {
 
 function DetailRow({ label, value }: DetailRowProps) {
   return (
-    <div className="flex justify-between py-1.5 text-sm font-mono border-b border-border/30 last:border-0">
-      <span className="text-muted-foreground text-xs">{label}</span>
-      <span className="font-medium text-foreground">{value}</span>
+    <div className="flex justify-between gap-2 py-1.5 text-sm font-mono border-b border-border/30 last:border-0">
+      <span className="text-muted-foreground text-xs shrink-0">{label}</span>
+      <span className="font-medium text-foreground text-right break-all min-w-0">{value}</span>
     </div>
   );
 }

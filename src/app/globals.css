@@ -826,6 +826,9 @@
   color: var(--bb-white);
   font-family: inherit;
   word-break: break-all;
+  flex: 1;
+  min-width: 0;
+  text-align: right;
 }
 
 .bb-forensic-value.mono {

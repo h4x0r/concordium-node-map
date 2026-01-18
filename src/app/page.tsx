@@ -643,8 +643,12 @@ function DesktopHome() {
                       }}
                       style={{ cursor: 'pointer' }}
                     >
-                      <td className="text-[var(--bb-cyan)]" style={{ maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {node.nodeName || node.nodeId.slice(0, 12)}
+                      <td
+                        className="text-[var(--bb-cyan)]"
+                        title={node.nodeName || node.nodeId}
+                        style={{ maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                      >
+                        {node.nodeName || node.nodeId.slice(0, 16)}
                       </td>
                       <td className="num">{node.peersCount}</td>
                       <td className="num">{node.finalizedBlockHeight}</td>
