@@ -4159,3 +4159,128 @@
   background: rgba(255, 0, 255, 0.3);
   box-shadow: 0 0 12px rgba(255, 0, 255, 0.5);
 }
+
+/* ===== Data View Styles ===== */
+.bb-data-view {
+  padding: 16px;
+  height: 100%;
+  overflow-y: auto;
+  background: var(--bb-black);
+}
+
+.bb-view-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.bb-stat-card {
+  background: var(--bb-panel-bg);
+  border: 1px solid var(--bb-border);
+  padding: 16px;
+  text-align: center;
+}
+
+.bb-stat-card.positive {
+  border-color: var(--bb-green);
+}
+
+.bb-stat-card.negative {
+  border-color: var(--bb-red);
+}
+
+.bb-stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--bb-white);
+  margin-bottom: 4px;
+}
+
+.bb-stat-card.positive .bb-stat-value {
+  color: var(--bb-green);
+}
+
+.bb-stat-card.negative .bb-stat-value {
+  color: var(--bb-red);
+}
+
+.bb-stat-label {
+  font-size: 11px;
+  color: var(--bb-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.bb-view-section {
+  background: var(--bb-panel-bg);
+  border: 1px solid var(--bb-border);
+  padding: 16px;
+}
+
+.bb-view-section h3 {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--bb-white);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--bb-border);
+}
+
+.bb-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  border-radius: 2px;
+  background: var(--bb-border);
+  color: var(--bb-gray);
+}
+
+.bb-badge.positive {
+  background: rgba(0, 255, 128, 0.15);
+  color: var(--bb-green);
+}
+
+.bb-badge.negative {
+  background: rgba(255, 64, 64, 0.15);
+  color: var(--bb-red);
+}
+
+.bb-view-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 12px;
+  color: var(--bb-gray);
+  font-size: 12px;
+}
+
+.bb-spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--bb-border);
+  border-top-color: var(--concordium-teal);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.bb-view-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--bb-red);
+  font-size: 12px;
+  padding: 24px;
+  text-align: center;
+}

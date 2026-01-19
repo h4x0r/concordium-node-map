@@ -21,6 +21,8 @@ import { MobileHome } from '@/components/mobile/MobileHome';
 import { HelpPanel } from '@/components/help';
 import { CopyableTooltip } from '@/components/ui/CopyableTooltip';
 import { OsintHoverCard, OsintDrawer } from '@/components/osint';
+import { TransactionsView } from '@/components/dashboard/TransactionsView';
+import { BlocksView } from '@/components/dashboard/BlocksView';
 
 // Dynamic imports for heavy map components
 const TopologyGraph = dynamic(
@@ -471,17 +473,30 @@ function DesktopHome() {
             >
               Geographic
             </button>
-            <button className="bb-tab">Transactions</button>
-            <button className="bb-tab">Blocks</button>
+            <button
+              className={`bb-tab ${currentView === 'transactions' ? 'active' : ''}`}
+              onClick={() => setView('transactions')}
+            >
+              Transactions
+            </button>
+            <button
+              className={`bb-tab ${currentView === 'blocks' ? 'active' : ''}`}
+              onClick={() => setView('blocks')}
+            >
+              Blocks
+            </button>
             <div className="flex-1" />
             <div className="bb-tab" style={{ cursor: 'default', color: 'var(--bb-gray)' }}>
               {formatDate(currentTime)}
             </div>
           </div>
 
-          {/* Map Content */}
+          {/* Map/Data Content */}
           <div className="flex-1 min-h-0 relative">
-            {currentView === 'topology' ? <TopologyGraph /> : <GeographicMap />}
+            {currentView === 'topology' && <TopologyGraph />}
+            {currentView === 'geographic' && <GeographicMap />}
+            {currentView === 'transactions' && <TransactionsView />}
+            {currentView === 'blocks' && <BlocksView />}
           </div>
 
           {/* Per-Node Detail Panel - shows when a node is selected */}
