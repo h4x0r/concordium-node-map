@@ -40,6 +40,11 @@ describe('ValidatorFetcher', () => {
       ];
 
       vi.spyOn(fetcher as any, 'fetchBakersRewardPeriod').mockResolvedValue(mockBakers);
+      vi.spyOn(fetcher as any, 'fetchBakerAccountAddresses').mockResolvedValue(new Map([
+        [1, '3kBx2h5Y...'],
+        [42, '4aBc3d4E...'],
+        [100, '5fGh6i7J...'],
+      ]));
 
       const result = await fetcher.fetchAllValidators();
 
@@ -58,6 +63,7 @@ describe('ValidatorFetcher', () => {
       ];
 
       vi.spyOn(fetcher as any, 'fetchBakersRewardPeriod').mockResolvedValue(mockBakers);
+      vi.spyOn(fetcher as any, 'fetchBakerAccountAddresses').mockResolvedValue(new Map([[42, '3ABC123def456...']]));
 
       const result = await fetcher.fetchAllValidators();
 
@@ -93,6 +99,7 @@ describe('ValidatorFetcher', () => {
       ];
 
       vi.spyOn(fetcher as any, 'fetchBakersRewardPeriod').mockResolvedValue(mockBakers);
+      vi.spyOn(fetcher as any, 'fetchBakerAccountAddresses').mockResolvedValue(new Map());
 
       const result = await fetcher.fetchAllValidators();
 
@@ -106,6 +113,7 @@ describe('ValidatorFetcher', () => {
       ];
 
       vi.spyOn(fetcher as any, 'fetchBakersRewardPeriod').mockResolvedValue(mockBakers);
+      vi.spyOn(fetcher as any, 'fetchBakerAccountAddresses').mockResolvedValue(new Map());
 
       const result = await fetcher.fetchAllValidators();
 
@@ -129,6 +137,7 @@ describe('ValidatorFetcher', () => {
       ];
 
       vi.spyOn(fetcher as any, 'fetchBakersRewardPeriod').mockResolvedValue(mockBakers);
+      vi.spyOn(fetcher as any, 'fetchBakerAccountAddresses').mockResolvedValue(new Map());
 
       const result = await fetcher.fetchAllValidators();
 
@@ -148,6 +157,7 @@ describe('ValidatorFetcher', () => {
 
       const fetchBakersSpy = vi.fn().mockResolvedValue(mockBakers);
       vi.spyOn(fetcher as any, 'fetchBakersRewardPeriod').mockImplementation(fetchBakersSpy);
+      vi.spyOn(fetcher as any, 'fetchBakerAccountAddresses').mockResolvedValue(new Map());
 
       const result = await fetcher.fetchAllValidators();
 
@@ -163,6 +173,7 @@ describe('ValidatorFetcher', () => {
       const fetchBakersSpy = vi.fn().mockResolvedValue(mockBakers);
 
       vi.spyOn(fetcher as any, 'fetchBakersRewardPeriod').mockImplementation(fetchBakersSpy);
+      vi.spyOn(fetcher as any, 'fetchBakerAccountAddresses').mockResolvedValue(new Map());
 
       // First call
       await fetcher.fetchAllValidators();
@@ -184,6 +195,7 @@ describe('ValidatorFetcher', () => {
       const fetchBakersSpy = vi.fn().mockResolvedValue(mockBakers);
 
       vi.spyOn(cachingFetcher as any, 'fetchBakersRewardPeriod').mockImplementation(fetchBakersSpy);
+      vi.spyOn(cachingFetcher as any, 'fetchBakerAccountAddresses').mockResolvedValue(new Map());
 
       // First call
       await cachingFetcher.fetchAllValidators();
@@ -202,6 +214,7 @@ describe('ValidatorFetcher', () => {
       const fetchBakersSpy = vi.fn().mockResolvedValue(mockBakers);
 
       vi.spyOn(fetcher as any, 'fetchBakersRewardPeriod').mockImplementation(fetchBakersSpy);
+      vi.spyOn(fetcher as any, 'fetchBakerAccountAddresses').mockResolvedValue(new Map());
 
       // First call
       await fetcher.fetchAllValidators();
@@ -209,6 +222,41 @@ describe('ValidatorFetcher', () => {
       await fetcher.fetchAllValidators({ forceRefresh: true });
 
       expect(fetchBakersSpy).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('account addresses', () => {
+    it('fetches account addresses and includes them in validators', async () => {
+      const mockBakers = [
+        createMockBakerRewardPeriodInfo(42, BigInt('600000000000')),
+      ];
+
+      vi.spyOn(fetcher as any, 'fetchBakersRewardPeriod').mockResolvedValue(mockBakers);
+      vi.spyOn(fetcher as any, 'fetchBakerAccountAddresses').mockResolvedValue(
+        new Map([[42, '3kBx2h5Y2veb4hZgAJWPrr8GvTCgCHkq...']])
+      );
+
+      const result = await fetcher.fetchAllValidators();
+
+      expect(result.validators[0].accountAddress).toBe('3kBx2h5Y2veb4hZgAJWPrr8GvTCgCHkq...');
+    });
+
+    it('continues with empty address if account address fetch fails', async () => {
+      const mockBakers = [
+        createMockBakerRewardPeriodInfo(42, BigInt('600000000000')),
+      ];
+
+      vi.spyOn(fetcher as any, 'fetchBakersRewardPeriod').mockResolvedValue(mockBakers);
+      vi.spyOn(fetcher as any, 'fetchBakerAccountAddresses').mockRejectedValue(
+        new Error('Failed to fetch addresses')
+      );
+
+      const result = await fetcher.fetchAllValidators();
+
+      // Should still return validator, just with empty address
+      expect(result.validators).toHaveLength(1);
+      expect(result.validators[0].accountAddress).toBe('');
+      expect(result.errors).toContain('Failed to fetch account addresses: Failed to fetch addresses');
     });
   });
 });

@@ -66,6 +66,7 @@ export class ValidatorFetcher {
 
   /**
    * Fetch all validators from the chain using efficient getBakersRewardPeriod
+   * Also fetches account addresses using getPoolInfo
    * Returns cached result if available and not expired
    */
   async fetchAllValidators(options?: FetchOptions): Promise<FetchResult> {
@@ -88,10 +89,22 @@ export class ValidatorFetcher {
         totalNetworkStake += totalStake;
       }
 
-      // Second pass: transform to ChainValidator with lottery power
+      // Fetch account addresses for all bakers (batched for efficiency)
+      const bakerIds = bakersInfo.map((info) => info.baker.bakerId);
+      let addressMap = new Map<number, string>();
+      try {
+        addressMap = await this.fetchBakerAccountAddresses(bakerIds);
+      } catch (err) {
+        errors.push(`Failed to fetch account addresses: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        // Continue without addresses - better to have partial data
+      }
+
+      // Second pass: transform to ChainValidator with lottery power and address
       for (const info of bakersInfo) {
         try {
-          const validator = this.transformToChainValidator(info, totalNetworkStake);
+          const bakerId = Number(info.baker.bakerId);
+          const accountAddress = addressMap.get(bakerId) || '';
+          const validator = this.transformToChainValidator(info, totalNetworkStake, accountAddress);
           validators.push(validator);
         } catch (err) {
           const bakerId = Number(info.baker.bakerId);
@@ -185,7 +198,8 @@ export class ValidatorFetcher {
    */
   private transformToChainValidator(
     info: BakerRewardPeriodInfo,
-    totalNetworkStake: bigint
+    totalNetworkStake: bigint,
+    accountAddress: string = ''
   ): ChainValidator {
     const bakerId = Number(info.baker.bakerId);
     const totalStake = info.equityCapital + info.delegatedCapital;
@@ -197,9 +211,7 @@ export class ValidatorFetcher {
 
     return {
       bakerId,
-      // Account address not available from getBakersRewardPeriod
-      // Can be fetched separately if needed via getAccountInfo
-      accountAddress: '',
+      accountAddress,
       equityCapital: info.equityCapital,
       delegatedCapital: info.delegatedCapital,
       totalStake,
@@ -215,6 +227,59 @@ export class ValidatorFetcher {
       inCurrentPayday: true,
       effectiveStake: info.effectiveStake,
     };
+  }
+
+  /**
+   * Fetch account addresses for bakers using getPoolInfo
+   * Returns a map of bakerId -> accountAddress
+   */
+  protected async fetchBakerAccountAddresses(
+    bakerIds: bigint[]
+  ): Promise<Map<number, string>> {
+    const { ConcordiumGRPCNodeClient, credentials } = await import(
+      '@concordium/web-sdk/nodejs'
+    );
+
+    const client = new ConcordiumGRPCNodeClient(
+      this.host,
+      this.port,
+      credentials.createSsl(),
+      { timeout: this.timeout }
+    );
+
+    const addressMap = new Map<number, string>();
+
+    // Fetch in batches to avoid overwhelming the node
+    const BATCH_SIZE = 20;
+    for (let i = 0; i < bakerIds.length; i += BATCH_SIZE) {
+      const batch = bakerIds.slice(i, i + BATCH_SIZE);
+
+      // Fetch batch in parallel
+      const promises = batch.map(async (bakerId) => {
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const poolInfo = await (client as any).getPoolInfo(bakerId);
+          // Extract account address from pool info
+          // The SDK returns it as poolInfo.poolInfo?.bakerAddress or similar
+          const address = poolInfo?.poolInfo?.bakerAddress?.toString()
+            || poolInfo?.bakerAddress?.toString()
+            || '';
+          return { bakerId: Number(bakerId), address };
+        } catch {
+          // Baker might not have a pool or pool info unavailable
+          return { bakerId: Number(bakerId), address: '' };
+        }
+      });
+
+      const results = await Promise.all(promises);
+      for (const { bakerId, address } of results) {
+        if (address) {
+          addressMap.set(bakerId, address);
+        }
+      }
+    }
+
+    return addressMap;
   }
 }
 
