@@ -60,6 +60,10 @@ export async function initializeSchema(): Promise<void> {
     'ALTER TABLE peers ADD COLUMN consensus_baker_id INTEGER',
     'ALTER TABLE nodes ADD COLUMN consensus_baker_id INTEGER',
     'ALTER TABLE nodes ADD COLUMN baking_committee_member TEXT',
+    // Transaction tracking columns (added 2026-01-20)
+    'ALTER TABLE blocks ADD COLUMN transaction_count INTEGER DEFAULT 0',
+    'ALTER TABLE validators ADD COLUMN transactions_24h INTEGER DEFAULT 0',
+    'ALTER TABLE validators ADD COLUMN transactions_7d INTEGER DEFAULT 0',
   ];
 
   for (const migration of migrations) {
