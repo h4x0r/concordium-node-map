@@ -12,7 +12,7 @@ export async function GET() {
     await initializeSchema();
     const db = getDbClient();
 
-    // Get all validators
+    // Get validators in current payday (active bakers only)
     const validatorsResult = await db.execute(`
       SELECT
         baker_id,
@@ -38,6 +38,7 @@ export async function GET() {
         state_transition_count,
         data_completeness
       FROM validators
+      WHERE in_current_payday = 1
       ORDER BY lottery_power DESC
     `);
 
@@ -119,6 +120,9 @@ export async function GET() {
         accountAddress: v.accountAddress,
         lotteryPower: v.lotteryPower,
         openStatus: v.openStatus,
+        blocks24h: v.blocks24h,
+        blocks7d: v.blocks7d,
+        lastBlockTime: v.lastBlockTime,
       })),
     });
   } catch (error) {

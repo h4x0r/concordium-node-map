@@ -3670,6 +3670,17 @@
   color: #ef4444;
 }
 
+.cvb-value-sm.cvb-pending {
+  color: var(--bb-gray);
+  opacity: 0.6;
+  animation: cvb-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes cvb-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
 .cvb-separator {
   color: var(--bb-gray);
   font-weight: 400;
@@ -3993,6 +4004,18 @@
 
 .vip-status {
   text-transform: capitalize;
+}
+
+.vip-blocks {
+  font-family: var(--font-mono);
+  color: var(--bb-cyan);
+  text-align: right;
+}
+
+.vip-last-block {
+  font-family: var(--font-mono);
+  color: var(--bb-gray);
+  font-size: 10px;
 }
 
 .vip-table-note {

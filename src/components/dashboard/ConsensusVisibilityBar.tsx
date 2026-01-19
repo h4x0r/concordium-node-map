@@ -73,6 +73,25 @@ export function ConsensusVisibilityBar({
     );
   }
 
+  // Detect "not ready" state: 0 visible validators means cron hasn't linked data yet
+  const isDataNotReady = visibility.visibleReporting === 0 && visibility.totalRegistered > 0;
+
+  // Show pending state if data not ready
+  if (isDataNotReady) {
+    return (
+      <div
+        data-testid="consensus-visibility-bar"
+        className={`consensus-visibility-bar cvb-compact ${className}`}
+        title="Validator visibility data syncing..."
+      >
+        <div className="cvb-metric-inline">
+          <span className="cvb-label-sm">VAL</span>
+          <span className="cvb-value-sm cvb-pending">...</span>
+        </div>
+      </div>
+    );
+  }
+
   const visibilityColorClass = getVisibilityColorClass(
     visibility.stakeVisibilityPct
   );

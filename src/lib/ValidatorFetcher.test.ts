@@ -13,6 +13,8 @@ import { ValidatorFetcher } from './ValidatorFetcher';
 vi.mock('@concordium/web-sdk/nodejs', () => ({
   ConcordiumGRPCNodeClient: vi.fn().mockImplementation(() => ({
     getBakersRewardPeriod: vi.fn(),
+    getPoolInfo: vi.fn(),
+    getAccountInfo: vi.fn(),
   })),
   credentials: {
     createSsl: vi.fn(),
@@ -40,11 +42,14 @@ describe('ValidatorFetcher', () => {
       ];
 
       vi.spyOn(fetcher as any, 'fetchBakersRewardPeriod').mockResolvedValue(mockBakers);
-      vi.spyOn(fetcher as any, 'fetchBakerAccountAddresses').mockResolvedValue(new Map([
-        [1, '3kBx2h5Y...'],
-        [42, '4aBc3d4E...'],
-        [100, '5fGh6i7J...'],
-      ]));
+      vi.spyOn(fetcher as any, 'fetchBakerAccountAddresses').mockResolvedValue({
+        addressMap: new Map([
+          [1, '3kBx2h5Y...'],
+          [42, '4aBc3d4E...'],
+          [100, '5fGh6i7J...'],
+        ]),
+        diagnostics: { totalBakers: 3, addressesFromPool: 3, addressesFromAccount: 0, noAddressFound: 0, failedBakerIds: [] },
+      });
 
       const result = await fetcher.fetchAllValidators();
 
@@ -63,7 +68,10 @@ describe('ValidatorFetcher', () => {
       ];
 
       vi.spyOn(fetcher as any, 'fetchBakersRewardPeriod').mockResolvedValue(mockBakers);
-      vi.spyOn(fetcher as any, 'fetchBakerAccountAddresses').mockResolvedValue(new Map([[42, '3ABC123def456...']]));
+      vi.spyOn(fetcher as any, 'fetchBakerAccountAddresses').mockResolvedValue({
+        addressMap: new Map([[42, '3ABC123def456...']]),
+        diagnostics: { totalBakers: 1, addressesFromPool: 1, addressesFromAccount: 0, noAddressFound: 0, failedBakerIds: [] },
+      });
 
       const result = await fetcher.fetchAllValidators();
 
@@ -99,7 +107,10 @@ describe('ValidatorFetcher', () => {
       ];
 
       vi.spyOn(fetcher as any, 'fetchBakersRewardPeriod').mockResolvedValue(mockBakers);
-      vi.spyOn(fetcher as any, 'fetchBakerAccountAddresses').mockResolvedValue(new Map());
+      vi.spyOn(fetcher as any, 'fetchBakerAccountAddresses').mockResolvedValue({
+        addressMap: new Map(),
+        diagnostics: { totalBakers: 0, addressesFromPool: 0, addressesFromAccount: 0, noAddressFound: 0, failedBakerIds: [] },
+      });
 
       const result = await fetcher.fetchAllValidators();
 
@@ -113,7 +124,10 @@ describe('ValidatorFetcher', () => {
       ];
 
       vi.spyOn(fetcher as any, 'fetchBakersRewardPeriod').mockResolvedValue(mockBakers);
-      vi.spyOn(fetcher as any, 'fetchBakerAccountAddresses').mockResolvedValue(new Map());
+      vi.spyOn(fetcher as any, 'fetchBakerAccountAddresses').mockResolvedValue({
+        addressMap: new Map(),
+        diagnostics: { totalBakers: 0, addressesFromPool: 0, addressesFromAccount: 0, noAddressFound: 0, failedBakerIds: [] },
+      });
 
       const result = await fetcher.fetchAllValidators();
 
@@ -137,7 +151,10 @@ describe('ValidatorFetcher', () => {
       ];
 
       vi.spyOn(fetcher as any, 'fetchBakersRewardPeriod').mockResolvedValue(mockBakers);
-      vi.spyOn(fetcher as any, 'fetchBakerAccountAddresses').mockResolvedValue(new Map());
+      vi.spyOn(fetcher as any, 'fetchBakerAccountAddresses').mockResolvedValue({
+        addressMap: new Map(),
+        diagnostics: { totalBakers: 0, addressesFromPool: 0, addressesFromAccount: 0, noAddressFound: 0, failedBakerIds: [] },
+      });
 
       const result = await fetcher.fetchAllValidators();
 
@@ -157,7 +174,10 @@ describe('ValidatorFetcher', () => {
 
       const fetchBakersSpy = vi.fn().mockResolvedValue(mockBakers);
       vi.spyOn(fetcher as any, 'fetchBakersRewardPeriod').mockImplementation(fetchBakersSpy);
-      vi.spyOn(fetcher as any, 'fetchBakerAccountAddresses').mockResolvedValue(new Map());
+      vi.spyOn(fetcher as any, 'fetchBakerAccountAddresses').mockResolvedValue({
+        addressMap: new Map(),
+        diagnostics: { totalBakers: 0, addressesFromPool: 0, addressesFromAccount: 0, noAddressFound: 0, failedBakerIds: [] },
+      });
 
       const result = await fetcher.fetchAllValidators();
 
@@ -173,7 +193,10 @@ describe('ValidatorFetcher', () => {
       const fetchBakersSpy = vi.fn().mockResolvedValue(mockBakers);
 
       vi.spyOn(fetcher as any, 'fetchBakersRewardPeriod').mockImplementation(fetchBakersSpy);
-      vi.spyOn(fetcher as any, 'fetchBakerAccountAddresses').mockResolvedValue(new Map());
+      vi.spyOn(fetcher as any, 'fetchBakerAccountAddresses').mockResolvedValue({
+        addressMap: new Map(),
+        diagnostics: { totalBakers: 0, addressesFromPool: 0, addressesFromAccount: 0, noAddressFound: 0, failedBakerIds: [] },
+      });
 
       // First call
       await fetcher.fetchAllValidators();
@@ -195,7 +218,10 @@ describe('ValidatorFetcher', () => {
       const fetchBakersSpy = vi.fn().mockResolvedValue(mockBakers);
 
       vi.spyOn(cachingFetcher as any, 'fetchBakersRewardPeriod').mockImplementation(fetchBakersSpy);
-      vi.spyOn(cachingFetcher as any, 'fetchBakerAccountAddresses').mockResolvedValue(new Map());
+      vi.spyOn(cachingFetcher as any, 'fetchBakerAccountAddresses').mockResolvedValue({
+        addressMap: new Map(),
+        diagnostics: { totalBakers: 0, addressesFromPool: 0, addressesFromAccount: 0, noAddressFound: 0, failedBakerIds: [] },
+      });
 
       // First call
       await cachingFetcher.fetchAllValidators();
@@ -214,7 +240,10 @@ describe('ValidatorFetcher', () => {
       const fetchBakersSpy = vi.fn().mockResolvedValue(mockBakers);
 
       vi.spyOn(fetcher as any, 'fetchBakersRewardPeriod').mockImplementation(fetchBakersSpy);
-      vi.spyOn(fetcher as any, 'fetchBakerAccountAddresses').mockResolvedValue(new Map());
+      vi.spyOn(fetcher as any, 'fetchBakerAccountAddresses').mockResolvedValue({
+        addressMap: new Map(),
+        diagnostics: { totalBakers: 0, addressesFromPool: 0, addressesFromAccount: 0, noAddressFound: 0, failedBakerIds: [] },
+      });
 
       // First call
       await fetcher.fetchAllValidators();
@@ -232,9 +261,10 @@ describe('ValidatorFetcher', () => {
       ];
 
       vi.spyOn(fetcher as any, 'fetchBakersRewardPeriod').mockResolvedValue(mockBakers);
-      vi.spyOn(fetcher as any, 'fetchBakerAccountAddresses').mockResolvedValue(
-        new Map([[42, '3kBx2h5Y2veb4hZgAJWPrr8GvTCgCHkq...']])
-      );
+      vi.spyOn(fetcher as any, 'fetchBakerAccountAddresses').mockResolvedValue({
+        addressMap: new Map([[42, '3kBx2h5Y2veb4hZgAJWPrr8GvTCgCHkq...']]),
+        diagnostics: { totalBakers: 1, addressesFromPool: 1, addressesFromAccount: 0, noAddressFound: 0, failedBakerIds: [] },
+      });
 
       const result = await fetcher.fetchAllValidators();
 
@@ -257,6 +287,143 @@ describe('ValidatorFetcher', () => {
       expect(result.validators).toHaveLength(1);
       expect(result.validators[0].accountAddress).toBe('');
       expect(result.errors).toContain('Failed to fetch account addresses: Failed to fetch addresses');
+    });
+  });
+
+  describe('retry and fallback logic', () => {
+    it('retries getPoolInfo on transient failures', async () => {
+      // This tests the retryWithBackoff method indirectly through fetchBakerAddress
+      const mockClient = {
+        getPoolInfo: vi.fn()
+          .mockRejectedValueOnce(new Error('Timeout'))
+          .mockRejectedValueOnce(new Error('Connection reset'))
+          .mockResolvedValueOnce({ bakerAddress: { toString: () => '3kBx2h5Y...' } }),
+        getAccountInfo: vi.fn(),
+      };
+
+      // Access private method for testing
+      const result = await (fetcher as any).fetchBakerAddress(mockClient, BigInt(42));
+
+      expect(result.address).toBe('3kBx2h5Y...');
+      expect(result.source).toBe('pool');
+      expect(mockClient.getPoolInfo).toHaveBeenCalledTimes(3);
+      expect(mockClient.getAccountInfo).not.toHaveBeenCalled();
+    });
+
+    it('falls back to getAccountInfo when getPoolInfo fails', async () => {
+      const mockClient = {
+        getPoolInfo: vi.fn().mockRejectedValue(new Error('Pool not found')),
+        getAccountInfo: vi.fn().mockResolvedValue({
+          accountAddress: { toString: () => '4aBc3d4E...' },
+        }),
+      };
+
+      const result = await (fetcher as any).fetchBakerAddress(mockClient, BigInt(1175));
+
+      expect(result.address).toBe('4aBc3d4E...');
+      expect(result.source).toBe('account');
+      // getPoolInfo called 3 times (1 + 2 retries), then getAccountInfo called
+      expect(mockClient.getPoolInfo).toHaveBeenCalledTimes(3);
+      expect(mockClient.getAccountInfo).toHaveBeenCalledTimes(1);
+    });
+
+    it('returns empty when both methods fail', async () => {
+      const mockClient = {
+        getPoolInfo: vi.fn().mockRejectedValue(new Error('Pool not found')),
+        getAccountInfo: vi.fn().mockRejectedValue(new Error('Account not found')),
+      };
+
+      const result = await (fetcher as any).fetchBakerAddress(mockClient, BigInt(9999));
+
+      expect(result.address).toBe('');
+      expect(result.source).toBe('none');
+    });
+
+    it('returns empty when getPoolInfo returns no address and getAccountInfo fails', async () => {
+      const mockClient = {
+        getPoolInfo: vi.fn().mockResolvedValue({ bakerAddress: undefined }),
+        getAccountInfo: vi.fn().mockRejectedValue(new Error('Account not found')),
+      };
+
+      const result = await (fetcher as any).fetchBakerAddress(mockClient, BigInt(100));
+
+      expect(result.address).toBe('');
+      expect(result.source).toBe('none');
+    });
+  });
+
+  describe('diagnostics tracking', () => {
+    it('tracks addresses from pool (primary method)', async () => {
+      const mockBakers = [
+        createMockBakerRewardPeriodInfo(1, BigInt('100000000000')),
+        createMockBakerRewardPeriodInfo(2, BigInt('100000000000')),
+      ];
+
+      vi.spyOn(fetcher as any, 'fetchBakersRewardPeriod').mockResolvedValue(mockBakers);
+      vi.spyOn(fetcher as any, 'fetchBakerAccountAddresses').mockResolvedValue({
+        addressMap: new Map([
+          [1, '3ABC...'],
+          [2, '4DEF...'],
+        ]),
+        diagnostics: {
+          totalBakers: 2,
+          addressesFromPool: 2,
+          addressesFromAccount: 0,
+          noAddressFound: 0,
+          failedBakerIds: [],
+        },
+      });
+
+      const result = await fetcher.fetchAllValidators();
+
+      expect(result.diagnostics).toBeDefined();
+      expect(result.diagnostics?.addressesFromPool).toBe(2);
+      expect(result.diagnostics?.addressesFromAccount).toBe(0);
+      expect(result.diagnostics?.noAddressFound).toBe(0);
+    });
+
+    it('tracks addresses from account fallback', async () => {
+      const mockBakers = [
+        createMockBakerRewardPeriodInfo(1175, BigInt('100000000000')),
+      ];
+
+      vi.spyOn(fetcher as any, 'fetchBakersRewardPeriod').mockResolvedValue(mockBakers);
+      vi.spyOn(fetcher as any, 'fetchBakerAccountAddresses').mockResolvedValue({
+        addressMap: new Map([[1175, '5GHI...']]),
+        diagnostics: {
+          totalBakers: 1,
+          addressesFromPool: 0,
+          addressesFromAccount: 1,
+          noAddressFound: 0,
+          failedBakerIds: [],
+        },
+      });
+
+      const result = await fetcher.fetchAllValidators();
+
+      expect(result.diagnostics?.addressesFromAccount).toBe(1);
+    });
+
+    it('tracks failed baker IDs', async () => {
+      const mockBakers = [
+        createMockBakerRewardPeriodInfo(9999, BigInt('100000000000')),
+      ];
+
+      vi.spyOn(fetcher as any, 'fetchBakersRewardPeriod').mockResolvedValue(mockBakers);
+      vi.spyOn(fetcher as any, 'fetchBakerAccountAddresses').mockResolvedValue({
+        addressMap: new Map(),
+        diagnostics: {
+          totalBakers: 1,
+          addressesFromPool: 0,
+          addressesFromAccount: 0,
+          noAddressFound: 1,
+          failedBakerIds: [9999],
+        },
+      });
+
+      const result = await fetcher.fetchAllValidators();
+
+      expect(result.diagnostics?.failedBakerIds).toContain(9999);
     });
   });
 });

@@ -38,6 +38,7 @@ export interface ValidatorPollStats {
   stakeVisibilityPct: number;
   quorumHealth: 'healthy' | 'degraded' | 'critical';
   fetchErrors: string[];
+  addressesFilled?: number; // Count of missing addresses that were filled in
 }
 
 /**
@@ -208,17 +209,18 @@ export class PollService {
   /**
    * Process validators from chain data with timeout protection.
    * Fetches all bakers from gRPC and links to reporting peers.
-   * Times out after 30 seconds to prevent blocking the cron job.
+   * Times out after 60 seconds to prevent blocking the cron job.
+   * (Increased from 30s to accommodate retry logic for address fetching)
    */
   async processValidators(reportingNodes: NodeSummary[]): Promise<ValidatorPollStats> {
     const errors: string[] = [];
-    const VALIDATOR_TIMEOUT_MS = 30000; // 30 second timeout
+    const VALIDATOR_TIMEOUT_MS = 60000; // 60 second timeout (increased to accommodate retries)
 
     try {
-      // Fetch all validators from chain with timeout
-      const fetchPromise = this.validatorFetcher.fetchAllValidators();
+      // Fetch all validators from chain with timeout (force refresh to bypass cache)
+      const fetchPromise = this.validatorFetcher.fetchAllValidators({ forceRefresh: true });
       const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Validator fetch timed out after 30s')), VALIDATOR_TIMEOUT_MS)
+        setTimeout(() => reject(new Error('Validator fetch timed out after 60s')), VALIDATOR_TIMEOUT_MS)
       );
 
       const fetchResult: FetchResult = await Promise.race([fetchPromise, timeoutPromise]);
@@ -264,6 +266,25 @@ export class PollService {
       // Record a consensus snapshot
       await this.validatorTracker.recordConsensusSnapshot();
 
+      // Fetch addresses for validators that are missing them
+      // This uses getAccountInfo fallback (baker_id = account_index)
+      let addressesFilled = 0;
+      try {
+        const missingAddressBakers = await this.validatorTracker.getValidatorsMissingAddresses();
+        if (missingAddressBakers.length > 0) {
+          console.log(`[PollService] Fetching addresses for ${missingAddressBakers.length} validators missing addresses...`);
+          const { addressMap } = await this.validatorFetcher.fetchAddressesForBakerIds(missingAddressBakers);
+          const updateResult = await this.validatorTracker.updateValidatorAddresses(addressMap);
+          addressesFilled = updateResult.updated;
+          if (addressesFilled > 0) {
+            console.log(`[PollService] Filled ${addressesFilled} missing addresses`);
+          }
+        }
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : 'Unknown error';
+        errors.push(`Failed to fetch missing addresses: ${errMsg}`);
+      }
+
       // Get visibility metrics
       const visibility: ConsensusVisibility = await this.validatorTracker.calculateConsensusVisibility();
 
@@ -275,6 +296,7 @@ export class PollService {
         stakeVisibilityPct: visibility.stakeVisibilityPct,
         quorumHealth: visibility.quorumHealth,
         fetchErrors: errors,
+        addressesFilled,
       };
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Unknown error';

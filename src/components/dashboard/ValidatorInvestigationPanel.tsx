@@ -5,15 +5,12 @@
  *
  * Shows when user clicks on the ConsensusVisibilityBar:
  * - Summary metrics (total, visible, phantom, stake visibility)
- * - Explanation of what phantom validators mean
  * - Table of phantom validators with details
- * - Recommendations for improving visibility
  */
 
 import { useState } from 'react';
 import {
   useConsensusVisibility,
-  useValidators,
   getVisibilityColorClass,
   getHealthColorClass,
 } from '@/hooks/useValidators';
@@ -29,7 +26,6 @@ export function ValidatorInvestigationPanel({
   onClose,
 }: ValidatorInvestigationPanelProps) {
   const { visibility, phantoms } = useConsensusVisibility();
-  const { data: validatorData } = useValidators();
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
 
   if (!isOpen) return null;
@@ -54,6 +50,16 @@ export function ValidatorInvestigationPanel({
     return `${(power * 100).toFixed(3)}%`;
   };
 
+  const formatLastBlockTime = (timestamp: number | null) => {
+    if (timestamp === null) return '--';
+    const diff = Date.now() - timestamp;
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    if (hours < 1) return 'Just now';
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  };
+
   const visibilityColorClass = visibility
     ? getVisibilityColorClass(visibility.stakeVisibilityPct)
     : 'negative';
@@ -66,7 +72,7 @@ export function ValidatorInvestigationPanel({
       <div className="vip-panel" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="vip-header">
-          <h2>Validator Visibility Investigation</h2>
+          <h2>Validator Visibility Details</h2>
           <button className="vip-close" onClick={onClose} aria-label="Close">
             &times;
           </button>
@@ -100,27 +106,6 @@ export function ValidatorInvestigationPanel({
           </div>
         </div>
 
-        {/* Explanation Section */}
-        <div className="vip-section">
-          <h3>Why This Matters</h3>
-          <div className="vip-explanation">
-            <p>
-              <strong>Phantom validators</strong> appear on the Concordium blockchain but don&apos;t
-              report to the network dashboard. This creates blind spots:
-            </p>
-            <ul>
-              <li>Geographic location unknown - can&apos;t assess decentralization</li>
-              <li>Health monitoring unavailable - can&apos;t detect issues early</li>
-              <li>Network topology incomplete - missing peer connections</li>
-              <li>Stake visibility reduced - affects quorum health assessment</li>
-            </ul>
-            <p className="vip-highlight">
-              Currently <strong>{visibility?.stakeVisibilityPct.toFixed(1) ?? 0}%</strong> of
-              staked CCD is visible. For healthy quorum monitoring, aim for &gt;67%.
-            </p>
-          </div>
-        </div>
-
         {/* Phantom Validators Table */}
         <div className="vip-section">
           <h3>Phantom Validators ({phantoms.length})</h3>
@@ -136,6 +121,9 @@ export function ValidatorInvestigationPanel({
                     <th>Baker ID</th>
                     <th>Account Address</th>
                     <th>Lottery Power</th>
+                    <th>Blocks (24h)</th>
+                    <th>Blocks (7d)</th>
+                    <th>Last Block</th>
                     <th>Status</th>
                   </tr>
                 </thead>
@@ -165,6 +153,15 @@ export function ValidatorInvestigationPanel({
                       <td className="vip-lottery">
                         {formatLotteryPower(validator.lotteryPower)}
                       </td>
+                      <td className="vip-blocks">
+                        {validator.blocks24h ?? 0}
+                      </td>
+                      <td className="vip-blocks">
+                        {validator.blocks7d ?? 0}
+                      </td>
+                      <td className="vip-last-block">
+                        {formatLastBlockTime(validator.lastBlockTime)}
+                      </td>
                       <td className="vip-status">
                         {validator.openStatus ?? '--'}
                       </td>
@@ -179,30 +176,7 @@ export function ValidatorInvestigationPanel({
               )}
             </div>
           )}
-        </div>
-
-        {/* Recommendations */}
-        <div className="vip-section">
-          <h3>How to Improve Visibility</h3>
-          <div className="vip-recommendations">
-            <p>Validators can report to the dashboard by:</p>
-            <ol>
-              <li>
-                Enable the <code>--report-to-network</code> flag in node configuration
-              </li>
-              <li>
-                Ensure port <code>8888</code> (or configured port) is accessible
-              </li>
-              <li>
-                Wait for next polling cycle (every 5 minutes)
-              </li>
-            </ol>
-            <p className="vip-note">
-              Reporting improves network observability and helps the community monitor
-              consensus health.
-            </p>
-          </div>
-        </div>
+                </div>
       </div>
     </div>
   );

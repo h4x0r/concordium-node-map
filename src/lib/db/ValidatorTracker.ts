@@ -290,6 +290,17 @@ export class ValidatorTracker {
       }
     }
 
+    // Mark validators NOT in current chain list as inactive (in_current_payday = 0)
+    const activeIds = chainValidators.map(v => v.bakerId);
+    if (activeIds.length > 0) {
+      // Build placeholders for IN clause
+      const placeholders = activeIds.map(() => '?').join(',');
+      await this.db.execute(
+        `UPDATE validators SET in_current_payday = 0 WHERE baker_id NOT IN (${placeholders})`,
+        activeIds
+      );
+    }
+
     return {
       totalProcessed: chainValidators.length,
       newValidators,
@@ -318,9 +329,10 @@ export class ValidatorTracker {
 
   /**
    * Calculate consensus visibility metrics
+   * Only counts validators in current payday (active bakers)
    */
   async calculateConsensusVisibility(): Promise<ConsensusVisibility> {
-    const result = await this.db.execute('SELECT * FROM validators');
+    const result = await this.db.execute('SELECT * FROM validators WHERE in_current_payday = 1');
     const validators = result.rows as unknown as ValidatorRecord[];
 
     let visibleCount = 0;
@@ -385,11 +397,12 @@ export class ValidatorTracker {
 
   /**
    * Get all phantom (chain_only) validators
+   * Only returns validators in current payday (active bakers)
    */
   async getPhantomValidators(): Promise<ValidatorWithSource[]> {
     const result = await this.db.execute(
       `SELECT baker_id, account_address, source, linked_peer_id, total_stake, lottery_power, open_status
-       FROM validators WHERE source = 'chain_only'`
+       FROM validators WHERE source = 'chain_only' AND in_current_payday = 1`
     );
 
     return result.rows.map((row) => ({
@@ -482,6 +495,51 @@ export class ValidatorTracker {
         newValue: row.new_value as string | null,
       })),
     };
+  }
+
+  /**
+   * Get validators that are missing account addresses
+   * Returns baker IDs for validators with NULL or empty account_address
+   */
+  async getValidatorsMissingAddresses(): Promise<number[]> {
+    const result = await this.db.execute(
+      `SELECT baker_id FROM validators
+       WHERE account_address IS NULL OR account_address = ''`
+    );
+
+    return result.rows.map((row) => row.baker_id as number);
+  }
+
+  /**
+   * Update account addresses for validators
+   * Takes a map of bakerId -> accountAddress
+   * Returns the number of validators updated
+   */
+  async updateValidatorAddresses(
+    addressMap: Map<number, string>
+  ): Promise<{ updated: number; skipped: number }> {
+    let updated = 0;
+    let skipped = 0;
+
+    for (const [bakerId, address] of addressMap) {
+      if (!address) {
+        skipped++;
+        continue;
+      }
+
+      const result = await this.db.execute(
+        `UPDATE validators SET account_address = ? WHERE baker_id = ?`,
+        [address, bakerId]
+      );
+
+      if (result.rowsAffected > 0) {
+        updated++;
+      } else {
+        skipped++;
+      }
+    }
+
+    return { updated, skipped };
   }
 
   /**

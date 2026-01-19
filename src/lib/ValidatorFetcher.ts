@@ -11,12 +11,25 @@ export interface FetchOptions {
   forceRefresh?: boolean;
 }
 
+/**
+ * Diagnostics for account address fetching
+ * Tracks success rates across different fetch methods
+ */
+export interface FetchDiagnostics {
+  totalBakers: number;
+  addressesFromPool: number;      // Primary method: getPoolInfo
+  addressesFromAccount: number;   // Fallback method: getAccountInfo
+  noAddressFound: number;
+  failedBakerIds: number[];
+}
+
 export interface FetchResult {
   validators: ChainValidator[];
   totalFetched: number;
   totalNetworkStake: bigint;
   errors: string[];
   fetchedAt: number;
+  diagnostics?: FetchDiagnostics;
 }
 
 export interface ValidatorFetcherOptions {
@@ -78,6 +91,7 @@ export class ValidatorFetcher {
     const errors: string[] = [];
     const validators: ChainValidator[] = [];
     let totalNetworkStake = BigInt(0);
+    let diagnostics: FetchDiagnostics | undefined;
 
     try {
       // Fetch all bakers in a single efficient stream
@@ -93,7 +107,9 @@ export class ValidatorFetcher {
       const bakerIds = bakersInfo.map((info) => info.baker.bakerId);
       let addressMap = new Map<number, string>();
       try {
-        addressMap = await this.fetchBakerAccountAddresses(bakerIds);
+        const result = await this.fetchBakerAccountAddresses(bakerIds);
+        addressMap = result.addressMap;
+        diagnostics = result.diagnostics;
       } catch (err) {
         errors.push(`Failed to fetch account addresses: ${err instanceof Error ? err.message : 'Unknown error'}`);
         // Continue without addresses - better to have partial data
@@ -121,6 +137,7 @@ export class ValidatorFetcher {
       totalNetworkStake,
       errors,
       fetchedAt: Date.now(),
+      diagnostics,
     };
 
     // Update cache
@@ -230,12 +247,86 @@ export class ValidatorFetcher {
   }
 
   /**
-   * Fetch account addresses for bakers using getPoolInfo
-   * Returns a map of bakerId -> accountAddress
+   * Retry a function with exponential backoff
+   * Used for transient network failures
+   */
+  private async retryWithBackoff<T>(
+    fn: () => Promise<T>,
+    options: { maxRetries?: number; baseDelayMs?: number; bakerId?: number } = {}
+  ): Promise<T> {
+    const { maxRetries = 2, baseDelayMs = 300 } = options;
+    let lastError: Error | null = null;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        return await fn();
+      } catch (err) {
+        lastError = err as Error;
+        if (attempt === maxRetries) break;
+        // Exponential backoff: 300ms, 600ms, 1200ms
+        const delay = baseDelayMs * Math.pow(2, attempt);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+    throw lastError;
+  }
+
+  /**
+   * Fetch a baker's account address with fallback logic
+   * Primary: getPoolInfo (returns bakerAddress directly)
+   * Fallback: getAccountInfo by account index (baker_id = account_index in Concordium)
+   */
+  private async fetchBakerAddress(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    client: any,
+    bakerId: bigint
+  ): Promise<{ address: string; source: 'pool' | 'account' | 'none' }> {
+    // Primary: Try getPoolInfo with retry
+    try {
+      const poolStatus = await this.retryWithBackoff<{ bakerAddress?: { toString(): string } }>(
+        () => client.getPoolInfo(bakerId),
+        { bakerId: Number(bakerId) }
+      );
+      const address = poolStatus?.bakerAddress?.toString() || '';
+      if (address) return { address, source: 'pool' };
+    } catch {
+      // getPoolInfo failed after retries, try fallback
+    }
+
+    // Fallback: Try getAccountInfo by account index (baker_id = account_index)
+    try {
+      const accountInfo = await this.retryWithBackoff<{ accountAddress?: { toString(): string } }>(
+        () => client.getAccountInfo({ index: bakerId }),
+        { bakerId: Number(bakerId) }
+      );
+      const address = accountInfo?.accountAddress?.toString() || '';
+      if (address) return { address, source: 'account' };
+    } catch {
+      // Both methods failed
+    }
+
+    return { address: '', source: 'none' };
+  }
+
+  /**
+   * Fetch account addresses for arbitrary baker IDs
+   * Uses getAccountInfo fallback (baker_id = account_index in Concordium)
+   * Can be used to fill in missing addresses for stale validators
+   */
+  async fetchAddressesForBakerIds(
+    bakerIds: number[]
+  ): Promise<{ addressMap: Map<number, string>; diagnostics: FetchDiagnostics }> {
+    const bigintIds = bakerIds.map((id) => BigInt(id));
+    return this.fetchBakerAccountAddresses(bigintIds);
+  }
+
+  /**
+   * Fetch account addresses for bakers using getPoolInfo with fallback to getAccountInfo
+   * Returns a map of bakerId -> accountAddress and diagnostics
    */
   protected async fetchBakerAccountAddresses(
     bakerIds: bigint[]
-  ): Promise<Map<number, string>> {
+  ): Promise<{ addressMap: Map<number, string>; diagnostics: FetchDiagnostics }> {
     const { ConcordiumGRPCNodeClient, credentials } = await import(
       '@concordium/web-sdk/nodejs'
     );
@@ -248,35 +339,55 @@ export class ValidatorFetcher {
     );
 
     const addressMap = new Map<number, string>();
+    const diagnostics: FetchDiagnostics = {
+      totalBakers: bakerIds.length,
+      addressesFromPool: 0,
+      addressesFromAccount: 0,
+      noAddressFound: 0,
+      failedBakerIds: [],
+    };
 
     // Fetch in batches to avoid overwhelming the node
     const BATCH_SIZE = 20;
     for (let i = 0; i < bakerIds.length; i += BATCH_SIZE) {
       const batch = bakerIds.slice(i, i + BATCH_SIZE);
 
-      // Fetch batch in parallel
+      // Fetch batch in parallel using the new fetchBakerAddress method
       const promises = batch.map(async (bakerId) => {
-        try {
-          // getPoolInfo returns BakerPoolStatus which has bakerAddress directly
-          const poolStatus = await client.getPoolInfo(bakerId);
-          // bakerAddress is of type AccountAddress.Type which has toString()
-          const address = poolStatus?.bakerAddress?.toString() || '';
-          return { bakerId: Number(bakerId), address };
-        } catch {
-          // Baker might not have a pool or pool info unavailable
-          return { bakerId: Number(bakerId), address: '' };
-        }
+        const result = await this.fetchBakerAddress(client, bakerId);
+        return { bakerId: Number(bakerId), ...result };
       });
 
       const results = await Promise.all(promises);
-      for (const { bakerId, address } of results) {
+      for (const { bakerId, address, source } of results) {
         if (address) {
           addressMap.set(bakerId, address);
+          if (source === 'pool') {
+            diagnostics.addressesFromPool++;
+          } else if (source === 'account') {
+            diagnostics.addressesFromAccount++;
+          }
+        } else {
+          diagnostics.noAddressFound++;
+          diagnostics.failedBakerIds.push(bakerId);
         }
       }
     }
 
-    return addressMap;
+    // Log diagnostics for debugging
+    if (diagnostics.addressesFromAccount > 0 || diagnostics.noAddressFound > 0) {
+      console.log(
+        `[ValidatorFetcher] Address fetch diagnostics: ` +
+        `pool=${diagnostics.addressesFromPool}, ` +
+        `account_fallback=${diagnostics.addressesFromAccount}, ` +
+        `failed=${diagnostics.noAddressFound}` +
+        (diagnostics.failedBakerIds.length > 0
+          ? ` (bakers: ${diagnostics.failedBakerIds.slice(0, 10).join(', ')}${diagnostics.failedBakerIds.length > 10 ? '...' : ''})`
+          : '')
+      );
+    }
+
+    return { addressMap, diagnostics };
   }
 }
 

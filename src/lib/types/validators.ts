@@ -24,6 +24,9 @@ export interface PhantomValidator {
   accountAddress: string;
   lotteryPower: number | null;
   openStatus: string | null;
+  blocks24h: number;
+  blocks7d: number;
+  lastBlockTime: number | null;
 }
 
 /**
