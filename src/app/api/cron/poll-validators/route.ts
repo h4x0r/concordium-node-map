@@ -46,6 +46,9 @@ async function fetchNodesSummary(): Promise<NodeSummary[]> {
     consensusRunning: node.consensusRunning as boolean,
     averageBytesPerSecondIn: node.averageBytesPerSecondIn as number | null,
     averageBytesPerSecondOut: node.averageBytesPerSecondOut as number | null,
+    // Validator linkage - links reporting nodes to on-chain bakers
+    consensusBakerId: node.consensusBakerId as number | undefined,
+    bakingCommitteeMember: node.bakingCommitteeMember as string | undefined,
   }));
 }
 

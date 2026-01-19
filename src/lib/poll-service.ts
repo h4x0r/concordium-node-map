@@ -242,16 +242,15 @@ export class PollService {
         nodeName: row.node_name as string,
       }));
 
-      // Also include reporting nodes that have baker IDs in their nodeId
-      // (Dashboard API includes some consensus info)
+      // Also include reporting nodes that have baker IDs from dashboard API
       for (const node of reportingNodes) {
         // Skip if already in the list
         if (reportingPeers.some(p => p.peerId === node.nodeId)) continue;
 
-        // For now, we don't have baker IDs from dashboard, but we'll track the nodes
+        // Use consensusBakerId from dashboard if available
         reportingPeers.push({
           peerId: node.nodeId,
-          consensusBakerId: null,
+          consensusBakerId: node.consensusBakerId ?? null,
           nodeName: node.nodeName,
         });
       }
