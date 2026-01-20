@@ -16,7 +16,7 @@ import type { Validator } from '@/lib/types/validators';
 
 const PAGE_SIZE = 15;
 
-type SortPeriod = '24h' | '7d';
+type SortPeriod = '24h' | '7d' | '30d';
 
 export function TransactionsView() {
   const { data, isLoading, error } = useValidators();
@@ -52,10 +52,11 @@ export function TransactionsView() {
     (acc, v) => ({
       tx24h: acc.tx24h + v.transactions24h,
       tx7d: acc.tx7d + v.transactions7d,
+      tx30d: acc.tx30d + v.transactions30d,
       visibleTx24h: acc.visibleTx24h + (v.source === 'reporting' ? v.transactions24h : 0),
       phantomTx24h: acc.phantomTx24h + (v.source === 'chain_only' ? v.transactions24h : 0),
     }),
-    { tx24h: 0, tx7d: 0, visibleTx24h: 0, phantomTx24h: 0 }
+    { tx24h: 0, tx7d: 0, tx30d: 0, visibleTx24h: 0, phantomTx24h: 0 }
   );
 
   const phantomTxPct = totals.tx24h > 0
@@ -68,7 +69,10 @@ export function TransactionsView() {
       if (sortPeriod === '24h') {
         return b.transactions24h - a.transactions24h;
       }
-      return b.transactions7d - a.transactions7d;
+      if (sortPeriod === '7d') {
+        return b.transactions7d - a.transactions7d;
+      }
+      return b.transactions30d - a.transactions30d;
     });
 
   // Pagination
@@ -89,6 +93,10 @@ export function TransactionsView() {
         <div className="bb-stat-card">
           <div className="bb-stat-value">{formatNumber(totals.tx7d)}</div>
           <div className="bb-stat-label">Transactions (7d)</div>
+        </div>
+        <div className="bb-stat-card">
+          <div className="bb-stat-value">{formatNumber(totals.tx30d)}</div>
+          <div className="bb-stat-label">Transactions (30d)</div>
         </div>
         <div className="bb-stat-card positive">
           <div className="bb-stat-value">{formatNumber(totals.visibleTx24h)}</div>
@@ -118,6 +126,12 @@ export function TransactionsView() {
               >
                 7d
               </button>
+              <button
+                className={`bb-sort-btn ${sortPeriod === '30d' ? 'active' : ''}`}
+                onClick={() => handleSortPeriodChange('30d')}
+              >
+                30d
+              </button>
             </div>
           </div>
           <span className="bb-section-count">{sortedValidators.length} validators</span>
@@ -130,6 +144,7 @@ export function TransactionsView() {
               <th>Type</th>
               <th className={sortPeriod === '24h' ? 'bb-sorted' : ''}>Txs (24h){sortPeriod === '24h' && ' ▼'}</th>
               <th className={sortPeriod === '7d' ? 'bb-sorted' : ''}>Txs (7d){sortPeriod === '7d' && ' ▼'}</th>
+              <th className={sortPeriod === '30d' ? 'bb-sorted' : ''}>Txs (30d){sortPeriod === '30d' && ' ▼'}</th>
               <th>Lottery Power</th>
             </tr>
           </thead>
@@ -153,6 +168,7 @@ export function TransactionsView() {
                 </td>
                 <td className="font-mono">{formatNumber(v.transactions24h)}</td>
                 <td className="font-mono">{formatNumber(v.transactions7d)}</td>
+                <td className="font-mono">{formatNumber(v.transactions30d)}</td>
                 <td className="font-mono">
                   {v.lotteryPower !== null ? `${(v.lotteryPower * 100).toFixed(3)}%` : '--'}
                 </td>

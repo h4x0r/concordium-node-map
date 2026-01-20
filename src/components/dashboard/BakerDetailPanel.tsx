@@ -146,6 +146,10 @@ export function BakerDetailPanel({
               <span className="bdp-stat-value">{formatNumber(validator.blocks7d)}</span>
             </div>
             <div className="bdp-stat-row">
+              <span className="bdp-stat-label">30d</span>
+              <span className="bdp-stat-value">{formatNumber(validator.blocks30d)}</span>
+            </div>
+            <div className="bdp-stat-row">
               <span className="bdp-stat-label">Last Block</span>
               <span className="bdp-stat-value">{formatLastBlockTime(validator.lastBlockTime)}</span>
             </div>
@@ -168,6 +172,10 @@ export function BakerDetailPanel({
             <div className="bdp-stat-row">
               <span className="bdp-stat-label">7d</span>
               <span className="bdp-stat-value">{formatNumber(validator.transactions7d)}</span>
+            </div>
+            <div className="bdp-stat-row">
+              <span className="bdp-stat-label">30d</span>
+              <span className="bdp-stat-value">{formatNumber(validator.transactions30d)}</span>
             </div>
           </div>
 

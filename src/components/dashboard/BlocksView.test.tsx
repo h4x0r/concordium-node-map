@@ -44,9 +44,9 @@ describe('BlocksView', () => {
     mockUseValidators.mockReturnValue({
       data: {
         validators: [
-          { bakerId: 1, source: 'reporting', blocks24h: 20, blocks7d: 100, lotteryPower: 0.1, lastBlockTime: null },
-          { bakerId: 2, source: 'chain_only', blocks24h: 10, blocks7d: 50, lotteryPower: 0.05, lastBlockTime: null },
-          { bakerId: 3, source: 'reporting', blocks24h: 15, blocks7d: 75, lotteryPower: 0.08, lastBlockTime: null },
+          { bakerId: 1, source: 'reporting', blocks24h: 20, blocks7d: 100, blocks30d: 400, transactions24h: 50, transactions7d: 300, transactions30d: 1200, lotteryPower: 0.1, lastBlockTime: null },
+          { bakerId: 2, source: 'chain_only', blocks24h: 10, blocks7d: 50, blocks30d: 200, transactions24h: 25, transactions7d: 150, transactions30d: 600, lotteryPower: 0.05, lastBlockTime: null },
+          { bakerId: 3, source: 'reporting', blocks24h: 15, blocks7d: 75, blocks30d: 300, transactions24h: 38, transactions7d: 225, transactions30d: 900, lotteryPower: 0.08, lastBlockTime: null },
         ],
       },
       isLoading: false,
@@ -57,7 +57,7 @@ describe('BlocksView', () => {
 
     // Get all stat cards
     const statCards = document.querySelectorAll('.bb-stat-card');
-    expect(statCards.length).toBe(4);
+    expect(statCards.length).toBe(5);
 
     // Check total blocks (24h): 20 + 10 + 15 = 45
     expect(statCards[0].querySelector('.bb-stat-value')?.textContent).toBe('45');
@@ -65,19 +65,22 @@ describe('BlocksView', () => {
     // Check total blocks (7d): 100 + 50 + 75 = 225
     expect(statCards[1].querySelector('.bb-stat-value')?.textContent).toBe('225');
 
+    // Check total blocks (30d): 400 + 200 + 300 = 900
+    expect(statCards[2].querySelector('.bb-stat-value')?.textContent).toBe('900');
+
     // Check visible validator blocks (24h): 20 + 15 = 35
-    expect(statCards[2].querySelector('.bb-stat-value')?.textContent).toBe('35');
+    expect(statCards[3].querySelector('.bb-stat-value')?.textContent).toBe('35');
 
     // Check phantom validator blocks (24h): 10
-    expect(statCards[3].querySelector('.bb-stat-value')?.textContent).toBe('10');
+    expect(statCards[4].querySelector('.bb-stat-value')?.textContent).toBe('10');
   });
 
   it('displays phantom block percentage', () => {
     mockUseValidators.mockReturnValue({
       data: {
         validators: [
-          { bakerId: 1, source: 'reporting', blocks24h: 80, blocks7d: 400, lotteryPower: 0.4, lastBlockTime: null },
-          { bakerId: 2, source: 'chain_only', blocks24h: 20, blocks7d: 100, lotteryPower: 0.1, lastBlockTime: null },
+          { bakerId: 1, source: 'reporting', blocks24h: 80, blocks7d: 400, blocks30d: 1600, transactions24h: 200, transactions7d: 1000, transactions30d: 4000, lotteryPower: 0.4, lastBlockTime: null },
+          { bakerId: 2, source: 'chain_only', blocks24h: 20, blocks7d: 100, blocks30d: 400, transactions24h: 50, transactions7d: 250, transactions30d: 1000, lotteryPower: 0.1, lastBlockTime: null },
         ],
       },
       isLoading: false,
@@ -94,9 +97,9 @@ describe('BlocksView', () => {
     mockUseValidators.mockReturnValue({
       data: {
         validators: [
-          { bakerId: 1, source: 'reporting', blocks24h: 10, blocks7d: 50, lotteryPower: 0.1, lastBlockTime: null },
-          { bakerId: 2, source: 'chain_only', blocks24h: 30, blocks7d: 150, lotteryPower: 0.2, lastBlockTime: null },
-          { bakerId: 3, source: 'reporting', blocks24h: 20, blocks7d: 100, lotteryPower: 0.15, lastBlockTime: null },
+          { bakerId: 1, source: 'reporting', blocks24h: 10, blocks7d: 50, blocks30d: 200, transactions24h: 25, transactions7d: 125, transactions30d: 500, lotteryPower: 0.1, lastBlockTime: null },
+          { bakerId: 2, source: 'chain_only', blocks24h: 30, blocks7d: 150, blocks30d: 600, transactions24h: 75, transactions7d: 375, transactions30d: 1500, lotteryPower: 0.2, lastBlockTime: null },
+          { bakerId: 3, source: 'reporting', blocks24h: 20, blocks7d: 100, blocks30d: 400, transactions24h: 50, transactions7d: 250, transactions30d: 1000, lotteryPower: 0.15, lastBlockTime: null },
         ],
       },
       isLoading: false,
@@ -117,8 +120,8 @@ describe('BlocksView', () => {
     mockUseValidators.mockReturnValue({
       data: {
         validators: [
-          { bakerId: 1, source: 'reporting', blocks24h: 20, blocks7d: 100, lotteryPower: 0.1, lastBlockTime: null },
-          { bakerId: 2, source: 'chain_only', blocks24h: 10, blocks7d: 50, lotteryPower: 0.05, lastBlockTime: null },
+          { bakerId: 1, source: 'reporting', blocks24h: 20, blocks7d: 100, blocks30d: 400, transactions24h: 50, transactions7d: 250, transactions30d: 1000, lotteryPower: 0.1, lastBlockTime: null },
+          { bakerId: 2, source: 'chain_only', blocks24h: 10, blocks7d: 50, blocks30d: 200, transactions24h: 25, transactions7d: 125, transactions30d: 500, lotteryPower: 0.05, lastBlockTime: null },
         ],
       },
       isLoading: false,
@@ -136,9 +139,9 @@ describe('BlocksView', () => {
     mockUseValidators.mockReturnValue({
       data: {
         validators: [
-          { bakerId: 1, source: 'reporting', blocks24h: 20, blocks7d: 100, lotteryPower: 0.1, lastBlockTime: now - 30 * 60 * 1000 }, // 30 min ago
-          { bakerId: 2, source: 'reporting', blocks24h: 15, blocks7d: 75, lotteryPower: 0.08, lastBlockTime: now - 5 * 60 * 60 * 1000 }, // 5 hours ago
-          { bakerId: 3, source: 'reporting', blocks24h: 10, blocks7d: 50, lotteryPower: 0.05, lastBlockTime: now - 3 * 24 * 60 * 60 * 1000 }, // 3 days ago
+          { bakerId: 1, source: 'reporting', blocks24h: 20, blocks7d: 100, blocks30d: 400, transactions24h: 50, transactions7d: 250, transactions30d: 1000, lotteryPower: 0.1, lastBlockTime: now - 30 * 60 * 1000 }, // 30 min ago
+          { bakerId: 2, source: 'reporting', blocks24h: 15, blocks7d: 75, blocks30d: 300, transactions24h: 38, transactions7d: 188, transactions30d: 750, lotteryPower: 0.08, lastBlockTime: now - 5 * 60 * 60 * 1000 }, // 5 hours ago
+          { bakerId: 3, source: 'reporting', blocks24h: 10, blocks7d: 50, blocks30d: 200, transactions24h: 25, transactions7d: 125, transactions30d: 500, lotteryPower: 0.05, lastBlockTime: now - 3 * 24 * 60 * 60 * 1000 }, // 3 days ago
         ],
       },
       isLoading: false,
@@ -156,7 +159,7 @@ describe('BlocksView', () => {
     mockUseValidators.mockReturnValue({
       data: {
         validators: [
-          { bakerId: 1, source: 'reporting', blocks24h: 20, blocks7d: 100, lotteryPower: 0.1, lastBlockTime: null },
+          { bakerId: 1, source: 'reporting', blocks24h: 20, blocks7d: 100, blocks30d: 400, transactions24h: 50, transactions7d: 250, transactions30d: 1000, lotteryPower: 0.1, lastBlockTime: null },
         ],
       },
       isLoading: false,
@@ -171,7 +174,7 @@ describe('BlocksView', () => {
     mockUseValidators.mockReturnValue({
       data: {
         validators: [
-          { bakerId: 1, source: 'reporting', blocks24h: 20, blocks7d: 100, lotteryPower: 0.12345, lastBlockTime: null },
+          { bakerId: 1, source: 'reporting', blocks24h: 20, blocks7d: 100, blocks30d: 400, transactions24h: 50, transactions7d: 250, transactions30d: 1000, lotteryPower: 0.12345, lastBlockTime: null },
         ],
       },
       isLoading: false,

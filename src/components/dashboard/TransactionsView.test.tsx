@@ -45,9 +45,9 @@ describe('TransactionsView', () => {
     mockUseValidators.mockReturnValue({
       data: {
         validators: [
-          { bakerId: 1, source: 'reporting', transactions24h: 100, transactions7d: 500, lotteryPower: 0.1 },
-          { bakerId: 2, source: 'chain_only', transactions24h: 50, transactions7d: 200, lotteryPower: 0.05 },
-          { bakerId: 3, source: 'reporting', transactions24h: 75, transactions7d: 300, lotteryPower: 0.08 },
+          { bakerId: 1, source: 'reporting', transactions24h: 100, transactions7d: 500, transactions30d: 2000, lotteryPower: 0.1 },
+          { bakerId: 2, source: 'chain_only', transactions24h: 50, transactions7d: 200, transactions30d: 800, lotteryPower: 0.05 },
+          { bakerId: 3, source: 'reporting', transactions24h: 75, transactions7d: 300, transactions30d: 1200, lotteryPower: 0.08 },
         ],
       },
       isLoading: false,
@@ -58,7 +58,7 @@ describe('TransactionsView', () => {
 
     // Get all stat cards
     const statCards = document.querySelectorAll('.bb-stat-card');
-    expect(statCards.length).toBe(4);
+    expect(statCards.length).toBe(5); // 24h, 7d, 30d, visible, phantom
 
     // Check total transactions (24h): 100 + 50 + 75 = 225
     expect(statCards[0].querySelector('.bb-stat-value')?.textContent).toBe('225');
@@ -66,20 +66,23 @@ describe('TransactionsView', () => {
     // Check total transactions (7d): 500 + 200 + 300 = 1,000
     expect(statCards[1].querySelector('.bb-stat-value')?.textContent).toBe('1,000');
 
+    // Check total transactions (30d): 2000 + 800 + 1200 = 4,000
+    expect(statCards[2].querySelector('.bb-stat-value')?.textContent).toBe('4,000');
+
     // Check visible validator transactions (24h): 100 + 75 = 175
-    expect(statCards[2].querySelector('.bb-stat-value')?.textContent).toBe('175');
+    expect(statCards[3].querySelector('.bb-stat-value')?.textContent).toBe('175');
 
     // Check phantom validator transactions (24h): 50
-    expect(statCards[3].querySelector('.bb-stat-value')?.textContent).toBe('50');
+    expect(statCards[4].querySelector('.bb-stat-value')?.textContent).toBe('50');
   });
 
   it('displays top validators sorted by transactions', () => {
     mockUseValidators.mockReturnValue({
       data: {
         validators: [
-          { bakerId: 1, source: 'reporting', transactions24h: 50, transactions7d: 200, lotteryPower: 0.1 },
-          { bakerId: 2, source: 'chain_only', transactions24h: 150, transactions7d: 600, lotteryPower: 0.2 },
-          { bakerId: 3, source: 'reporting', transactions24h: 100, transactions7d: 400, lotteryPower: 0.15 },
+          { bakerId: 1, source: 'reporting', transactions24h: 50, transactions7d: 200, transactions30d: 800, lotteryPower: 0.1 },
+          { bakerId: 2, source: 'chain_only', transactions24h: 150, transactions7d: 600, transactions30d: 2400, lotteryPower: 0.2 },
+          { bakerId: 3, source: 'reporting', transactions24h: 100, transactions7d: 400, transactions30d: 1600, lotteryPower: 0.15 },
         ],
       },
       isLoading: false,
@@ -100,8 +103,8 @@ describe('TransactionsView', () => {
     mockUseValidators.mockReturnValue({
       data: {
         validators: [
-          { bakerId: 1, source: 'reporting', transactions24h: 100, transactions7d: 400, lotteryPower: 0.1 },
-          { bakerId: 2, source: 'chain_only', transactions24h: 50, transactions7d: 200, lotteryPower: 0.05 },
+          { bakerId: 1, source: 'reporting', transactions24h: 100, transactions7d: 400, transactions30d: 1600, lotteryPower: 0.1 },
+          { bakerId: 2, source: 'chain_only', transactions24h: 50, transactions7d: 200, transactions30d: 800, lotteryPower: 0.05 },
         ],
       },
       isLoading: false,
@@ -118,7 +121,7 @@ describe('TransactionsView', () => {
     mockUseValidators.mockReturnValue({
       data: {
         validators: [
-          { bakerId: 1, source: 'reporting', transactions24h: 100, transactions7d: 400, lotteryPower: 0.12345 },
+          { bakerId: 1, source: 'reporting', transactions24h: 100, transactions7d: 400, transactions30d: 1600, lotteryPower: 0.12345 },
         ],
       },
       isLoading: false,
@@ -135,7 +138,7 @@ describe('TransactionsView', () => {
     mockUseValidators.mockReturnValue({
       data: {
         validators: [
-          { bakerId: 1, source: 'reporting', transactions24h: 100, transactions7d: 400, lotteryPower: null },
+          { bakerId: 1, source: 'reporting', transactions24h: 100, transactions7d: 400, transactions30d: 1600, lotteryPower: null },
         ],
       },
       isLoading: false,
@@ -150,8 +153,8 @@ describe('TransactionsView', () => {
     mockUseValidators.mockReturnValue({
       data: {
         validators: [
-          { bakerId: 1, source: 'reporting', transactions24h: 80, transactions7d: 400, lotteryPower: 0.4 },
-          { bakerId: 2, source: 'chain_only', transactions24h: 20, transactions7d: 100, lotteryPower: 0.1 },
+          { bakerId: 1, source: 'reporting', transactions24h: 80, transactions7d: 400, transactions30d: 1600, lotteryPower: 0.4 },
+          { bakerId: 2, source: 'chain_only', transactions24h: 20, transactions7d: 100, transactions30d: 400, lotteryPower: 0.1 },
         ],
       },
       isLoading: false,
@@ -168,7 +171,7 @@ describe('TransactionsView', () => {
     mockUseValidators.mockReturnValue({
       data: {
         validators: [
-          { bakerId: 42, source: 'reporting', transactions24h: 100, transactions7d: 400, lotteryPower: 0.1 },
+          { bakerId: 42, source: 'reporting', transactions24h: 100, transactions7d: 400, transactions30d: 1600, lotteryPower: 0.1 },
         ],
       },
       isLoading: false,
@@ -189,9 +192,11 @@ describe('TransactionsView', () => {
       source: 'reporting',
       transactions24h: 100,
       transactions7d: 400,
+      transactions30d: 1600,
       lotteryPower: 0.1,
       blocks24h: 10,
       blocks7d: 70,
+      blocks30d: 300,
       lastBlockTime: null,
       lastBlockHeight: null,
       commissionRates: { baking: 0.1, finalization: 0.05, transaction: 0.01 },
@@ -227,9 +232,11 @@ describe('TransactionsView', () => {
       source: 'reporting',
       transactions24h: 100,
       transactions7d: 400,
+      transactions30d: 1600,
       lotteryPower: 0.1,
       blocks24h: 10,
       blocks7d: 70,
+      blocks30d: 300,
       lastBlockTime: null,
       lastBlockHeight: null,
       commissionRates: { baking: 0.1, finalization: 0.05, transaction: 0.01 },
@@ -268,9 +275,11 @@ describe('TransactionsView', () => {
       source: 'reporting',
       transactions24h: 100,
       transactions7d: 400,
+      transactions30d: 1600,
       lotteryPower: 0.1,
       blocks24h: 10,
       blocks7d: 70,
+      blocks30d: 300,
       lastBlockTime: null,
       lastBlockHeight: null,
       commissionRates: { baking: 0.1, finalization: 0.05, transaction: 0.01 },
@@ -310,6 +319,7 @@ describe('TransactionsView', () => {
         source: i % 2 === 0 ? 'reporting' : 'chain_only',
         transactions24h: 1000 - i * 10, // Higher tx count for lower indices
         transactions7d: 5000 - i * 50,
+        transactions30d: 20000 - i * 200,
         lotteryPower: 0.01 * (count - i),
       }));
     };
@@ -436,11 +446,11 @@ describe('TransactionsView', () => {
   });
 
   describe('sort period toggle', () => {
-    it('renders 24h and 7d sort buttons', () => {
+    it('renders 24h, 7d, and 30d sort buttons', () => {
       mockUseValidators.mockReturnValue({
         data: {
           validators: [
-            { bakerId: 1, source: 'reporting', transactions24h: 100, transactions7d: 500, lotteryPower: 0.1 },
+            { bakerId: 1, source: 'reporting', transactions24h: 100, transactions7d: 500, transactions30d: 2000, lotteryPower: 0.1 },
           ],
         },
         isLoading: false,
@@ -451,13 +461,14 @@ describe('TransactionsView', () => {
 
       expect(screen.getByRole('button', { name: '24h' })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: '7d' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '30d' })).toBeInTheDocument();
     });
 
     it('defaults to 24h sort with active state', () => {
       mockUseValidators.mockReturnValue({
         data: {
           validators: [
-            { bakerId: 1, source: 'reporting', transactions24h: 100, transactions7d: 500, lotteryPower: 0.1 },
+            { bakerId: 1, source: 'reporting', transactions24h: 100, transactions7d: 500, transactions30d: 2000, lotteryPower: 0.1 },
           ],
         },
         isLoading: false,
@@ -468,13 +479,14 @@ describe('TransactionsView', () => {
 
       expect(screen.getByRole('button', { name: '24h' })).toHaveClass('active');
       expect(screen.getByRole('button', { name: '7d' })).not.toHaveClass('active');
+      expect(screen.getByRole('button', { name: '30d' })).not.toHaveClass('active');
     });
 
     it('switches to 7d sort when clicking 7d button', () => {
       mockUseValidators.mockReturnValue({
         data: {
           validators: [
-            { bakerId: 1, source: 'reporting', transactions24h: 100, transactions7d: 500, lotteryPower: 0.1 },
+            { bakerId: 1, source: 'reporting', transactions24h: 100, transactions7d: 500, transactions30d: 2000, lotteryPower: 0.1 },
           ],
         },
         isLoading: false,
@@ -487,15 +499,36 @@ describe('TransactionsView', () => {
 
       expect(screen.getByRole('button', { name: '7d' })).toHaveClass('active');
       expect(screen.getByRole('button', { name: '24h' })).not.toHaveClass('active');
+      expect(screen.getByRole('button', { name: '30d' })).not.toHaveClass('active');
+    });
+
+    it('switches to 30d sort when clicking 30d button', () => {
+      mockUseValidators.mockReturnValue({
+        data: {
+          validators: [
+            { bakerId: 1, source: 'reporting', transactions24h: 100, transactions7d: 500, transactions30d: 2000, lotteryPower: 0.1 },
+          ],
+        },
+        isLoading: false,
+        error: null,
+      });
+
+      render(<TransactionsView />);
+
+      fireEvent.click(screen.getByRole('button', { name: '30d' }));
+
+      expect(screen.getByRole('button', { name: '30d' })).toHaveClass('active');
+      expect(screen.getByRole('button', { name: '24h' })).not.toHaveClass('active');
+      expect(screen.getByRole('button', { name: '7d' })).not.toHaveClass('active');
     });
 
     it('sorts by 7d transactions when 7d is selected', () => {
       mockUseValidators.mockReturnValue({
         data: {
           validators: [
-            { bakerId: 1, source: 'reporting', transactions24h: 200, transactions7d: 100, lotteryPower: 0.1 },
-            { bakerId: 2, source: 'reporting', transactions24h: 50, transactions7d: 500, lotteryPower: 0.1 },
-            { bakerId: 3, source: 'reporting', transactions24h: 100, transactions7d: 300, lotteryPower: 0.1 },
+            { bakerId: 1, source: 'reporting', transactions24h: 200, transactions7d: 100, transactions30d: 400, lotteryPower: 0.1 },
+            { bakerId: 2, source: 'reporting', transactions24h: 50, transactions7d: 500, transactions30d: 2000, lotteryPower: 0.1 },
+            { bakerId: 3, source: 'reporting', transactions24h: 100, transactions7d: 300, transactions30d: 1200, lotteryPower: 0.1 },
           ],
         },
         isLoading: false,
@@ -515,12 +548,37 @@ describe('TransactionsView', () => {
       expect(rows[1]).toHaveTextContent('2'); // Baker ID 2 first now
     });
 
+    it('sorts by 30d transactions when 30d is selected', () => {
+      mockUseValidators.mockReturnValue({
+        data: {
+          validators: [
+            { bakerId: 1, source: 'reporting', transactions24h: 200, transactions7d: 500, transactions30d: 100, lotteryPower: 0.1 },
+            { bakerId: 2, source: 'reporting', transactions24h: 50, transactions7d: 100, transactions30d: 3000, lotteryPower: 0.1 },
+            { bakerId: 3, source: 'reporting', transactions24h: 100, transactions7d: 300, transactions30d: 1500, lotteryPower: 0.1 },
+          ],
+        },
+        isLoading: false,
+        error: null,
+      });
+
+      render(<TransactionsView />);
+
+      // Switch to 30d sort: Baker 2 (3000) > Baker 3 (1500) > Baker 1 (100)
+      fireEvent.click(screen.getByRole('button', { name: '30d' }));
+
+      const rows = screen.getAllByRole('row');
+      expect(rows[1]).toHaveTextContent('2'); // Baker ID 2 first
+      expect(rows[2]).toHaveTextContent('3'); // Baker ID 3 second
+      expect(rows[3]).toHaveTextContent('1'); // Baker ID 1 third
+    });
+
     it('resets to first page when changing sort period', () => {
       const validators = Array.from({ length: 20 }, (_, i) => ({
         bakerId: i + 1,
         source: 'reporting',
         transactions24h: 1000 - i * 10,
         transactions7d: i * 10, // Reverse order for 7d
+        transactions30d: i * 40, // Different order for 30d
         lotteryPower: 0.01,
       }));
 
@@ -547,7 +605,7 @@ describe('TransactionsView', () => {
       mockUseValidators.mockReturnValue({
         data: {
           validators: [
-            { bakerId: 1, source: 'reporting', transactions24h: 100, transactions7d: 500, lotteryPower: 0.1 },
+            { bakerId: 1, source: 'reporting', transactions24h: 100, transactions7d: 500, transactions30d: 2000, lotteryPower: 0.1 },
           ],
         },
         isLoading: false,
@@ -564,6 +622,12 @@ describe('TransactionsView', () => {
 
       // 7d column should now have sort indicator
       expect(screen.getByRole('columnheader', { name: /Txs \(7d\).*▼/ })).toHaveClass('bb-sorted');
+
+      // Switch to 30d
+      fireEvent.click(screen.getByRole('button', { name: '30d' }));
+
+      // 30d column should now have sort indicator
+      expect(screen.getByRole('columnheader', { name: /Txs \(30d\).*▼/ })).toHaveClass('bb-sorted');
     });
   });
 });

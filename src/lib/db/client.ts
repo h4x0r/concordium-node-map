@@ -64,6 +64,9 @@ export async function initializeSchema(): Promise<void> {
     'ALTER TABLE blocks ADD COLUMN transaction_count INTEGER DEFAULT 0',
     'ALTER TABLE validators ADD COLUMN transactions_24h INTEGER DEFAULT 0',
     'ALTER TABLE validators ADD COLUMN transactions_7d INTEGER DEFAULT 0',
+    // 30-day tracking columns (added 2026-01-20)
+    'ALTER TABLE validators ADD COLUMN blocks_30d INTEGER DEFAULT 0',
+    'ALTER TABLE validators ADD COLUMN transactions_30d INTEGER DEFAULT 0',
   ];
 
   for (const migration of migrations) {

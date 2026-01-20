@@ -227,8 +227,10 @@ export const SCHEMA = {
       last_block_time INTEGER,
       blocks_24h INTEGER DEFAULT 0,
       blocks_7d INTEGER DEFAULT 0,
+      blocks_30d INTEGER DEFAULT 0,
       transactions_24h INTEGER DEFAULT 0,
       transactions_7d INTEGER DEFAULT 0,
+      transactions_30d INTEGER DEFAULT 0,
 
       -- Forensic tracking
       first_observed INTEGER NOT NULL,
@@ -569,8 +571,10 @@ export interface ValidatorRecord {
   last_block_time: number | null;
   blocks_24h: number;
   blocks_7d: number;
+  blocks_30d: number;
   transactions_24h: number;
   transactions_7d: number;
+  transactions_30d: number;
   first_observed: number;
   last_chain_update: number | null;
   state_transition_count: number;

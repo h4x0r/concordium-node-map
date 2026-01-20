@@ -26,8 +26,10 @@ export interface PhantomValidator {
   openStatus: string | null;
   blocks24h: number;
   blocks7d: number;
+  blocks30d: number;
   transactions24h: number;
   transactions7d: number;
+  transactions30d: number;
   lastBlockTime: number | null;
 }
 
@@ -66,8 +68,10 @@ export interface Validator {
   lastBlockTime: number | null;
   blocks24h: number;
   blocks7d: number;
+  blocks30d: number;
   transactions24h: number;
   transactions7d: number;
+  transactions30d: number;
   firstObserved: number;
   lastChainUpdate: number | null;
   stateTransitionCount: number;

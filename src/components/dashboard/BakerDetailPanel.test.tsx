@@ -28,8 +28,10 @@ const mockValidator: Validator = {
   lastBlockTime: Date.now() - 30 * 60 * 1000, // 30 min ago
   blocks24h: 42,
   blocks7d: 280,
+  blocks30d: 1200,
   transactions24h: 150,
   transactions7d: 1050,
+  transactions30d: 4500,
   firstObserved: Date.now() - 30 * 24 * 60 * 60 * 1000, // 30 days ago
   lastChainUpdate: Date.now() - 5 * 60 * 1000, // 5 min ago
   stateTransitionCount: 3,
@@ -104,12 +106,14 @@ describe('BakerDetailPanel', () => {
     render(<BakerDetailPanel isOpen={true} validator={mockValidator} onClose={mockOnClose} />);
     expect(screen.getByText('42')).toBeInTheDocument(); // blocks24h
     expect(screen.getByText('280')).toBeInTheDocument(); // blocks7d
+    expect(screen.getByText('1,200')).toBeInTheDocument(); // blocks30d (with locale formatting)
   });
 
   it('displays transaction stats', () => {
     render(<BakerDetailPanel isOpen={true} validator={mockValidator} onClose={mockOnClose} />);
     expect(screen.getByText('150')).toBeInTheDocument(); // transactions24h
     expect(screen.getByText('1,050')).toBeInTheDocument(); // transactions7d (with locale formatting)
+    expect(screen.getByText('4,500')).toBeInTheDocument(); // transactions30d (with locale formatting)
   });
 
   it('displays lottery power as percentage', () => {

@@ -4,7 +4,7 @@
  * BlocksView - Network block production overview
  *
  * Shows block production stats aggregated from validator data:
- * - Total blocks (24h/7d)
+ * - Total blocks (24h/7d/30d)
  * - Top validators by block production
  * - Block distribution by validator type
  */
@@ -14,10 +14,21 @@ import { useValidators } from '@/hooks/useValidators';
 import { BakerDetailPanel } from './BakerDetailPanel';
 import type { Validator } from '@/lib/types/validators';
 
+const PAGE_SIZE = 15;
+
+type SortPeriod = '24h' | '7d' | '30d';
+
 export function BlocksView() {
   const { data, isLoading, error } = useValidators();
   const [selectedValidator, setSelectedValidator] = useState<Validator | null>(null);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [sortPeriod, setSortPeriod] = useState<SortPeriod>('24h');
   const validators = data?.validators ?? [];
+
+  const handleSortPeriodChange = (period: SortPeriod) => {
+    setSortPeriod(period);
+    setCurrentPage(0); // Reset to first page when changing sort
+  };
 
   if (isLoading) {
     return (
@@ -41,20 +52,33 @@ export function BlocksView() {
     (acc, v) => ({
       blocks24h: acc.blocks24h + v.blocks24h,
       blocks7d: acc.blocks7d + v.blocks7d,
+      blocks30d: acc.blocks30d + v.blocks30d,
       visibleBlocks24h: acc.visibleBlocks24h + (v.source === 'reporting' ? v.blocks24h : 0),
       phantomBlocks24h: acc.phantomBlocks24h + (v.source === 'chain_only' ? v.blocks24h : 0),
     }),
-    { blocks24h: 0, blocks7d: 0, visibleBlocks24h: 0, phantomBlocks24h: 0 }
+    { blocks24h: 0, blocks7d: 0, blocks30d: 0, visibleBlocks24h: 0, phantomBlocks24h: 0 }
   );
 
   const phantomBlockPct = totals.blocks24h > 0
     ? (totals.phantomBlocks24h / totals.blocks24h) * 100
     : 0;
 
-  // Top validators by blocks (24h)
-  const topByBlocks = [...validators]
-    .sort((a, b) => b.blocks24h - a.blocks24h)
-    .slice(0, 10);
+  // All validators sorted by blocks (by selected period)
+  const sortedValidators = [...validators]
+    .sort((a, b) => {
+      if (sortPeriod === '24h') {
+        return b.blocks24h - a.blocks24h;
+      }
+      if (sortPeriod === '7d') {
+        return b.blocks7d - a.blocks7d;
+      }
+      return b.blocks30d - a.blocks30d;
+    });
+
+  // Pagination
+  const totalPages = Math.ceil(sortedValidators.length / PAGE_SIZE);
+  const startIdx = currentPage * PAGE_SIZE;
+  const paginatedValidators = sortedValidators.slice(startIdx, startIdx + PAGE_SIZE);
 
   const formatNumber = (n: number) => n.toLocaleString();
 
@@ -80,6 +104,10 @@ export function BlocksView() {
           <div className="bb-stat-value">{formatNumber(totals.blocks7d)}</div>
           <div className="bb-stat-label">Blocks (7d)</div>
         </div>
+        <div className="bb-stat-card">
+          <div className="bb-stat-value">{formatNumber(totals.blocks30d)}</div>
+          <div className="bb-stat-label">Blocks (30d)</div>
+        </div>
         <div className="bb-stat-card positive">
           <div className="bb-stat-value">{formatNumber(totals.visibleBlocks24h)}</div>
           <div className="bb-stat-label">By Visible Validators</div>
@@ -90,23 +118,51 @@ export function BlocksView() {
         </div>
       </div>
 
-      {/* Top Validators by Blocks */}
+      {/* Validators by Blocks */}
       <div className="bb-view-section">
-        <h3>Top Block Producers (24h)</h3>
+        <div className="bb-section-header">
+          <div className="bb-section-title-row">
+            <h3>Validators by Blocks</h3>
+            <div className="bb-sort-toggle">
+              <button
+                className={`bb-sort-btn ${sortPeriod === '24h' ? 'active' : ''}`}
+                onClick={() => handleSortPeriodChange('24h')}
+              >
+                24h
+              </button>
+              <button
+                className={`bb-sort-btn ${sortPeriod === '7d' ? 'active' : ''}`}
+                onClick={() => handleSortPeriodChange('7d')}
+              >
+                7d
+              </button>
+              <button
+                className={`bb-sort-btn ${sortPeriod === '30d' ? 'active' : ''}`}
+                onClick={() => handleSortPeriodChange('30d')}
+              >
+                30d
+              </button>
+            </div>
+          </div>
+          <span className="bb-section-count">{sortedValidators.length} validators</span>
+        </div>
         <table className="bb-table">
           <thead>
             <tr>
+              <th>#</th>
               <th>Baker ID</th>
               <th>Type</th>
-              <th>Blocks (24h)</th>
-              <th>Blocks (7d)</th>
+              <th className={sortPeriod === '24h' ? 'bb-sorted' : ''}>Blocks (24h){sortPeriod === '24h' && ' ▼'}</th>
+              <th className={sortPeriod === '7d' ? 'bb-sorted' : ''}>Blocks (7d){sortPeriod === '7d' && ' ▼'}</th>
+              <th className={sortPeriod === '30d' ? 'bb-sorted' : ''}>Blocks (30d){sortPeriod === '30d' && ' ▼'}</th>
               <th>Last Block</th>
               <th>Lottery Power</th>
             </tr>
           </thead>
           <tbody>
-            {topByBlocks.map((v) => (
+            {paginatedValidators.map((v, idx) => (
               <tr key={v.bakerId}>
+                <td className="font-mono bb-rank">{startIdx + idx + 1}</td>
                 <td className="font-mono">
                   <button
                     className="bb-baker-link"
@@ -123,6 +179,7 @@ export function BlocksView() {
                 </td>
                 <td className="font-mono">{formatNumber(v.blocks24h)}</td>
                 <td className="font-mono">{formatNumber(v.blocks7d)}</td>
+                <td className="font-mono">{formatNumber(v.blocks30d)}</td>
                 <td>{formatLastBlockTime(v.lastBlockTime)}</td>
                 <td className="font-mono">
                   {v.lotteryPower !== null ? `${(v.lotteryPower * 100).toFixed(3)}%` : '--'}
@@ -131,6 +188,47 @@ export function BlocksView() {
             ))}
           </tbody>
         </table>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="bb-pagination">
+            <button
+              className="bb-pagination-btn"
+              onClick={() => setCurrentPage(0)}
+              disabled={currentPage === 0}
+              title="First page"
+            >
+              ««
+            </button>
+            <button
+              className="bb-pagination-btn"
+              onClick={() => setCurrentPage(p => p - 1)}
+              disabled={currentPage === 0}
+              title="Previous page"
+            >
+              «
+            </button>
+            <span className="bb-pagination-info">
+              Page {currentPage + 1} of {totalPages}
+            </span>
+            <button
+              className="bb-pagination-btn"
+              onClick={() => setCurrentPage(p => p + 1)}
+              disabled={currentPage >= totalPages - 1}
+              title="Next page"
+            >
+              »
+            </button>
+            <button
+              className="bb-pagination-btn"
+              onClick={() => setCurrentPage(totalPages - 1)}
+              disabled={currentPage >= totalPages - 1}
+              title="Last page"
+            >
+              »»
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Baker Detail Panel */}

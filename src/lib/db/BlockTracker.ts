@@ -41,6 +41,7 @@ export interface TopProducer {
 // Time windows for block count calculations
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const SEVEN_DAYS_MS = 7 * ONE_DAY_MS;
+const THIRTY_DAYS_MS = 30 * ONE_DAY_MS;
 
 export class BlockTracker {
   private db: Client;
@@ -221,13 +222,14 @@ export class BlockTracker {
   }
 
   /**
-   * Recalculate blocks_24h and blocks_7d for all validators
+   * Recalculate blocks_24h, blocks_7d, and blocks_30d for all validators
    * Should be called periodically to update stale counts
    */
   async recalculateBlockCounts(): Promise<void> {
     const now = Date.now();
     const oneDayAgo = now - ONE_DAY_MS;
     const sevenDaysAgo = now - SEVEN_DAYS_MS;
+    const thirtyDaysAgo = now - THIRTY_DAYS_MS;
 
     // Calculate 24h counts per baker
     const counts24h = await this.db.execute(
@@ -247,6 +249,15 @@ export class BlockTracker {
       [sevenDaysAgo]
     );
 
+    // Calculate 30d counts per baker
+    const counts30d = await this.db.execute(
+      `SELECT baker_id, COUNT(*) as count
+       FROM blocks
+       WHERE timestamp >= ?
+       GROUP BY baker_id`,
+      [thirtyDaysAgo]
+    );
+
     // Build maps for quick lookup
     const map24h = new Map<number, number>();
     for (const row of counts24h.rows) {
@@ -258,6 +269,11 @@ export class BlockTracker {
       map7d.set(row.baker_id as number, Number(row.count));
     }
 
+    const map30d = new Map<number, number>();
+    for (const row of counts30d.rows) {
+      map30d.set(row.baker_id as number, Number(row.count));
+    }
+
     // Get all validators
     const validators = await this.db.execute('SELECT baker_id FROM validators');
 
@@ -266,22 +282,24 @@ export class BlockTracker {
       const bakerId = row.baker_id as number;
       const blocks24h = map24h.get(bakerId) ?? 0;
       const blocks7d = map7d.get(bakerId) ?? 0;
+      const blocks30d = map30d.get(bakerId) ?? 0;
 
       await this.db.execute(
-        `UPDATE validators SET blocks_24h = ?, blocks_7d = ? WHERE baker_id = ?`,
-        [blocks24h, blocks7d, bakerId]
+        `UPDATE validators SET blocks_24h = ?, blocks_7d = ?, blocks_30d = ? WHERE baker_id = ?`,
+        [blocks24h, blocks7d, blocks30d, bakerId]
       );
     }
   }
 
   /**
-   * Recalculate transactions_24h and transactions_7d for all validators
+   * Recalculate transactions_24h, transactions_7d, and transactions_30d for all validators
    * Should be called periodically to update stale counts
    */
   async recalculateTransactionCounts(): Promise<void> {
     const now = Date.now();
     const oneDayAgo = now - ONE_DAY_MS;
     const sevenDaysAgo = now - SEVEN_DAYS_MS;
+    const thirtyDaysAgo = now - THIRTY_DAYS_MS;
 
     // Calculate 24h transaction sums per baker
     const sums24h = await this.db.execute(
@@ -301,6 +319,15 @@ export class BlockTracker {
       [sevenDaysAgo]
     );
 
+    // Calculate 30d transaction sums per baker
+    const sums30d = await this.db.execute(
+      `SELECT baker_id, SUM(transaction_count) as sum
+       FROM blocks
+       WHERE timestamp >= ?
+       GROUP BY baker_id`,
+      [thirtyDaysAgo]
+    );
+
     // Build maps for quick lookup
     const map24h = new Map<number, number>();
     for (const row of sums24h.rows) {
@@ -312,6 +339,11 @@ export class BlockTracker {
       map7d.set(row.baker_id as number, Number(row.sum));
     }
 
+    const map30d = new Map<number, number>();
+    for (const row of sums30d.rows) {
+      map30d.set(row.baker_id as number, Number(row.sum));
+    }
+
     // Get all validators
     const validators = await this.db.execute('SELECT baker_id FROM validators');
 
@@ -320,10 +352,11 @@ export class BlockTracker {
       const bakerId = row.baker_id as number;
       const transactions24h = map24h.get(bakerId) ?? 0;
       const transactions7d = map7d.get(bakerId) ?? 0;
+      const transactions30d = map30d.get(bakerId) ?? 0;
 
       await this.db.execute(
-        `UPDATE validators SET transactions_24h = ?, transactions_7d = ? WHERE baker_id = ?`,
-        [transactions24h, transactions7d, bakerId]
+        `UPDATE validators SET transactions_24h = ?, transactions_7d = ?, transactions_30d = ? WHERE baker_id = ?`,
+        [transactions24h, transactions7d, transactions30d, bakerId]
       );
     }
   }
