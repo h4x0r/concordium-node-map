@@ -55,24 +55,27 @@ describe('BlocksView', () => {
 
     render(<BlocksView />);
 
-    // Get all stat cards
+    // Get all stat cards (1 combined + 2 for visible/phantom)
     const statCards = document.querySelectorAll('.bb-stat-card');
-    expect(statCards.length).toBe(5);
+    expect(statCards.length).toBe(3);
 
-    // Check total blocks (24h): 20 + 10 + 15 = 45
-    expect(statCards[0].querySelector('.bb-stat-value')?.textContent).toBe('45');
+    // Check combined card has title and 3 metrics
+    const combinedCard = document.querySelector('.bb-stat-card-combined');
+    expect(combinedCard).toBeInTheDocument();
+    expect(combinedCard?.querySelector('.bb-stat-card-title')?.textContent).toBe('Blocks');
 
-    // Check total blocks (7d): 100 + 50 + 75 = 225
-    expect(statCards[1].querySelector('.bb-stat-value')?.textContent).toBe('225');
-
-    // Check total blocks (30d): 400 + 200 + 300 = 900
-    expect(statCards[2].querySelector('.bb-stat-value')?.textContent).toBe('900');
+    // Check metrics in combined card: 45 (24h), 225 (7d), 900 (30d)
+    const metrics = combinedCard?.querySelectorAll('.bb-stat-metric');
+    expect(metrics?.length).toBe(3);
+    expect(metrics?.[0].querySelector('.bb-stat-value')?.textContent).toBe('45');
+    expect(metrics?.[1].querySelector('.bb-stat-value')?.textContent).toBe('225');
+    expect(metrics?.[2].querySelector('.bb-stat-value')?.textContent).toBe('900');
 
     // Check visible validator blocks (24h): 20 + 15 = 35
-    expect(statCards[3].querySelector('.bb-stat-value')?.textContent).toBe('35');
+    expect(statCards[1].querySelector('.bb-stat-value')?.textContent).toBe('35');
 
     // Check phantom validator blocks (24h): 10
-    expect(statCards[4].querySelector('.bb-stat-value')?.textContent).toBe('10');
+    expect(statCards[2].querySelector('.bb-stat-value')?.textContent).toBe('10');
   });
 
   it('displays phantom block percentage', () => {

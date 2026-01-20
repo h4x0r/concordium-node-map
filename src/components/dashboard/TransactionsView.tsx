@@ -86,17 +86,22 @@ export function TransactionsView() {
     <div className="bb-data-view">
       {/* Summary Cards */}
       <div className="bb-view-summary">
-        <div className="bb-stat-card">
-          <div className="bb-stat-value">{formatNumber(totals.tx24h)}</div>
-          <div className="bb-stat-label">Transactions (24h)</div>
-        </div>
-        <div className="bb-stat-card">
-          <div className="bb-stat-value">{formatNumber(totals.tx7d)}</div>
-          <div className="bb-stat-label">Transactions (7d)</div>
-        </div>
-        <div className="bb-stat-card">
-          <div className="bb-stat-value">{formatNumber(totals.tx30d)}</div>
-          <div className="bb-stat-label">Transactions (30d)</div>
+        <div className="bb-stat-card bb-stat-card-combined">
+          <div className="bb-stat-card-title">Transactions</div>
+          <div className="bb-stat-metrics">
+            <div className="bb-stat-metric">
+              <span className="bb-stat-value">{formatNumber(totals.tx24h)}</span>
+              <span className="bb-stat-period">24h</span>
+            </div>
+            <div className="bb-stat-metric">
+              <span className="bb-stat-value">{formatNumber(totals.tx7d)}</span>
+              <span className="bb-stat-period">7d</span>
+            </div>
+            <div className="bb-stat-metric">
+              <span className="bb-stat-value">{formatNumber(totals.tx30d)}</span>
+              <span className="bb-stat-period">30d</span>
+            </div>
+          </div>
         </div>
         <div className="bb-stat-card positive">
           <div className="bb-stat-value">{formatNumber(totals.visibleTx24h)}</div>

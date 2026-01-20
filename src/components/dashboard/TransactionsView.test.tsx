@@ -56,24 +56,27 @@ describe('TransactionsView', () => {
 
     render(<TransactionsView />);
 
-    // Get all stat cards
+    // Get all stat cards (1 combined + 2 for visible/phantom)
     const statCards = document.querySelectorAll('.bb-stat-card');
-    expect(statCards.length).toBe(5); // 24h, 7d, 30d, visible, phantom
+    expect(statCards.length).toBe(3);
 
-    // Check total transactions (24h): 100 + 50 + 75 = 225
-    expect(statCards[0].querySelector('.bb-stat-value')?.textContent).toBe('225');
+    // Check combined card has title and 3 metrics
+    const combinedCard = document.querySelector('.bb-stat-card-combined');
+    expect(combinedCard).toBeInTheDocument();
+    expect(combinedCard?.querySelector('.bb-stat-card-title')?.textContent).toBe('Transactions');
 
-    // Check total transactions (7d): 500 + 200 + 300 = 1,000
-    expect(statCards[1].querySelector('.bb-stat-value')?.textContent).toBe('1,000');
-
-    // Check total transactions (30d): 2000 + 800 + 1200 = 4,000
-    expect(statCards[2].querySelector('.bb-stat-value')?.textContent).toBe('4,000');
+    // Check metrics in combined card: 225 (24h), 1,000 (7d), 4,000 (30d)
+    const metrics = combinedCard?.querySelectorAll('.bb-stat-metric');
+    expect(metrics?.length).toBe(3);
+    expect(metrics?.[0].querySelector('.bb-stat-value')?.textContent).toBe('225');
+    expect(metrics?.[1].querySelector('.bb-stat-value')?.textContent).toBe('1,000');
+    expect(metrics?.[2].querySelector('.bb-stat-value')?.textContent).toBe('4,000');
 
     // Check visible validator transactions (24h): 100 + 75 = 175
-    expect(statCards[3].querySelector('.bb-stat-value')?.textContent).toBe('175');
+    expect(statCards[1].querySelector('.bb-stat-value')?.textContent).toBe('175');
 
     // Check phantom validator transactions (24h): 50
-    expect(statCards[4].querySelector('.bb-stat-value')?.textContent).toBe('50');
+    expect(statCards[2].querySelector('.bb-stat-value')?.textContent).toBe('50');
   });
 
   it('displays top validators sorted by transactions', () => {

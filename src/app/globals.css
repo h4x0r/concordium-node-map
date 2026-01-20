@@ -4213,6 +4213,44 @@
   letter-spacing: 0.5px;
 }
 
+/* Combined stat card with multiple metrics */
+.bb-stat-card-combined {
+  min-width: 200px;
+}
+
+.bb-stat-card-title {
+  font-size: 11px;
+  color: var(--bb-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.bb-stat-metrics {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+
+.bb-stat-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.bb-stat-metric .bb-stat-value {
+  font-size: 22px;
+  margin-bottom: 0;
+}
+
+.bb-stat-period {
+  font-size: 10px;
+  color: var(--bb-gray);
+  text-transform: uppercase;
+}
+
 .bb-view-section {
   background: var(--bb-panel-bg);
   border: 1px solid var(--bb-border);
