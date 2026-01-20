@@ -302,4 +302,136 @@ describe('TransactionsView', () => {
     // The panel should be closed
     expect(screen.queryByText('Baker Details')).not.toBeInTheDocument();
   });
+
+  describe('pagination', () => {
+    const createManyValidators = (count: number) => {
+      return Array.from({ length: count }, (_, i) => ({
+        bakerId: i + 1,
+        source: i % 2 === 0 ? 'reporting' : 'chain_only',
+        transactions24h: 1000 - i * 10, // Higher tx count for lower indices
+        transactions7d: 5000 - i * 50,
+        lotteryPower: 0.01 * (count - i),
+      }));
+    };
+
+    it('shows pagination controls when validators exceed page size', () => {
+      mockUseValidators.mockReturnValue({
+        data: { validators: createManyValidators(20) },
+        isLoading: false,
+        error: null,
+      });
+
+      render(<TransactionsView />);
+
+      expect(screen.getByText('Page 1 of 2')).toBeInTheDocument();
+      expect(screen.getByTitle('Next page')).toBeInTheDocument();
+      expect(screen.getByTitle('Previous page')).toBeInTheDocument();
+    });
+
+    it('does not show pagination when validators fit on one page', () => {
+      mockUseValidators.mockReturnValue({
+        data: { validators: createManyValidators(10) },
+        isLoading: false,
+        error: null,
+      });
+
+      render(<TransactionsView />);
+
+      expect(screen.queryByText(/Page \d+ of \d+/)).not.toBeInTheDocument();
+    });
+
+    it('displays total validator count', () => {
+      mockUseValidators.mockReturnValue({
+        data: { validators: createManyValidators(25) },
+        isLoading: false,
+        error: null,
+      });
+
+      render(<TransactionsView />);
+
+      expect(screen.getByText('25 validators')).toBeInTheDocument();
+    });
+
+    it('navigates to next page when clicking next button', () => {
+      mockUseValidators.mockReturnValue({
+        data: { validators: createManyValidators(20) },
+        isLoading: false,
+        error: null,
+      });
+
+      render(<TransactionsView />);
+
+      // Page 1 should be displayed
+      expect(screen.getByText('Page 1 of 2')).toBeInTheDocument();
+
+      // Navigate to next page
+      fireEvent.click(screen.getByTitle('Next page'));
+
+      // Page 2 should now be displayed
+      expect(screen.getByText('Page 2 of 2')).toBeInTheDocument();
+    });
+
+    it('navigates to previous page when clicking previous button', () => {
+      mockUseValidators.mockReturnValue({
+        data: { validators: createManyValidators(20) },
+        isLoading: false,
+        error: null,
+      });
+
+      render(<TransactionsView />);
+
+      // Go to page 2
+      fireEvent.click(screen.getByTitle('Next page'));
+      expect(screen.getByText('Page 2 of 2')).toBeInTheDocument();
+
+      // Go back to page 1
+      fireEvent.click(screen.getByTitle('Previous page'));
+      expect(screen.getByText('Page 1 of 2')).toBeInTheDocument();
+    });
+
+    it('disables previous button on first page', () => {
+      mockUseValidators.mockReturnValue({
+        data: { validators: createManyValidators(20) },
+        isLoading: false,
+        error: null,
+      });
+
+      render(<TransactionsView />);
+
+      expect(screen.getByTitle('Previous page')).toBeDisabled();
+      expect(screen.getByTitle('First page')).toBeDisabled();
+    });
+
+    it('disables next button on last page', () => {
+      mockUseValidators.mockReturnValue({
+        data: { validators: createManyValidators(20) },
+        isLoading: false,
+        error: null,
+      });
+
+      render(<TransactionsView />);
+
+      // Go to last page
+      fireEvent.click(screen.getByTitle('Last page'));
+
+      expect(screen.getByTitle('Next page')).toBeDisabled();
+      expect(screen.getByTitle('Last page')).toBeDisabled();
+    });
+
+    it('shows rank numbers for each row', () => {
+      mockUseValidators.mockReturnValue({
+        data: { validators: createManyValidators(5) },
+        isLoading: false,
+        error: null,
+      });
+
+      render(<TransactionsView />);
+
+      // Check for rank column in table header
+      expect(screen.getByRole('columnheader', { name: '#' })).toBeInTheDocument();
+
+      // Check that validators are displayed (5 validators = 5 data rows)
+      expect(screen.getByText('5 validators')).toBeInTheDocument();
+    });
+  });
 });

@@ -14,9 +14,12 @@ import { useValidators } from '@/hooks/useValidators';
 import { BakerDetailPanel } from './BakerDetailPanel';
 import type { Validator } from '@/lib/types/validators';
 
+const PAGE_SIZE = 15;
+
 export function TransactionsView() {
   const { data, isLoading, error } = useValidators();
   const [selectedValidator, setSelectedValidator] = useState<Validator | null>(null);
+  const [currentPage, setCurrentPage] = useState(0);
   const validators = data?.validators ?? [];
 
   if (isLoading) {
@@ -51,10 +54,14 @@ export function TransactionsView() {
     ? (totals.phantomTx24h / totals.tx24h) * 100
     : 0;
 
-  // Top validators by transactions (24h)
-  const topByTx = [...validators]
-    .sort((a, b) => b.transactions24h - a.transactions24h)
-    .slice(0, 10);
+  // All validators sorted by transactions (24h)
+  const sortedValidators = [...validators]
+    .sort((a, b) => b.transactions24h - a.transactions24h);
+
+  // Pagination
+  const totalPages = Math.ceil(sortedValidators.length / PAGE_SIZE);
+  const startIdx = currentPage * PAGE_SIZE;
+  const paginatedValidators = sortedValidators.slice(startIdx, startIdx + PAGE_SIZE);
 
   const formatNumber = (n: number) => n.toLocaleString();
 
@@ -80,12 +87,16 @@ export function TransactionsView() {
         </div>
       </div>
 
-      {/* Top Validators by Transactions */}
+      {/* Validators by Transactions */}
       <div className="bb-view-section">
-        <h3>Top Validators by Transactions (24h)</h3>
+        <div className="bb-section-header">
+          <h3>Validators by Transactions (24h)</h3>
+          <span className="bb-section-count">{sortedValidators.length} validators</span>
+        </div>
         <table className="bb-table">
           <thead>
             <tr>
+              <th>#</th>
               <th>Baker ID</th>
               <th>Type</th>
               <th>Txs (24h)</th>
@@ -94,8 +105,9 @@ export function TransactionsView() {
             </tr>
           </thead>
           <tbody>
-            {topByTx.map((v) => (
+            {paginatedValidators.map((v, idx) => (
               <tr key={v.bakerId}>
+                <td className="font-mono bb-rank">{startIdx + idx + 1}</td>
                 <td className="font-mono">
                   <button
                     className="bb-baker-link"
@@ -119,6 +131,47 @@ export function TransactionsView() {
             ))}
           </tbody>
         </table>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="bb-pagination">
+            <button
+              className="bb-pagination-btn"
+              onClick={() => setCurrentPage(0)}
+              disabled={currentPage === 0}
+              title="First page"
+            >
+              ««
+            </button>
+            <button
+              className="bb-pagination-btn"
+              onClick={() => setCurrentPage(p => p - 1)}
+              disabled={currentPage === 0}
+              title="Previous page"
+            >
+              «
+            </button>
+            <span className="bb-pagination-info">
+              Page {currentPage + 1} of {totalPages}
+            </span>
+            <button
+              className="bb-pagination-btn"
+              onClick={() => setCurrentPage(p => p + 1)}
+              disabled={currentPage >= totalPages - 1}
+              title="Next page"
+            >
+              »
+            </button>
+            <button
+              className="bb-pagination-btn"
+              onClick={() => setCurrentPage(totalPages - 1)}
+              disabled={currentPage >= totalPages - 1}
+              title="Last page"
+            >
+              »»
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Baker Detail Panel */}

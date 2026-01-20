@@ -4306,6 +4306,68 @@
   text-decoration: underline;
 }
 
+/* Section header with count */
+.bb-section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.bb-section-header h3 {
+  margin-bottom: 0;
+}
+
+.bb-section-count {
+  font-size: 11px;
+  color: var(--bb-text-dim);
+}
+
+/* Rank column */
+.bb-rank {
+  color: var(--bb-text-dim);
+  text-align: right;
+  padding-right: 12px !important;
+}
+
+/* Pagination controls */
+.bb-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--bb-border);
+}
+
+.bb-pagination-btn {
+  background: var(--bb-panel);
+  border: 1px solid var(--bb-border);
+  color: var(--bb-amber);
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+
+.bb-pagination-btn:hover:not(:disabled) {
+  background: var(--bb-amber);
+  color: var(--bb-bg);
+}
+
+.bb-pagination-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.bb-pagination-info {
+  font-size: 11px;
+  color: var(--bb-text-dim);
+  padding: 0 12px;
+}
+
 /* ============================================= */
 /* BakerDetailPanel (bdp-*)                     */
 /* ============================================= */
