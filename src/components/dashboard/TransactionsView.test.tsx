@@ -434,4 +434,136 @@ describe('TransactionsView', () => {
       expect(screen.getByText('5 validators')).toBeInTheDocument();
     });
   });
+
+  describe('sort period toggle', () => {
+    it('renders 24h and 7d sort buttons', () => {
+      mockUseValidators.mockReturnValue({
+        data: {
+          validators: [
+            { bakerId: 1, source: 'reporting', transactions24h: 100, transactions7d: 500, lotteryPower: 0.1 },
+          ],
+        },
+        isLoading: false,
+        error: null,
+      });
+
+      render(<TransactionsView />);
+
+      expect(screen.getByRole('button', { name: '24h' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '7d' })).toBeInTheDocument();
+    });
+
+    it('defaults to 24h sort with active state', () => {
+      mockUseValidators.mockReturnValue({
+        data: {
+          validators: [
+            { bakerId: 1, source: 'reporting', transactions24h: 100, transactions7d: 500, lotteryPower: 0.1 },
+          ],
+        },
+        isLoading: false,
+        error: null,
+      });
+
+      render(<TransactionsView />);
+
+      expect(screen.getByRole('button', { name: '24h' })).toHaveClass('active');
+      expect(screen.getByRole('button', { name: '7d' })).not.toHaveClass('active');
+    });
+
+    it('switches to 7d sort when clicking 7d button', () => {
+      mockUseValidators.mockReturnValue({
+        data: {
+          validators: [
+            { bakerId: 1, source: 'reporting', transactions24h: 100, transactions7d: 500, lotteryPower: 0.1 },
+          ],
+        },
+        isLoading: false,
+        error: null,
+      });
+
+      render(<TransactionsView />);
+
+      fireEvent.click(screen.getByRole('button', { name: '7d' }));
+
+      expect(screen.getByRole('button', { name: '7d' })).toHaveClass('active');
+      expect(screen.getByRole('button', { name: '24h' })).not.toHaveClass('active');
+    });
+
+    it('sorts by 7d transactions when 7d is selected', () => {
+      mockUseValidators.mockReturnValue({
+        data: {
+          validators: [
+            { bakerId: 1, source: 'reporting', transactions24h: 200, transactions7d: 100, lotteryPower: 0.1 },
+            { bakerId: 2, source: 'reporting', transactions24h: 50, transactions7d: 500, lotteryPower: 0.1 },
+            { bakerId: 3, source: 'reporting', transactions24h: 100, transactions7d: 300, lotteryPower: 0.1 },
+          ],
+        },
+        isLoading: false,
+        error: null,
+      });
+
+      render(<TransactionsView />);
+
+      // Default 24h sort: Baker 1 (200) > Baker 3 (100) > Baker 2 (50)
+      let rows = screen.getAllByRole('row');
+      expect(rows[1]).toHaveTextContent('1'); // Baker ID 1 first
+
+      // Switch to 7d sort: Baker 2 (500) > Baker 3 (300) > Baker 1 (100)
+      fireEvent.click(screen.getByRole('button', { name: '7d' }));
+
+      rows = screen.getAllByRole('row');
+      expect(rows[1]).toHaveTextContent('2'); // Baker ID 2 first now
+    });
+
+    it('resets to first page when changing sort period', () => {
+      const validators = Array.from({ length: 20 }, (_, i) => ({
+        bakerId: i + 1,
+        source: 'reporting',
+        transactions24h: 1000 - i * 10,
+        transactions7d: i * 10, // Reverse order for 7d
+        lotteryPower: 0.01,
+      }));
+
+      mockUseValidators.mockReturnValue({
+        data: { validators },
+        isLoading: false,
+        error: null,
+      });
+
+      render(<TransactionsView />);
+
+      // Go to page 2
+      fireEvent.click(screen.getByTitle('Next page'));
+      expect(screen.getByText('Page 2 of 2')).toBeInTheDocument();
+
+      // Switch sort period
+      fireEvent.click(screen.getByRole('button', { name: '7d' }));
+
+      // Should be back to page 1
+      expect(screen.getByText('Page 1 of 2')).toBeInTheDocument();
+    });
+
+    it('shows sort indicator on sorted column header', () => {
+      mockUseValidators.mockReturnValue({
+        data: {
+          validators: [
+            { bakerId: 1, source: 'reporting', transactions24h: 100, transactions7d: 500, lotteryPower: 0.1 },
+          ],
+        },
+        isLoading: false,
+        error: null,
+      });
+
+      render(<TransactionsView />);
+
+      // 24h column should have sort indicator
+      expect(screen.getByRole('columnheader', { name: /Txs \(24h\).*▼/ })).toHaveClass('bb-sorted');
+
+      // Switch to 7d
+      fireEvent.click(screen.getByRole('button', { name: '7d' }));
+
+      // 7d column should now have sort indicator
+      expect(screen.getByRole('columnheader', { name: /Txs \(7d\).*▼/ })).toHaveClass('bb-sorted');
+    });
+  });
 });

@@ -16,11 +16,19 @@ import type { Validator } from '@/lib/types/validators';
 
 const PAGE_SIZE = 15;
 
+type SortPeriod = '24h' | '7d';
+
 export function TransactionsView() {
   const { data, isLoading, error } = useValidators();
   const [selectedValidator, setSelectedValidator] = useState<Validator | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
+  const [sortPeriod, setSortPeriod] = useState<SortPeriod>('24h');
   const validators = data?.validators ?? [];
+
+  const handleSortPeriodChange = (period: SortPeriod) => {
+    setSortPeriod(period);
+    setCurrentPage(0); // Reset to first page when changing sort
+  };
 
   if (isLoading) {
     return (
@@ -54,9 +62,14 @@ export function TransactionsView() {
     ? (totals.phantomTx24h / totals.tx24h) * 100
     : 0;
 
-  // All validators sorted by transactions (24h)
+  // All validators sorted by transactions (by selected period)
   const sortedValidators = [...validators]
-    .sort((a, b) => b.transactions24h - a.transactions24h);
+    .sort((a, b) => {
+      if (sortPeriod === '24h') {
+        return b.transactions24h - a.transactions24h;
+      }
+      return b.transactions7d - a.transactions7d;
+    });
 
   // Pagination
   const totalPages = Math.ceil(sortedValidators.length / PAGE_SIZE);
@@ -90,7 +103,23 @@ export function TransactionsView() {
       {/* Validators by Transactions */}
       <div className="bb-view-section">
         <div className="bb-section-header">
-          <h3>Validators by Transactions (24h)</h3>
+          <div className="bb-section-title-row">
+            <h3>Validators by Transactions</h3>
+            <div className="bb-sort-toggle">
+              <button
+                className={`bb-sort-btn ${sortPeriod === '24h' ? 'active' : ''}`}
+                onClick={() => handleSortPeriodChange('24h')}
+              >
+                24h
+              </button>
+              <button
+                className={`bb-sort-btn ${sortPeriod === '7d' ? 'active' : ''}`}
+                onClick={() => handleSortPeriodChange('7d')}
+              >
+                7d
+              </button>
+            </div>
+          </div>
           <span className="bb-section-count">{sortedValidators.length} validators</span>
         </div>
         <table className="bb-table">
@@ -99,8 +128,8 @@ export function TransactionsView() {
               <th>#</th>
               <th>Baker ID</th>
               <th>Type</th>
-              <th>Txs (24h)</th>
-              <th>Txs (7d)</th>
+              <th className={sortPeriod === '24h' ? 'bb-sorted' : ''}>Txs (24h){sortPeriod === '24h' && ' ▼'}</th>
+              <th className={sortPeriod === '7d' ? 'bb-sorted' : ''}>Txs (7d){sortPeriod === '7d' && ' ▼'}</th>
               <th>Lottery Power</th>
             </tr>
           </thead>

@@ -4323,6 +4323,54 @@
   color: var(--bb-text-dim);
 }
 
+/* Section title row with sort toggle */
+.bb-section-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bb-sort-toggle {
+  display: flex;
+  gap: 2px;
+}
+
+.bb-sort-btn {
+  background: var(--bb-panel);
+  border: 1px solid var(--bb-border);
+  color: var(--bb-text-dim);
+  padding: 2px 8px;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+
+.bb-sort-btn:first-child {
+  border-radius: 3px 0 0 3px;
+}
+
+.bb-sort-btn:last-child {
+  border-radius: 0 3px 3px 0;
+  border-left: none;
+}
+
+.bb-sort-btn:hover:not(.active) {
+  background: var(--bb-panel-bg);
+  color: var(--bb-white);
+}
+
+.bb-sort-btn.active {
+  background: var(--bb-amber);
+  color: var(--bb-bg);
+  border-color: var(--bb-amber);
+}
+
+/* Sorted column indicator */
+.bb-sorted {
+  color: var(--bb-amber) !important;
+}
+
 /* Rank column */
 .bb-rank {
   color: var(--bb-text-dim);
