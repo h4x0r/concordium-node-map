@@ -183,6 +183,9 @@ export function BlocksView() {
                     <span className={`bb-badge ${v.source === 'reporting' ? 'positive' : 'negative'}`}>
                       {v.source === 'reporting' ? 'Visible' : 'Phantom'}
                     </span>
+                    {v.blocks24h === 0 && v.blocks7d === 0 && v.blocks30d === 0 && (
+                      <span className="bb-badge inactive ml-1">No Activity</span>
+                    )}
                   </td>
                   <td className="font-mono">{formatNumber(v.blocks24h)}</td>
                   <td className="font-mono">{formatNumber(v.blocks7d)}</td>

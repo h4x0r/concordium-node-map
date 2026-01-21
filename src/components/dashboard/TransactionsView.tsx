@@ -172,6 +172,9 @@ export function TransactionsView() {
                     <span className={`bb-badge ${v.source === 'reporting' ? 'positive' : 'negative'}`}>
                       {v.source === 'reporting' ? 'Visible' : 'Phantom'}
                     </span>
+                    {v.transactions24h === 0 && v.transactions7d === 0 && v.transactions30d === 0 && (
+                      <span className="bb-badge inactive ml-1">No Activity</span>
+                    )}
                   </td>
                   <td className="font-mono">{formatNumber(v.transactions24h)}</td>
                   <td className="font-mono">{formatNumber(v.transactions7d)}</td>

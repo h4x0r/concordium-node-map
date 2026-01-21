@@ -4338,6 +4338,11 @@
   color: var(--bb-red);
 }
 
+.bb-badge.inactive {
+  background: rgba(128, 128, 128, 0.15);
+  color: var(--bb-gray);
+}
+
 .bb-view-loading {
   display: flex;
   flex-direction: column;
