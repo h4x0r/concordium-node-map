@@ -43,8 +43,8 @@ describe('useResponsivePageSize', () => {
     );
 
     // Available: 700 - 128 (reserved) - 52 (pagination) - 24 (header) = 496
-    // Rows: 496 / 41 = 12.0 → 12 rows
-    expect(result.current).toBe(12);
+    // Rows: 496 / 24 = 20.6 → 20 rows
+    expect(result.current).toBe(20);
   });
 
   it('respects minimum rows', () => {
@@ -84,7 +84,7 @@ describe('useResponsivePageSize', () => {
     );
 
     // Available: 600 - 100 (custom reserved) - 52 (pagination) - 24 (header) = 424
-    // Rows: 424 / 41 = 10.3 → 10 rows
-    expect(result.current).toBe(10);
+    // Rows: 424 / 24 = 17.6 → 17 rows
+    expect(result.current).toBe(17);
   });
 });

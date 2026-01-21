@@ -7,7 +7,7 @@
 
 import { useState, useEffect, useLayoutEffect, useCallback, RefObject } from 'react';
 
-const ROW_HEIGHT = 41; // Height per table row (padding + content + border)
+const ROW_HEIGHT = 24; // Height per table row (3px padding*2 + ~17px content + 1px border)
 const MIN_ROWS = 5;    // Minimum rows to always show
 const MAX_ROWS = 100;  // Maximum rows cap
 
@@ -40,17 +40,6 @@ export function useResponsivePageSize({
 
     const availableForRows = containerHeight - reservedHeight - paginationHeight - tableHeaderHeight;
     const calculatedRows = Math.floor(availableForRows / ROW_HEIGHT);
-
-    // Debug logging
-    console.log('[useResponsivePageSize]', {
-      containerHeight,
-      reservedHeight,
-      paginationHeight,
-      tableHeaderHeight,
-      availableForRows,
-      calculatedRows,
-      finalRows: Math.max(MIN_ROWS, Math.min(MAX_ROWS, calculatedRows)),
-    });
 
     return Math.max(MIN_ROWS, Math.min(MAX_ROWS, calculatedRows));
   }, [containerRef, reservedHeight, paginationHeight, tableHeaderHeight]);
