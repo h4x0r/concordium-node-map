@@ -42,9 +42,9 @@ describe('useResponsivePageSize', () => {
       useResponsivePageSize({ containerRef: mockContainerRef })
     );
 
-    // Available: 700 - 200 (reserved) - 55 (pagination) - 76 (header) = 369
-    // Rows: 369 / 41 = 9.0 → 9 rows
-    expect(result.current).toBe(9);
+    // Available: 700 - 128 (reserved) - 52 (pagination) - 24 (header) = 496
+    // Rows: 496 / 41 = 12.0 → 12 rows
+    expect(result.current).toBe(12);
   });
 
   it('respects minimum rows', () => {
@@ -83,8 +83,8 @@ describe('useResponsivePageSize', () => {
       })
     );
 
-    // Available: 600 - 100 (custom reserved) - 55 (pagination) - 76 (header) = 369
-    // Rows: 369 / 41 = 9.0 → 9 rows
-    expect(result.current).toBe(9);
+    // Available: 600 - 100 (custom reserved) - 52 (pagination) - 24 (header) = 424
+    // Rows: 424 / 41 = 10.3 → 10 rows
+    expect(result.current).toBe(10);
   });
 });
