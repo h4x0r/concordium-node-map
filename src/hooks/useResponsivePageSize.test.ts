@@ -35,16 +35,16 @@ describe('useResponsivePageSize', () => {
 
   it('calculates page size based on container height', () => {
     const mockDiv = document.createElement('div');
-    Object.defineProperty(mockDiv, 'clientHeight', { value: 600 });
+    Object.defineProperty(mockDiv, 'clientHeight', { value: 700 });
     mockContainerRef.current = mockDiv;
 
     const { result } = renderHook(() =>
       useResponsivePageSize({ containerRef: mockContainerRef })
     );
 
-    // Available: 600 - 160 (reserved) - 65 (pagination) - 40 (header) = 335
-    // Rows: 335 / 41 = 8.2 → 8 rows
-    expect(result.current).toBe(8);
+    // Available: 700 - 200 (reserved) - 55 (pagination) - 76 (header) = 369
+    // Rows: 369 / 41 = 9.0 → 9 rows
+    expect(result.current).toBe(9);
   });
 
   it('respects minimum rows', () => {
@@ -83,8 +83,8 @@ describe('useResponsivePageSize', () => {
       })
     );
 
-    // Available: 600 - 100 - 65 (pagination) - 40 (header) = 395
-    // Rows: 395 / 41 = 9.6 → 9 rows
+    // Available: 600 - 100 (custom reserved) - 55 (pagination) - 76 (header) = 369
+    // Rows: 369 / 41 = 9.0 → 9 rows
     expect(result.current).toBe(9);
   });
 });
