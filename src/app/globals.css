@@ -326,6 +326,44 @@
   background: var(--bb-orange-dim);
 }
 
+/* Baker node row highlighting */
+.bb-table tr.bb-baker-row {
+  background: rgba(0, 255, 128, 0.08);
+}
+
+.bb-table tr.bb-baker-row:hover {
+  background: rgba(0, 255, 128, 0.15);
+}
+
+.bb-table tr.bb-baker-row.selected {
+  background: rgba(0, 255, 128, 0.25);
+}
+
+.bb-baker-id {
+  color: var(--bb-green);
+  font-weight: 600;
+}
+
+.bb-lottery-power {
+  color: var(--concordium-teal);
+  font-weight: 500;
+}
+
+.bb-no-baker {
+  color: var(--bb-gray);
+}
+
+.bb-node-name {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bb-client {
+  font-size: 10px;
+  color: var(--bb-gray);
+}
+
 /* Data alignments */
 .bb-table .num {
   text-align: right;
