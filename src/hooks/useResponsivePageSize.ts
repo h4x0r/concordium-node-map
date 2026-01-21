@@ -24,9 +24,9 @@ interface UseResponsivePageSizeOptions {
 
 export function useResponsivePageSize({
   containerRef,
-  reservedHeight = 210, // Container padding (32) + summary cards (~115) + section padding/header (~63)
-  paginationHeight = 70, // Pagination controls + section bottom padding
-  tableHeaderHeight = 44,
+  reservedHeight = 160, // Summary cards + margins
+  paginationHeight = 65, // Pagination controls
+  tableHeaderHeight = 40,
 }: UseResponsivePageSizeOptions): number {
   const [pageSize, setPageSize] = useState(MIN_ROWS);
 
