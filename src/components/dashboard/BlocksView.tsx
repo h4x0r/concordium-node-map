@@ -9,8 +9,9 @@
  * - Block distribution by validator type
  */
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { useValidators } from '@/hooks/useValidators';
+import { useNodes } from '@/hooks/useNodes';
 import { useResponsivePageSize } from '@/hooks/useResponsivePageSize';
 import { BakerDetailPanel } from './BakerDetailPanel';
 import type { Validator } from '@/lib/types/validators';
@@ -20,11 +21,25 @@ type SortPeriod = '24h' | '7d' | '30d';
 export function BlocksView() {
   const containerRef = useRef<HTMLDivElement>(null);
   const { data, isLoading, error } = useValidators();
+  const { data: nodes } = useNodes();
   const [selectedValidator, setSelectedValidator] = useState<Validator | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [sortPeriod, setSortPeriod] = useState<SortPeriod>('24h');
   const validators = data?.validators ?? [];
   const pageSize = useResponsivePageSize({ containerRef });
+
+  // Map bakerId -> nodeName for display
+  const bakerNodeNames = useMemo(() => {
+    const map = new Map<number, string>();
+    if (nodes) {
+      for (const node of nodes) {
+        if (node.consensusBakerId !== null) {
+          map.set(node.consensusBakerId, node.nodeName || node.nodeId.slice(0, 12) + '...');
+        }
+      }
+    }
+    return map;
+  }, [nodes]);
 
   const handleSortPeriodChange = (period: SortPeriod) => {
     setSortPeriod(period);
@@ -158,6 +173,7 @@ export function BlocksView() {
               <tr>
                 <th>#</th>
                 <th>Baker ID</th>
+                <th>Node Name</th>
                 <th>Type</th>
                 <th className={sortPeriod === '24h' ? 'bb-sorted' : ''}>Blocks (24h){sortPeriod === '24h' && ' ▼'}</th>
                 <th className={sortPeriod === '7d' ? 'bb-sorted' : ''}>Blocks (7d){sortPeriod === '7d' && ' ▼'}</th>
@@ -178,6 +194,9 @@ export function BlocksView() {
                     >
                       {v.bakerId}
                     </button>
+                  </td>
+                  <td className="bb-node-name">
+                    {bakerNodeNames.get(v.bakerId) || '--'}
                   </td>
                   <td>
                     <span className={`bb-badge ${v.source === 'reporting' ? 'positive' : 'negative'}`}>

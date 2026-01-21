@@ -147,8 +147,15 @@ function DesktopHome() {
         )
       : nodes;
 
-    // Sort the filtered results
+    // Sort the filtered results - bakers always at top, then by selected column
     return [...filtered].sort((a, b) => {
+      // Bakers always come first
+      const aIsBaker = a.consensusBakerId !== null;
+      const bIsBaker = b.consensusBakerId !== null;
+      if (aIsBaker && !bIsBaker) return -1;
+      if (!aIsBaker && bIsBaker) return 1;
+
+      // Then sort by selected column
       let comparison = 0;
       switch (sortColumn) {
         case 'name':
@@ -659,7 +666,7 @@ function DesktopHome() {
                   {filteredAndSortedNodes.map((node) => (
                     <tr
                       key={node.nodeId}
-                      className={selectedNodeId === node.nodeId ? 'selected' : ''}
+                      className={`${node.consensusBakerId !== null ? 'bb-baker-row' : ''} ${selectedNodeId === node.nodeId ? 'selected' : ''}`}
                       onClick={() => {
                         playAcquisitionSequence();
                         selectNode(node.nodeId);
