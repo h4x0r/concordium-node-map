@@ -142,46 +142,48 @@ export function TransactionsView() {
           </div>
           <span className="bb-section-count">{sortedValidators.length} validators</span>
         </div>
-        <table className="bb-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Baker ID</th>
-              <th>Type</th>
-              <th className={sortPeriod === '24h' ? 'bb-sorted' : ''}>Txs (24h){sortPeriod === '24h' && ' ▼'}</th>
-              <th className={sortPeriod === '7d' ? 'bb-sorted' : ''}>Txs (7d){sortPeriod === '7d' && ' ▼'}</th>
-              <th className={sortPeriod === '30d' ? 'bb-sorted' : ''}>Txs (30d){sortPeriod === '30d' && ' ▼'}</th>
-              <th>Lottery Power</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginatedValidators.map((v, idx) => (
-              <tr key={v.bakerId}>
-                <td className="font-mono bb-rank">{startIdx + idx + 1}</td>
-                <td className="font-mono">
-                  <button
-                    className="bb-baker-link"
-                    onClick={() => setSelectedValidator(v)}
-                    title="View baker details"
-                  >
-                    {v.bakerId}
-                  </button>
-                </td>
-                <td>
-                  <span className={`bb-badge ${v.source === 'reporting' ? 'positive' : 'negative'}`}>
-                    {v.source === 'reporting' ? 'Visible' : 'Phantom'}
-                  </span>
-                </td>
-                <td className="font-mono">{formatNumber(v.transactions24h)}</td>
-                <td className="font-mono">{formatNumber(v.transactions7d)}</td>
-                <td className="font-mono">{formatNumber(v.transactions30d)}</td>
-                <td className="font-mono">
-                  {v.lotteryPower !== null ? `${(v.lotteryPower * 100).toFixed(3)}%` : '--'}
-                </td>
+        <div className="bb-table-wrapper">
+          <table className="bb-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Baker ID</th>
+                <th>Type</th>
+                <th className={sortPeriod === '24h' ? 'bb-sorted' : ''}>Txs (24h){sortPeriod === '24h' && ' ▼'}</th>
+                <th className={sortPeriod === '7d' ? 'bb-sorted' : ''}>Txs (7d){sortPeriod === '7d' && ' ▼'}</th>
+                <th className={sortPeriod === '30d' ? 'bb-sorted' : ''}>Txs (30d){sortPeriod === '30d' && ' ▼'}</th>
+                <th>Lottery Power</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {paginatedValidators.map((v, idx) => (
+                <tr key={v.bakerId}>
+                  <td className="font-mono bb-rank">{startIdx + idx + 1}</td>
+                  <td className="font-mono">
+                    <button
+                      className="bb-baker-link"
+                      onClick={() => setSelectedValidator(v)}
+                      title="View baker details"
+                    >
+                      {v.bakerId}
+                    </button>
+                  </td>
+                  <td>
+                    <span className={`bb-badge ${v.source === 'reporting' ? 'positive' : 'negative'}`}>
+                      {v.source === 'reporting' ? 'Visible' : 'Phantom'}
+                    </span>
+                  </td>
+                  <td className="font-mono">{formatNumber(v.transactions24h)}</td>
+                  <td className="font-mono">{formatNumber(v.transactions7d)}</td>
+                  <td className="font-mono">{formatNumber(v.transactions30d)}</td>
+                  <td className="font-mono">
+                    {v.lotteryPower !== null ? `${(v.lotteryPower * 100).toFixed(3)}%` : '--'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
         {/* Pagination Controls */}
         {totalPages > 1 && (

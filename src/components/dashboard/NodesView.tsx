@@ -159,55 +159,57 @@ export function NodesView() {
           <h3>Network Nodes</h3>
           <span className="bb-section-count">{sortedNodes.length} nodes</span>
         </div>
-        <table className="bb-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Node Name</th>
-              <th>Baker ID</th>
-              <th>Lottery Power</th>
-              <th>Peers</th>
-              <th>Height</th>
-              <th>Uptime</th>
-              <th>Client</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginatedNodes.map((node, idx) => {
-              const isBaker = node.consensusBakerId !== null;
-              return (
-                <tr
-                  key={node.nodeId}
-                  className={`${isBaker ? 'bb-baker-row' : ''} ${selectedNodeId === node.nodeId ? 'selected' : ''}`}
-                  onClick={() => setSelectedNodeId(node.nodeId === selectedNodeId ? null : node.nodeId)}
-                >
-                  <td className="font-mono bb-rank">{startIdx + idx + 1}</td>
-                  <td className="bb-node-name" title={node.nodeId}>
-                    {node.nodeName || node.nodeId.slice(0, 16) + '...'}
-                  </td>
-                  <td className="font-mono">
-                    {isBaker ? (
-                      <span className="bb-baker-id">{node.consensusBakerId}</span>
-                    ) : (
-                      <span className="bb-no-baker">--</span>
-                    )}
-                  </td>
-                  <td className="font-mono">
-                    {isBaker ? (
-                      <span className="bb-lottery-power">{formatLotteryPower(node.lotteryPower)}</span>
-                    ) : (
-                      <span className="bb-no-baker">--</span>
-                    )}
-                  </td>
-                  <td className="font-mono">{node.peersCount}</td>
-                  <td className="font-mono">{node.finalizedBlockHeight.toLocaleString()}</td>
-                  <td className="font-mono">{formatUptime(node.uptime)}</td>
-                  <td className="bb-client">{node.client || '--'}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <div className="bb-table-wrapper">
+          <table className="bb-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Node Name</th>
+                <th>Baker ID</th>
+                <th>Lottery Power</th>
+                <th>Peers</th>
+                <th>Height</th>
+                <th>Uptime</th>
+                <th>Client</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedNodes.map((node, idx) => {
+                const isBaker = node.consensusBakerId !== null;
+                return (
+                  <tr
+                    key={node.nodeId}
+                    className={`${isBaker ? 'bb-baker-row' : ''} ${selectedNodeId === node.nodeId ? 'selected' : ''}`}
+                    onClick={() => setSelectedNodeId(node.nodeId === selectedNodeId ? null : node.nodeId)}
+                  >
+                    <td className="font-mono bb-rank">{startIdx + idx + 1}</td>
+                    <td className="bb-node-name" title={node.nodeId}>
+                      {node.nodeName || node.nodeId.slice(0, 16) + '...'}
+                    </td>
+                    <td className="font-mono">
+                      {isBaker ? (
+                        <span className="bb-baker-id">{node.consensusBakerId}</span>
+                      ) : (
+                        <span className="bb-no-baker">--</span>
+                      )}
+                    </td>
+                    <td className="font-mono">
+                      {isBaker ? (
+                        <span className="bb-lottery-power">{formatLotteryPower(node.lotteryPower)}</span>
+                      ) : (
+                        <span className="bb-no-baker">--</span>
+                      )}
+                    </td>
+                    <td className="font-mono">{node.peersCount}</td>
+                    <td className="font-mono">{node.finalizedBlockHeight.toLocaleString()}</td>
+                    <td className="font-mono">{formatUptime(node.uptime)}</td>
+                    <td className="bb-client">{node.client || '--'}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
 
         {/* Pagination Controls */}
         {totalPages > 1 && (

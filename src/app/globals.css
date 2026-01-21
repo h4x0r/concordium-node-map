@@ -4202,7 +4202,9 @@
 .bb-data-view {
   padding: 16px;
   height: 100%;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   background: var(--bb-black);
 }
 
@@ -4210,7 +4212,8 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 12px;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
+  flex-shrink: 0;
 }
 
 .bb-stat-card {
@@ -4293,6 +4296,11 @@
   background: var(--bb-panel-bg);
   border: 1px solid var(--bb-border);
   padding: 16px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .bb-view-section h3 {
@@ -4388,6 +4396,14 @@
   align-items: baseline;
   justify-content: space-between;
   margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+/* Table wrapper for scrolling within view section */
+.bb-table-wrapper {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .bb-section-header h3 {
@@ -4463,6 +4479,7 @@
   margin-top: 16px;
   padding-top: 12px;
   border-top: 1px solid var(--bb-border);
+  flex-shrink: 0;
 }
 
 .bb-pagination-btn {
