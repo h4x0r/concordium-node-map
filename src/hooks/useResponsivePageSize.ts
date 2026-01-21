@@ -13,7 +13,7 @@ const MAX_ROWS = 50;   // Maximum rows cap
 
 interface UseResponsivePageSizeOptions {
   /** Reference to the container element */
-  containerRef: RefObject<HTMLElement>;
+  containerRef: RefObject<HTMLElement | null>;
   /** Height reserved for elements above the table (summary cards, section header) */
   reservedHeight?: number;
   /** Height of pagination controls */
