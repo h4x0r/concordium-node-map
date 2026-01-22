@@ -11,6 +11,7 @@ import { usePeers } from '@/hooks/usePeers';
 import { useIsMobile } from '@/hooks/useMediaQuery';
 import { useAudio } from '@/hooks/useAudio';
 import { calculateNetworkPulse, getPulseStatus, THRESHOLDS, calculateFinalizationHealth, calculateLatencyHealth } from '@/lib/pulse';
+import { calculateNodeHealth } from '@/lib/transforms';
 import { Sparkline } from '@/components/dashboard/Sparkline';
 import { MRTGChart, type MRTGDataPoint } from '@/components/dashboard/MRTGChart';
 import { NodeDetailPanel } from '@/components/dashboard/NodeDetailPanel';
@@ -176,6 +177,12 @@ function DesktopHome() {
       return sortDirection === 'asc' ? comparison : -comparison;
     });
   }, [nodes, commandInput, sortColumn, sortDirection]);
+
+  // Calculate max height for health comparison in Node Explorer
+  const maxHeight = useMemo(() => {
+    if (!nodes || !nodes.length) return 0;
+    return Math.max(...nodes.map(n => n.finalizedBlockHeight));
+  }, [nodes]);
 
   const handleSort = (column: 'name' | 'peers' | 'fin' | 'status') => {
     if (sortColumn === column) {
@@ -658,39 +665,43 @@ function DesktopHome() {
                     <th onClick={() => handleSort('fin')} style={{ cursor: 'pointer' }}>
                       Fin {sortColumn === 'fin' && (sortDirection === 'asc' ? '▲' : '▼')}
                     </th>
-                    <th onClick={() => handleSort('status')} style={{ cursor: 'pointer' }}>
-                      Status {sortColumn === 'status' && (sortDirection === 'asc' ? '▲' : '▼')}
-                    </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredAndSortedNodes.map((node) => (
-                    <tr
-                      key={node.nodeId}
-                      className={`${node.consensusBakerId !== null ? 'bb-baker-row' : ''} ${selectedNodeId === node.nodeId ? 'selected' : ''}`}
-                      onClick={() => {
-                        playAcquisitionSequence();
-                        selectNode(node.nodeId);
-                      }}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      <td
-                        className="text-[var(--bb-cyan)]"
-                        title={node.nodeName || node.nodeId}
-                        style={{ maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                  {filteredAndSortedNodes.map((node) => {
+                    const isBaker = node.consensusBakerId !== null;
+                    const health = calculateNodeHealth(node, maxHeight);
+                    const statusClass = {
+                      healthy: 'bb-status-dot-healthy',
+                      lagging: 'bb-status-dot-lagging',
+                      issue: 'bb-status-dot-issue',
+                    }[health];
+                    const statusTitle = health.charAt(0).toUpperCase() + health.slice(1);
+
+                    return (
+                      <tr
+                        key={node.nodeId}
+                        className={`${isBaker ? 'bb-baker-row' : ''} ${selectedNodeId === node.nodeId ? 'selected' : ''}`}
+                        onClick={() => {
+                          playAcquisitionSequence();
+                          selectNode(node.nodeId);
+                        }}
+                        style={{ cursor: 'pointer' }}
                       >
-                        {node.nodeName || node.nodeId.slice(0, 16)}
-                      </td>
-                      <td className="num">{node.peersCount}</td>
-                      <td className="num">{node.finalizedBlockHeight}</td>
-                      <td>
-                        <span className={`inline-block w-2 h-2 mr-1 ${
-                          node.consensusRunning ? 'bg-[var(--bb-green)]' : 'bg-[var(--bb-red)]'
-                        }`} />
-                        {node.consensusRunning ? 'OK' : 'OFF'}
-                      </td>
-                    </tr>
-                  ))}
+                        <td
+                          className="text-[var(--bb-cyan)]"
+                          title={node.nodeName || node.nodeId}
+                          style={{ maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                        >
+                          <span className={`bb-status-dot ${statusClass}`} title={statusTitle} />
+                          {isBaker && <span className="bb-baker-emoji" title="Baker">🥖</span>}
+                          {node.nodeName || node.nodeId.slice(0, 16)}
+                        </td>
+                        <td className="num">{node.peersCount}</td>
+                        <td className="num">{node.finalizedBlockHeight}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
