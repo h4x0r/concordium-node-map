@@ -96,7 +96,10 @@ export function TransactionsView() {
   const startIdx = currentPage * pageSize;
   const paginatedValidators = sortedValidators.slice(startIdx, startIdx + pageSize);
 
-  const formatNumber = (n: number) => n.toLocaleString();
+  // Use Intl.NumberFormat with explicit locale to avoid hydration mismatch
+  const formatNumber = (n: number) => {
+    return new Intl.NumberFormat('en-US').format(n);
+  };
 
   return (
     <div className="bb-data-view" ref={containerRef}>

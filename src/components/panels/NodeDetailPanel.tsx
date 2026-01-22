@@ -17,7 +17,7 @@ import { PeerTypeBadge, type PeerSource } from '@/components/ui/PeerTypeBadge';
 import type { PeerData } from '@/hooks/usePeers';
 import { useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { formatUptime, formatBytesPerSecond, formatNumber } from '@/lib/formatting';
+import { formatUptime, formatBytesPerSecond, formatNumber, formatBlockHeight } from '@/lib/formatting';
 
 interface SectionProps {
   title: string;
@@ -148,13 +148,13 @@ function NodeDetails({ node, maxHeight, peerData }: { node: ConcordiumNode; maxH
           label="Best Block"
           value={
             <span className="text-[var(--concordium-teal)]">
-              {node.bestBlockHeight.toLocaleString()}
+              {formatBlockHeight(node.bestBlockHeight)}
             </span>
           }
         />
         <DetailRow
           label="Finalized"
-          value={node.finalizedBlockHeight.toLocaleString()}
+          value={formatBlockHeight(node.finalizedBlockHeight)}
         />
         <DetailRow
           label="Behind"

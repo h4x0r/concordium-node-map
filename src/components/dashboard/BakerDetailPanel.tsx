@@ -11,9 +11,10 @@
  * - Pool status
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Validator } from '@/lib/types/validators';
 import { AddressIdenticon } from '@/components/ui/AddressIdenticon';
+import { formatNumber, formatLotteryPower, formatCommission, formatRelativeTime } from '@/lib/format-utils';
 
 export interface BakerDetailPanelProps {
   isOpen: boolean;
@@ -27,6 +28,12 @@ export function BakerDetailPanel({
   onClose,
 }: BakerDetailPanelProps) {
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Track client mount to avoid hydration mismatches with Date.now()
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   if (!isOpen) return null;
 
@@ -59,28 +66,6 @@ export function BakerDetailPanel({
   const truncateAddress = (address: string) => {
     if (address.length <= 16) return address;
     return `${address.slice(0, 8)}...${address.slice(-2)}`;
-  };
-
-  const formatNumber = (n: number) => n.toLocaleString();
-
-  const formatLotteryPower = (power: number | null) => {
-    if (power === null) return '--';
-    return `${(power * 100).toFixed(3)}%`;
-  };
-
-  const formatCommission = (rate: number | null) => {
-    if (rate === null) return '--';
-    return `${(rate * 100).toFixed(2)}%`;
-  };
-
-  const formatLastBlockTime = (timestamp: number | null) => {
-    if (timestamp === null) return '--';
-    const diff = Date.now() - timestamp;
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    if (hours < 1) return 'Just now';
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    return `${days}d ago`;
   };
 
   const formatDataCompleteness = (value: number | null) => {
@@ -151,7 +136,7 @@ export function BakerDetailPanel({
             </div>
             <div className="bdp-stat-row">
               <span className="bdp-stat-label">Last Block</span>
-              <span className="bdp-stat-value">{formatLastBlockTime(validator.lastBlockTime)}</span>
+              <span className="bdp-stat-value">{formatRelativeTime(validator.lastBlockTime, isMounted)}</span>
             </div>
             <div className="bdp-stat-row">
               <span className="bdp-stat-label">Last Height</span>

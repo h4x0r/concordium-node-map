@@ -11,7 +11,8 @@ import { useState, useRef, useMemo } from 'react';
 import { useNodes } from '@/hooks/useNodes';
 import { useValidators } from '@/hooks/useValidators';
 import { useResponsivePageSize } from '@/hooks/useResponsivePageSize';
-import type { ConcordiumNode } from '@/lib/transforms';
+import { formatNumber, formatLotteryPower } from '@/lib/format-utils';
+import { calculateNodeHealth, type ConcordiumNode } from '@/lib/transforms';
 import type { Validator } from '@/lib/types/validators';
 
 interface NodeWithLotteryPower extends ConcordiumNode {
@@ -76,6 +77,12 @@ export function NodesView() {
     });
   }, [nodes, validatorMap]);
 
+  // Calculate max height for health comparison
+  const maxHeight = useMemo(() => {
+    if (!sortedNodes.length) return 0;
+    return Math.max(...sortedNodes.map(n => n.finalizedBlockHeight));
+  }, [sortedNodes]);
+
   // Stats
   const stats = useMemo(() => {
     const bakerNodes = sortedNodes.filter(n => n.consensusBakerId !== null);
@@ -109,11 +116,6 @@ export function NodesView() {
       </div>
     );
   }
-
-  const formatLotteryPower = (power: number | null) => {
-    if (power === null) return '--';
-    return `${(power * 100).toFixed(3)}%`;
-  };
 
   const formatUptime = (ms: number) => {
     const hours = Math.floor(ms / (1000 * 60 * 60));
@@ -164,6 +166,7 @@ export function NodesView() {
             <thead>
               <tr>
                 <th>#</th>
+                <th className="bb-status-col"></th>
                 <th>Node Name</th>
                 <th>Baker ID</th>
                 <th>Lottery Power</th>
@@ -176,6 +179,17 @@ export function NodesView() {
             <tbody>
               {paginatedNodes.map((node, idx) => {
                 const isBaker = node.consensusBakerId !== null;
+                const health = calculateNodeHealth(node, maxHeight);
+                const statusClass = {
+                  healthy: 'bb-status-dot-healthy',
+                  lagging: 'bb-status-dot-lagging',
+                  issue: 'bb-status-dot-issue',
+                }[health];
+                const statusTitle = {
+                  healthy: 'Healthy',
+                  lagging: 'Lagging',
+                  issue: 'Issue',
+                }[health];
                 return (
                   <tr
                     key={node.nodeId}
@@ -183,7 +197,11 @@ export function NodesView() {
                     onClick={() => setSelectedNodeId(node.nodeId === selectedNodeId ? null : node.nodeId)}
                   >
                     <td className="font-mono bb-rank">{startIdx + idx + 1}</td>
+                    <td className="bb-status-cell">
+                      <span className={`bb-status-dot ${statusClass}`} title={statusTitle} />
+                    </td>
                     <td className="bb-node-name" title={node.nodeId}>
+                      {isBaker && <span className="bb-baker-emoji" title="Baker">🥖</span>}
                       {node.nodeName || node.nodeId.slice(0, 16) + '...'}
                     </td>
                     <td className="font-mono">
@@ -201,7 +219,7 @@ export function NodesView() {
                       )}
                     </td>
                     <td className="font-mono">{node.peersCount}</td>
-                    <td className="font-mono">{node.finalizedBlockHeight.toLocaleString()}</td>
+                    <td className="font-mono">{formatNumber(node.finalizedBlockHeight)}</td>
                     <td className="font-mono">{formatUptime(node.uptime)}</td>
                     <td className="bb-client">{node.client || '--'}</td>
                   </tr>

@@ -4518,6 +4518,47 @@
   padding: 0 12px;
 }
 
+/* Node table status indicators */
+.bb-status-col {
+  width: 24px;
+  padding: 0 4px !important;
+}
+
+.bb-status-cell {
+  width: 24px;
+  text-align: center;
+  padding: 0 4px !important;
+}
+
+.bb-status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.bb-status-dot-healthy {
+  background: var(--bb-green);
+  box-shadow: 0 0 6px var(--bb-green);
+}
+
+.bb-status-dot-lagging {
+  background: var(--bb-amber);
+  box-shadow: 0 0 6px var(--bb-amber);
+  animation: bb-pulse 2s ease-in-out infinite;
+}
+
+.bb-status-dot-issue {
+  background: var(--bb-red);
+  box-shadow: 0 0 6px var(--bb-red);
+  animation: bb-blink 0.5s ease-in-out infinite;
+}
+
+.bb-baker-emoji {
+  margin-right: 4px;
+  font-size: 12px;
+}
+
 /* ============================================= */
 /* BakerDetailPanel (bdp-*)                     */
 /* ============================================= */

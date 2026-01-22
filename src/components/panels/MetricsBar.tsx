@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { RefreshCw, Activity, Users, Clock, Shield } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { formatNumber } from '@/lib/format-utils';
 
 function formatTimeSince(timestamp: number): string {
   if (!timestamp) return 'Never';
@@ -133,7 +134,7 @@ export function MetricsBar() {
           <MetricCard
             icon={<Clock className="h-5 w-5" />}
             label="Max Lag"
-            value={metrics.maxFinalizationLag.toLocaleString()}
+            value={formatNumber(metrics.maxFinalizationLag)}
           />
           <MetricCard
             icon={<Shield className="h-5 w-5" />}

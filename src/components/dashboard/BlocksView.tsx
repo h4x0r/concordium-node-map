@@ -9,7 +9,7 @@
  * - Block distribution by validator type
  */
 
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import { useValidators } from '@/hooks/useValidators';
 import { useNodes } from '@/hooks/useNodes';
 import { useResponsivePageSize } from '@/hooks/useResponsivePageSize';
@@ -25,8 +25,14 @@ export function BlocksView() {
   const [selectedValidator, setSelectedValidator] = useState<Validator | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [sortPeriod, setSortPeriod] = useState<SortPeriod>('24h');
+  const [isMounted, setIsMounted] = useState(false);
   const validators = data?.validators ?? [];
   const pageSize = useResponsivePageSize({ containerRef });
+
+  // Track client mount to avoid hydration mismatches with Date.now()
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Map bakerId -> nodeName for display
   const bakerNodeNames = useMemo(() => {
@@ -96,10 +102,15 @@ export function BlocksView() {
   const startIdx = currentPage * pageSize;
   const paginatedValidators = sortedValidators.slice(startIdx, startIdx + pageSize);
 
-  const formatNumber = (n: number) => n.toLocaleString();
+  // Use Intl.NumberFormat with explicit locale to avoid hydration mismatch
+  const formatNumber = (n: number) => {
+    return new Intl.NumberFormat('en-US').format(n);
+  };
 
   const formatLastBlockTime = (timestamp: number | null) => {
     if (timestamp === null) return '--';
+    // Only calculate relative time on client to avoid hydration mismatch
+    if (!isMounted) return '...';
     const diff = Date.now() - timestamp;
     const hours = Math.floor(diff / (1000 * 60 * 60));
     if (hours < 1) return 'Just now';
