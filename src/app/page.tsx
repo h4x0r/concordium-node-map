@@ -692,7 +692,6 @@ function DesktopHome() {
                               disabled={!isAvailable}
                               title={isAvailable ? 'Click to view this node' : 'Phantom node - not reporting to dashboard'}
                             >
-                              {!isAvailable && <span className="bb-phantom-icon">👻</span>}
                               {peerId.slice(0, 8)}...
                             </button>
                           );
