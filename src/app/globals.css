@@ -3410,24 +3410,19 @@
   border-left-color: var(--bb-cyan);
 }
 
-/* Validator (Baker) Badge - Green Checkmark */
+/* Validator (Baker) Badge - Baker Emoji */
 .validator-badge {
   position: absolute;
   top: -12px;
   right: -8px;
   z-index: 10;
-  font-size: 28px;
+  font-size: 20px;
   line-height: 1;
-  color: #22c55e;
-  text-shadow:
-    0 0 8px rgba(34, 197, 94, 0.9),
-    0 0 16px rgba(34, 197, 94, 0.6),
-    0 0 24px rgba(34, 197, 94, 0.3);
+  filter: drop-shadow(0 0 4px rgba(255, 200, 100, 0.8));
 }
 
 .validator-badge::after {
-  content: '✔';
-  font-weight: 900;
+  content: '🥖';
 }
 
 /* Critical Node Star Badge */

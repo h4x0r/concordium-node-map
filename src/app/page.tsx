@@ -412,8 +412,8 @@ function DesktopHome() {
       {/* ===== MAIN CONTENT GRID ===== */}
       <div className="flex-1 min-h-0 bb-grid" style={{ gridTemplateColumns: '280px 1fr 400px', gridTemplateRows: 'auto 1fr' }}>
 
-        {/* ===== LEFT COLUMN - METRICS ===== */}
-        <div className="bb-grid-cell flex flex-col">
+        {/* ===== LEFT COLUMN - METRICS + NODE DETAILS ===== */}
+        <div className="bb-grid-cell flex flex-col" style={{ gridRow: 'span 2' }}>
           {/* Network Pulse Panel */}
           <div className="bb-panel flex-shrink-0">
             <div className="bb-panel-header">Network Pulse</div>
@@ -487,6 +487,229 @@ function DesktopHome() {
               {currentMetrics.pulse >= 90 && (
                 <div className="bb-alert success">
                   NOMINAL: All systems operational
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Node Details Panel - takes remaining space */}
+          <div className={`bb-panel flex-1 flex flex-col min-h-0 ${selectedNode?.consensusBakerId !== null ? 'bb-baker-panel' : ''}`}>
+            <div className="bb-panel-header dark">
+              Node Details
+              {selectedNode && (
+                <span className="text-[var(--bb-cyan)] font-normal ml-2">
+                  {selectedNode.consensusBakerId !== null && <span className="bb-baker-emoji" title="Baker">🥖</span>}
+                  {selectedNode.nodeName || selectedNode.nodeId.slice(0, 12)}
+                </span>
+              )}
+            </div>
+            <div className="bb-panel-body flex-1 overflow-auto">
+              {selectedNode ? (
+                <div className="bb-forensic">
+                  {/* Identity */}
+                  <div className="bb-forensic-section">
+                    <div className="bb-forensic-section-header">IDENTITY</div>
+                    <div className="bb-forensic-row">
+                      <span className="bb-forensic-label">Node ID</span>
+                      <CopyableTooltip
+                        value={selectedNode.nodeId}
+                        displayValue={`${selectedNode.nodeId.slice(0, 24)}...`}
+                        className="bb-forensic-value mono"
+                      />
+                    </div>
+                    <div className="bb-forensic-row">
+                      <span className="bb-forensic-label">Name</span>
+                      <span className="bb-forensic-value">{selectedNode.nodeName || 'Unnamed'}</span>
+                    </div>
+                    <div className="bb-forensic-row">
+                      <span className="bb-forensic-label">Client</span>
+                      <span className="bb-forensic-value">{selectedNode.client}</span>
+                    </div>
+                    <div className="bb-forensic-row">
+                      <span className="bb-forensic-label">Type</span>
+                      <span className="bb-forensic-value">{selectedNode.peerType}</span>
+                    </div>
+                  </div>
+
+                  {/* Status */}
+                  <div className="bb-forensic-section">
+                    <div className="bb-forensic-section-header">STATUS</div>
+                    <div className="bb-forensic-row">
+                      <span className="bb-forensic-label">Consensus</span>
+                      <span className={`bb-forensic-value ${selectedNode.consensusRunning ? 'text-[var(--bb-green)]' : 'text-[var(--bb-red)]'}`}>
+                        {selectedNode.consensusRunning ? 'RUNNING' : 'STOPPED'}
+                      </span>
+                    </div>
+                    <div className="bb-forensic-row">
+                      <span className="bb-forensic-label">Uptime</span>
+                      <span className="bb-forensic-value">{Math.floor(selectedNode.uptime / 3600)}h {Math.floor((selectedNode.uptime % 3600) / 60)}m</span>
+                    </div>
+                    <div className="bb-forensic-row">
+                      <span className="bb-forensic-label">Baker ID</span>
+                      <span className={`bb-forensic-value ${selectedNode.consensusBakerId !== null ? 'text-[var(--bb-magenta)]' : ''}`}>
+                        {selectedNode.consensusBakerId !== null ? `#${selectedNode.consensusBakerId}` : 'N/A'}
+                      </span>
+                    </div>
+                    {selectedNodeValidator && (
+                      <div className="bb-forensic-row">
+                        <span className="bb-forensic-label">Lottery Power</span>
+                        <span className="bb-forensic-value text-[var(--bb-magenta)]">
+                          {formatLotteryPower(selectedNodeValidator.lotteryPower)}
+                        </span>
+                      </div>
+                    )}
+                    <div className="bb-forensic-row">
+                      <span className="bb-forensic-label">Finalizer</span>
+                      <span className={`bb-forensic-value ${selectedNode.finalizationCommitteeMember ? 'text-[var(--bb-cyan)]' : ''}`}>
+                        {selectedNode.finalizationCommitteeMember ? 'YES' : 'NO'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Network */}
+                  <div className="bb-forensic-section">
+                    <div className="bb-forensic-section-header">NETWORK</div>
+                    {selectedNodePeer?.ipAddress && (
+                      <div className="bb-forensic-row">
+                        <span className="bb-forensic-label">IP Address</span>
+                        <OsintHoverCard
+                          ip={selectedNodePeer.ipAddress}
+                          onClickForFull={() => setOsintDrawerIp(selectedNodePeer.ipAddress)}
+                        >
+                          <span className="bb-forensic-value text-[var(--bb-cyan)]">
+                            {selectedNodePeer.ipAddress}:{selectedNodePeer.port}
+                          </span>
+                        </OsintHoverCard>
+                      </div>
+                    )}
+                    {selectedNodePeer?.geoCountry && (
+                      <div className="bb-forensic-row">
+                        <span className="bb-forensic-label">Location</span>
+                        <span className="bb-forensic-value">{selectedNodePeer.geoCity ? `${selectedNodePeer.geoCity}, ` : ''}{selectedNodePeer.geoCountry}</span>
+                      </div>
+                    )}
+                    {selectedNodePeer?.geoIsp && (
+                      <div className="bb-forensic-row">
+                        <span className="bb-forensic-label">ISP</span>
+                        <span className="bb-forensic-value text-[var(--bb-gray)]">{selectedNodePeer.geoIsp}</span>
+                      </div>
+                    )}
+                    <div className="bb-forensic-row">
+                      <span className="bb-forensic-label">Peers</span>
+                      <span className="bb-forensic-value text-[var(--bb-cyan)]">{selectedNode.peersCount}</span>
+                    </div>
+                    <div className="bb-forensic-row">
+                      <span className="bb-forensic-label">Latency</span>
+                      <span className="bb-forensic-value">{selectedNode.averagePing?.toFixed(0) ?? 'N/A'}ms</span>
+                    </div>
+                    <div className="bb-forensic-row">
+                      <span className="bb-forensic-label">BW In</span>
+                      <span className="bb-forensic-value">{selectedNode.averageBytesPerSecondIn ? `${(selectedNode.averageBytesPerSecondIn / 1024).toFixed(1)} KB/s` : 'N/A'}</span>
+                    </div>
+                    <div className="bb-forensic-row">
+                      <span className="bb-forensic-label">BW Out</span>
+                      <span className="bb-forensic-value">{selectedNode.averageBytesPerSecondOut ? `${(selectedNode.averageBytesPerSecondOut / 1024).toFixed(1)} KB/s` : 'N/A'}</span>
+                    </div>
+                    <div className="bb-forensic-row">
+                      <span className="bb-forensic-label">Packets</span>
+                      <span className="bb-forensic-value text-[var(--bb-gray)]">
+                        ↓{(selectedNode.packetsReceived / 1000000).toFixed(1)}M ↑{(selectedNode.packetsSent / 1000000).toFixed(1)}M
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Timing */}
+                  <div className="bb-forensic-section">
+                    <div className="bb-forensic-section-header">TIMING</div>
+                    <div className="bb-forensic-row">
+                      <span className="bb-forensic-label">Block Period</span>
+                      <span className="bb-forensic-value">{selectedNode.blockArrivePeriodEMA?.toFixed(2) ?? 'N/A'}s</span>
+                    </div>
+                    <div className="bb-forensic-row">
+                      <span className="bb-forensic-label">Fin Period</span>
+                      <span className="bb-forensic-value">{selectedNode.finalizationPeriodEMA?.toFixed(2) ?? 'N/A'}s</span>
+                    </div>
+                    <div className="bb-forensic-row">
+                      <span className="bb-forensic-label">Blocks Recv</span>
+                      <span className="bb-forensic-value">{selectedNode.blocksReceivedCount.toLocaleString()}</span>
+                    </div>
+                    <div className="bb-forensic-row">
+                      <span className="bb-forensic-label">Finalizations</span>
+                      <span className="bb-forensic-value">{selectedNode.finalizationCount.toLocaleString()}</span>
+                    </div>
+                  </div>
+
+                  {/* Blockchain */}
+                  <div className="bb-forensic-section">
+                    <div className="bb-forensic-section-header">BLOCKCHAIN</div>
+                    <div className="bb-forensic-row">
+                      <span className="bb-forensic-label">Best Height</span>
+                      <span className="bb-forensic-value text-[var(--bb-amber)]">{selectedNode.bestBlockHeight.toLocaleString()}</span>
+                    </div>
+                    <div className="bb-forensic-row">
+                      <span className="bb-forensic-label">Finalized</span>
+                      <span className="bb-forensic-value">{selectedNode.finalizedBlockHeight.toLocaleString()}</span>
+                    </div>
+                    <div className="bb-forensic-row">
+                      <span className="bb-forensic-label">Best Block</span>
+                      <CopyableTooltip
+                        value={selectedNode.bestBlock ?? ''}
+                        displayValue={`${selectedNode.bestBlock?.slice(0, 16)}...`}
+                        className="bb-forensic-value hash"
+                      />
+                    </div>
+                    <div className="bb-forensic-row">
+                      <span className="bb-forensic-label">Fin Block</span>
+                      <CopyableTooltip
+                        value={selectedNode.finalizedBlock ?? ''}
+                        displayValue={`${selectedNode.finalizedBlock?.slice(0, 16)}...`}
+                        className="bb-forensic-value hash"
+                      />
+                    </div>
+                    <div className="bb-forensic-row">
+                      <span className="bb-forensic-label">TXs/Block</span>
+                      <span className="bb-forensic-value">{selectedNode.transactionsPerBlockEMA?.toFixed(2) ?? 'N/A'}</span>
+                    </div>
+                    <div className="bb-forensic-row">
+                      <span className="bb-forensic-label">Last Baker</span>
+                      <span className="bb-forensic-value text-[var(--bb-magenta)]">#{selectedNode.bestBlockBakerId ?? 'N/A'}</span>
+                    </div>
+                  </div>
+
+                  {/* Connected Peers */}
+                  {selectedNode.peersList.length > 0 && (
+                    <div className="bb-forensic-section">
+                      <div className="bb-forensic-section-header">
+                        CONNECTED PEERS ({selectedNode.peersList.length})
+                        <span className="text-[var(--bb-gray)] font-normal ml-2 text-[8px]">
+                          {selectedNode.peersList.filter(id => knownNodeIds.has(id)).length} in dashboard
+                        </span>
+                      </div>
+                      <div className="bb-peer-list">
+                        {selectedNode.peersList.slice(0, 20).map((peerId) => {
+                          const isAvailable = knownNodeIds.has(peerId);
+                          return (
+                            <button
+                              key={peerId}
+                              onClick={() => isAvailable && selectNode(peerId)}
+                              className={`bb-peer-item ${isAvailable ? 'available' : ''}`}
+                              disabled={!isAvailable}
+                              title={isAvailable ? 'Click to view this node' : 'Node not in current dashboard'}
+                            >
+                              {peerId.slice(0, 8)}...
+                            </button>
+                          );
+                        })}
+                        {selectedNode.peersList.length > 20 && (
+                          <span className="bb-peer-overflow">+{selectedNode.peersList.length - 20} more</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-[var(--bb-gray)] text-center py-8">
+                  Select a node to view details
                 </div>
               )}
             </div>
@@ -729,235 +952,6 @@ function DesktopHome() {
           </div>
         </div>
 
-        {/* ===== BOTTOM LEFT - NODE DETAILS ===== */}
-        <div className="bb-grid-cell">
-          <div className={`bb-panel h-full flex flex-col ${selectedNode?.consensusBakerId !== null ? 'bb-baker-panel' : ''}`}>
-            <div className="bb-panel-header dark">
-              Node Details
-              {selectedNode && (
-                <span className="text-[var(--bb-cyan)] font-normal ml-2">
-                  {selectedNode.consensusBakerId !== null && <span className="bb-baker-emoji" title="Baker">🥖</span>}
-                  {selectedNode.nodeName || selectedNode.nodeId.slice(0, 12)}
-                </span>
-              )}
-            </div>
-            <div className="bb-panel-body flex-1 overflow-auto">
-              {selectedNode ? (
-                <div className="bb-forensic">
-                  {/* Identity */}
-                  <div className="bb-forensic-section">
-                    <div className="bb-forensic-section-header">IDENTITY</div>
-                    <div className="bb-forensic-row">
-                      <span className="bb-forensic-label">Node ID</span>
-                      <CopyableTooltip
-                        value={selectedNode.nodeId}
-                        displayValue={`${selectedNode.nodeId.slice(0, 24)}...`}
-                        className="bb-forensic-value mono"
-                      />
-                    </div>
-                    <div className="bb-forensic-row">
-                      <span className="bb-forensic-label">Name</span>
-                      <span className="bb-forensic-value">{selectedNode.nodeName || 'Unnamed'}</span>
-                    </div>
-                    <div className="bb-forensic-row">
-                      <span className="bb-forensic-label">Client</span>
-                      <span className="bb-forensic-value">{selectedNode.client}</span>
-                    </div>
-                    <div className="bb-forensic-row">
-                      <span className="bb-forensic-label">Type</span>
-                      <span className="bb-forensic-value">{selectedNode.peerType}</span>
-                    </div>
-                  </div>
-
-                  {/* Status */}
-                  <div className="bb-forensic-section">
-                    <div className="bb-forensic-section-header">STATUS</div>
-                    <div className="bb-forensic-row">
-                      <span className="bb-forensic-label">Consensus</span>
-                      <span className={`bb-forensic-value ${selectedNode.consensusRunning ? 'text-[var(--bb-green)]' : 'text-[var(--bb-red)]'}`}>
-                        {selectedNode.consensusRunning ? 'RUNNING' : 'STOPPED'}
-                      </span>
-                    </div>
-                    <div className="bb-forensic-row">
-                      <span className="bb-forensic-label">Uptime</span>
-                      <span className="bb-forensic-value">{Math.floor(selectedNode.uptime / 3600)}h {Math.floor((selectedNode.uptime % 3600) / 60)}m</span>
-                    </div>
-                    <div className="bb-forensic-row">
-                      <span className="bb-forensic-label">Baker ID</span>
-                      <span className={`bb-forensic-value ${selectedNode.consensusBakerId !== null ? 'text-[var(--bb-magenta)]' : ''}`}>
-                        {selectedNode.consensusBakerId !== null ? `#${selectedNode.consensusBakerId}` : 'N/A'}
-                      </span>
-                    </div>
-                    {selectedNodeValidator && (
-                      <div className="bb-forensic-row">
-                        <span className="bb-forensic-label">Lottery Power</span>
-                        <span className="bb-forensic-value text-[var(--bb-magenta)]">
-                          {formatLotteryPower(selectedNodeValidator.lotteryPower)}
-                        </span>
-                      </div>
-                    )}
-                    <div className="bb-forensic-row">
-                      <span className="bb-forensic-label">Finalizer</span>
-                      <span className={`bb-forensic-value ${selectedNode.finalizationCommitteeMember ? 'text-[var(--bb-cyan)]' : ''}`}>
-                        {selectedNode.finalizationCommitteeMember ? 'YES' : 'NO'}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Network */}
-                  <div className="bb-forensic-section">
-                    <div className="bb-forensic-section-header">NETWORK</div>
-                    {selectedNodePeer?.ipAddress && (
-                      <div className="bb-forensic-row">
-                        <span className="bb-forensic-label">IP Address</span>
-                        <OsintHoverCard
-                          ip={selectedNodePeer.ipAddress}
-                          onClickForFull={() => setOsintDrawerIp(selectedNodePeer.ipAddress)}
-                        >
-                          <span className="bb-forensic-value text-[var(--bb-cyan)]">
-                            {selectedNodePeer.ipAddress}:{selectedNodePeer.port}
-                          </span>
-                        </OsintHoverCard>
-                      </div>
-                    )}
-                    {selectedNodePeer?.geoCountry && (
-                      <div className="bb-forensic-row">
-                        <span className="bb-forensic-label">Location</span>
-                        <span className="bb-forensic-value">{selectedNodePeer.geoCity ? `${selectedNodePeer.geoCity}, ` : ''}{selectedNodePeer.geoCountry}</span>
-                      </div>
-                    )}
-                    {selectedNodePeer?.geoIsp && (
-                      <div className="bb-forensic-row">
-                        <span className="bb-forensic-label">ISP</span>
-                        <span className="bb-forensic-value text-[var(--bb-gray)]">{selectedNodePeer.geoIsp}</span>
-                      </div>
-                    )}
-                    <div className="bb-forensic-row">
-                      <span className="bb-forensic-label">Peers</span>
-                      <span className="bb-forensic-value text-[var(--bb-cyan)]">{selectedNode.peersCount}</span>
-                    </div>
-                    <div className="bb-forensic-row">
-                      <span className="bb-forensic-label">Latency</span>
-                      <span className="bb-forensic-value">{selectedNode.averagePing?.toFixed(0) ?? 'N/A'}ms</span>
-                    </div>
-                    <div className="bb-forensic-row">
-                      <span className="bb-forensic-label">BW In</span>
-                      <span className="bb-forensic-value">{selectedNode.averageBytesPerSecondIn ? `${(selectedNode.averageBytesPerSecondIn / 1024).toFixed(1)} KB/s` : 'N/A'}</span>
-                    </div>
-                    <div className="bb-forensic-row">
-                      <span className="bb-forensic-label">BW Out</span>
-                      <span className="bb-forensic-value">{selectedNode.averageBytesPerSecondOut ? `${(selectedNode.averageBytesPerSecondOut / 1024).toFixed(1)} KB/s` : 'N/A'}</span>
-                    </div>
-                    <div className="bb-forensic-row">
-                      <span className="bb-forensic-label">Packets</span>
-                      <span className="bb-forensic-value text-[var(--bb-gray)]">
-                        ↓{(selectedNode.packetsReceived / 1000000).toFixed(1)}M ↑{(selectedNode.packetsSent / 1000000).toFixed(1)}M
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Timing */}
-                  <div className="bb-forensic-section">
-                    <div className="bb-forensic-section-header">TIMING</div>
-                    <div className="bb-forensic-row">
-                      <span className="bb-forensic-label">Block Period</span>
-                      <span className="bb-forensic-value">{selectedNode.blockArrivePeriodEMA?.toFixed(2) ?? 'N/A'}s</span>
-                    </div>
-                    <div className="bb-forensic-row">
-                      <span className="bb-forensic-label">Fin Period</span>
-                      <span className="bb-forensic-value">{selectedNode.finalizationPeriodEMA?.toFixed(2) ?? 'N/A'}s</span>
-                    </div>
-                    <div className="bb-forensic-row">
-                      <span className="bb-forensic-label">Blocks Recv</span>
-                      <span className="bb-forensic-value">{selectedNode.blocksReceivedCount.toLocaleString()}</span>
-                    </div>
-                    <div className="bb-forensic-row">
-                      <span className="bb-forensic-label">Finalizations</span>
-                      <span className="bb-forensic-value">{selectedNode.finalizationCount.toLocaleString()}</span>
-                    </div>
-                  </div>
-
-                  {/* Blockchain */}
-                  <div className="bb-forensic-section">
-                    <div className="bb-forensic-section-header">BLOCKCHAIN</div>
-                    <div className="bb-forensic-row">
-                      <span className="bb-forensic-label">Best Height</span>
-                      <span className="bb-forensic-value text-[var(--bb-amber)]">{selectedNode.bestBlockHeight.toLocaleString()}</span>
-                    </div>
-                    <div className="bb-forensic-row">
-                      <span className="bb-forensic-label">Finalized</span>
-                      <span className="bb-forensic-value">{selectedNode.finalizedBlockHeight.toLocaleString()}</span>
-                    </div>
-                    <div className="bb-forensic-row">
-                      <span className="bb-forensic-label">Best Block</span>
-                      <CopyableTooltip
-                        value={selectedNode.bestBlock ?? ''}
-                        displayValue={`${selectedNode.bestBlock?.slice(0, 16)}...`}
-                        className="bb-forensic-value hash"
-                      />
-                    </div>
-                    <div className="bb-forensic-row">
-                      <span className="bb-forensic-label">Fin Block</span>
-                      <CopyableTooltip
-                        value={selectedNode.finalizedBlock ?? ''}
-                        displayValue={`${selectedNode.finalizedBlock?.slice(0, 16)}...`}
-                        className="bb-forensic-value hash"
-                      />
-                    </div>
-                    <div className="bb-forensic-row">
-                      <span className="bb-forensic-label">TXs/Block</span>
-                      <span className="bb-forensic-value">{selectedNode.transactionsPerBlockEMA?.toFixed(2) ?? 'N/A'}</span>
-                    </div>
-                    <div className="bb-forensic-row">
-                      <span className="bb-forensic-label">Last Baker</span>
-                      <span className="bb-forensic-value text-[var(--bb-magenta)]">#{selectedNode.bestBlockBakerId ?? 'N/A'}</span>
-                    </div>
-                  </div>
-
-                  {/* Connected Peers */}
-                  {selectedNode.peersList.length > 0 && (
-                    <div className="bb-forensic-section">
-                      <div className="bb-forensic-section-header">
-                        CONNECTED PEERS ({selectedNode.peersList.length})
-                        <span className="text-[var(--bb-gray)] font-normal ml-2 text-[8px]">
-                          {selectedNode.peersList.filter(id => knownNodeIds.has(id)).length} in dashboard
-                        </span>
-                      </div>
-                      <div className="bb-peer-list">
-                        {selectedNode.peersList.slice(0, 20).map((peerId) => {
-                          const isAvailable = knownNodeIds.has(peerId);
-                          return (
-                            <span
-                              key={peerId}
-                              className={`bb-peer-tag ${!isAvailable ? 'bb-peer-unavailable' : ''}`}
-                              onClick={() => {
-                                if (isAvailable) {
-                                  playAcquisitionSequence();
-                                  selectNode(peerId);
-                                }
-                              }}
-                              title={isAvailable ? 'Click to select this peer' : 'Peer not reporting to dashboard'}
-                            >
-                              {peerId.slice(0, 8)}
-                              {!isAvailable && <span className="bb-peer-external">EXT</span>}
-                            </span>
-                          );
-                        })}
-                        {selectedNode.peersList.length > 20 && (
-                          <span className="bb-peer-more">+{selectedNode.peersList.length - 20} more</span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-[var(--bb-gray)] text-xs text-center py-8">
-                  Select a node from the explorer<br />or click on the topology map
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* ===== DEEP DIVE PANEL ===== */}
