@@ -79,7 +79,7 @@ export function OsintHoverCard({ ip, children, onClickForFull }: OsintHoverCardP
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onClick={handleClick}
-        className="cursor-pointer hover:underline"
+        className="cursor-pointer hover:underline flex-1 min-w-0"
       >
         {children}
       </span>

@@ -572,17 +572,23 @@ function DesktopHome() {
                   <div className="bb-forensic-section">
                     <div className="bb-forensic-section-header">NETWORK</div>
                     {selectedNodePeer?.ipAddress && (
-                      <div className="bb-forensic-row">
-                        <span className="bb-forensic-label">IP Address</span>
-                        <OsintHoverCard
-                          ip={selectedNodePeer.ipAddress}
-                          onClickForFull={() => setOsintDrawerIp(selectedNodePeer.ipAddress)}
-                        >
-                          <span className="bb-forensic-value text-[var(--bb-cyan)]">
-                            {selectedNodePeer.ipAddress}:{selectedNodePeer.port}
-                          </span>
-                        </OsintHoverCard>
-                      </div>
+                      <>
+                        <div className="bb-forensic-row">
+                          <span className="bb-forensic-label">IP Address</span>
+                          <OsintHoverCard
+                            ip={selectedNodePeer.ipAddress}
+                            onClickForFull={() => setOsintDrawerIp(selectedNodePeer.ipAddress)}
+                          >
+                            <span className="bb-forensic-value text-[var(--bb-cyan)]">
+                              {selectedNodePeer.ipAddress}
+                            </span>
+                          </OsintHoverCard>
+                        </div>
+                        <div className="bb-forensic-row">
+                          <span className="bb-forensic-label">Port</span>
+                          <span className="bb-forensic-value">{selectedNodePeer.port}</span>
+                        </div>
+                      </>
                     )}
                     {selectedNodePeer?.geoCountry && (
                       <div className="bb-forensic-row">
