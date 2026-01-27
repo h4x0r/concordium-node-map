@@ -67,21 +67,11 @@ export const PORT_CATEGORIES = {
     description: 'Default gRPC',
     category: 'concordium',
   },
-  /** Alternative gRPC ports */
+  /** Alternative Concordium gRPC ports (some operators use these instead of 20000) */
   GRPC_OTHER: [
-    // Concordium alternative gRPC ports
-    { port: 10000, description: 'Concordium alt', category: 'concordium' },
-    { port: 10001, description: 'Concordium alt', category: 'concordium' },
-    { port: 11000, description: 'Concordium alt', category: 'concordium' },
-    // Standard gRPC default port
-    { port: 50051, description: 'gRPC standard', category: 'standard' },
-    // gRPC-web common ports
-    { port: 8080, description: 'gRPC-web', category: 'web' },
-    { port: 8443, description: 'gRPC-web TLS', category: 'web' },
-    // Common gRPC range
-    { port: 9000, description: 'gRPC common', category: 'common' },
-    { port: 9090, description: 'gRPC common', category: 'common' },
-    { port: 9999, description: 'gRPC common', category: 'common' },
+    { port: 10000, description: 'Alt gRPC' },
+    { port: 10001, description: 'Alt gRPC' },
+    { port: 11000, description: 'Alt gRPC' },
   ],
 } as const;
 

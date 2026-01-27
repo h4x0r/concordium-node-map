@@ -78,7 +78,7 @@ export interface SortOptions {
   nodeSortStage?: NodeSortStage;
 }
 
-export type SortColumn = 'risk' | 'node' | 'ip' | 'vulns';
+export type SortColumn = 'risk' | 'node' | 'ip' | 'port8888' | 'port20000' | 'portGrpcOther' | 'portOther' | 'vulns';
 export type SortDirection = 'asc' | 'desc';
 
 /**

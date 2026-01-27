@@ -23,25 +23,15 @@ describe('categorizePorts', () => {
     expect(result.grpcOther).toEqual([10000, 10001, 11000]);
   });
 
-  it('detects standard gRPC port 50051', () => {
-    const result = categorizePorts([50051]);
-    expect(result.grpcOther).toContain(50051);
+  it('categorizes non-Concordium ports as other', () => {
+    // Generic gRPC ports (50051, 8080, 9000, etc.) are NOT Concordium-specific
+    // They should be categorized as "other" (unknown exposed ports)
+    const result = categorizePorts([50051, 8080, 8443, 9000]);
+    expect(result.grpcOther).toEqual([]);
+    expect(result.otherPorts).toEqual([50051, 8080, 8443, 9000]);
   });
 
-  it('detects gRPC-web ports 8080 and 8443', () => {
-    const result = categorizePorts([8080, 8443]);
-    expect(result.grpcOther).toContain(8080);
-    expect(result.grpcOther).toContain(8443);
-  });
-
-  it('detects common gRPC ports in 9000 range', () => {
-    const result = categorizePorts([9000, 9090, 9999]);
-    expect(result.grpcOther).toContain(9000);
-    expect(result.grpcOther).toContain(9090);
-    expect(result.grpcOther).toContain(9999);
-  });
-
-  it('categorizes unknown ports as other', () => {
+  it('categorizes common service ports as other', () => {
     const result = categorizePorts([22, 80, 443, 3306]);
     expect(result.otherPorts).toEqual([22, 80, 443, 3306]);
     expect(result.hasPeering).toBe(false);
@@ -81,14 +71,19 @@ describe('getPortLegend', () => {
     expect(grpc?.description).toBe('Default gRPC');
   });
 
-  it('returns legend with Other gRPC description', () => {
+  it('returns legend with Other gRPC description (Concordium-only)', () => {
     const legend = getPortLegend();
     const otherGrpc = legend.find((l) => l.label === 'Other gRPC');
     expect(otherGrpc).toBeDefined();
     expect(otherGrpc?.description).toContain('10000/10001/11000');
-    expect(otherGrpc?.description).toContain('50051');
-    expect(otherGrpc?.description).toContain('8080/8443');
-    expect(otherGrpc?.description).toContain('9000/9090/9999');
+    expect(otherGrpc?.description).toContain('alt Concordium gRPC');
+  });
+
+  it('returns legend with OTHER description', () => {
+    const legend = getPortLegend();
+    const other = legend.find((l) => l.label === 'OTHER');
+    expect(other).toBeDefined();
+    expect(other?.description).toContain('Non-Concordium');
   });
 });
 
@@ -101,11 +96,17 @@ describe('isKnownPort', () => {
     expect(isKnownPort(20000)).toBe(true);
   });
 
-  it('returns true for alternative gRPC ports', () => {
+  it('returns true for Concordium alternative gRPC ports', () => {
     expect(isKnownPort(10000)).toBe(true);
     expect(isKnownPort(10001)).toBe(true);
     expect(isKnownPort(11000)).toBe(true);
-    expect(isKnownPort(50051)).toBe(true);
+  });
+
+  it('returns false for non-Concordium gRPC ports', () => {
+    // Generic gRPC ports are NOT considered "known" Concordium ports
+    expect(isKnownPort(50051)).toBe(false);
+    expect(isKnownPort(8080)).toBe(false);
+    expect(isKnownPort(9000)).toBe(false);
   });
 
   it('returns false for unknown ports', () => {
@@ -124,13 +125,18 @@ describe('getPortCategory', () => {
     expect(getPortCategory(20000)).toBe('grpc-default');
   });
 
-  it('returns grpc-other for alternative gRPC ports', () => {
+  it('returns grpc-other for Concordium alternative gRPC ports', () => {
     expect(getPortCategory(10000)).toBe('grpc-other');
-    expect(getPortCategory(50051)).toBe('grpc-other');
-    expect(getPortCategory(8080)).toBe('grpc-other');
+    expect(getPortCategory(10001)).toBe('grpc-other');
+    expect(getPortCategory(11000)).toBe('grpc-other');
   });
 
-  it('returns other for unknown ports', () => {
+  it('returns other for non-Concordium ports', () => {
+    // Generic gRPC ports are categorized as "other"
+    expect(getPortCategory(50051)).toBe('other');
+    expect(getPortCategory(8080)).toBe('other');
+    expect(getPortCategory(9000)).toBe('other');
+    // Common service ports
     expect(getPortCategory(22)).toBe('other');
     expect(getPortCategory(80)).toBe('other');
   });

@@ -40,18 +40,13 @@ export interface PortLegendItem {
  * @returns Array of legend items
  */
 export function getPortLegend(): PortLegendItem[] {
-  const concordiumAltPorts = PORT_CATEGORIES.GRPC_OTHER
-    .filter((p) => p.category === 'concordium')
-    .map((p) => p.port)
-    .join('/');
+  const altGrpcPorts = PORT_CATEGORIES.GRPC_OTHER.map((p) => p.port).join('/');
 
   return [
     { label: '8888', description: 'Peering' },
     { label: '20000', description: 'Default gRPC' },
-    {
-      label: 'Other gRPC',
-      description: `${concordiumAltPorts} (Concordium), 50051 (std), 8080/8443 (web), 9000/9090/9999 (common)`,
-    },
+    { label: 'Other gRPC', description: `${altGrpcPorts} (alt Concordium gRPC)` },
+    { label: 'OTHER', description: 'Non-Concordium exposed ports' },
   ];
 }
 

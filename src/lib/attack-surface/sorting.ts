@@ -70,6 +70,26 @@ export function sortAttackSurfaceNodes(
         comparison = compareIpAddresses(a.ipAddress, b.ipAddress);
         break;
 
+      case 'port8888':
+        // Boolean: true (has port) sorts before false
+        comparison = (a.hasPeeringPort ? 1 : 0) - (b.hasPeeringPort ? 1 : 0);
+        break;
+
+      case 'port20000':
+        // Boolean: true (has port) sorts before false
+        comparison = (a.hasGrpcDefault ? 1 : 0) - (b.hasGrpcDefault ? 1 : 0);
+        break;
+
+      case 'portGrpcOther':
+        // Sort by count of other gRPC ports
+        comparison = a.hasGrpcOther.length - b.hasGrpcOther.length;
+        break;
+
+      case 'portOther':
+        // Sort by count of other exposed ports
+        comparison = a.hasOtherPorts.length - b.hasOtherPorts.length;
+        break;
+
       case 'vulns':
         comparison = a.osintVulns.length - b.osintVulns.length;
         break;

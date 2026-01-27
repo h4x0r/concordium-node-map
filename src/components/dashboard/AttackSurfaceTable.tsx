@@ -72,10 +72,18 @@ export function AttackSurfaceTable({
               <th className="text-left cursor-pointer" onClick={() => onSort('ip')}>
                 IP {sortIndicator('ip')}
               </th>
-              <th className="text-center">8888</th>
-              <th className="text-center">20000</th>
-              <th className="text-center">Other gRPC</th>
-              <th className="text-center">OTHER</th>
+              <th className="text-center cursor-pointer" onClick={() => onSort('port8888')}>
+                8888 {sortIndicator('port8888')}
+              </th>
+              <th className="text-center cursor-pointer" onClick={() => onSort('port20000')}>
+                20000 {sortIndicator('port20000')}
+              </th>
+              <th className="text-center cursor-pointer" onClick={() => onSort('portGrpcOther')}>
+                Other gRPC {sortIndicator('portGrpcOther')}
+              </th>
+              <th className="text-center cursor-pointer" onClick={() => onSort('portOther')}>
+                OTHER {sortIndicator('portOther')}
+              </th>
               <th className="text-center cursor-pointer" onClick={() => onSort('vulns')}>
                 CVE {sortIndicator('vulns')}
               </th>
