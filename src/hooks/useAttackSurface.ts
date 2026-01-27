@@ -1,90 +1,23 @@
+/**
+ * Attack Surface Data Hook
+ *
+ * Fetches and aggregates attack surface data from nodes, peers, and OSINT.
+ * Business logic is delegated to pure functions in lib/attack-surface.
+ */
+
 import { useMemo } from 'react';
 import { useNodes } from './useNodes';
 import { usePeers } from './usePeers';
 import { useQuery } from '@tanstack/react-query';
 import type { OsintFullResponse } from '@/app/api/osint/route';
-
-/**
- * Port categories for attack surface analysis
- */
-export const PORT_CATEGORIES = {
-  // Critical Concordium ports
-  PEERING: 8888,
-  GRPC_DEFAULT: 20000,
-  // Other gRPC ports (Concordium alternatives + general gRPC conventions)
-  GRPC_OTHER: [
-    // Concordium alternative gRPC ports
-    10000, 10001, 11000,
-    // Standard gRPC default port
-    50051,
-    // gRPC-web common ports
-    8080, 8443,
-    // Common gRPC range (9000-9999 representatives)
-    9000, 9090, 9999,
-  ],
-} as const;
-
-export interface AttackSurfaceNode {
-  nodeId: string;
-  nodeName: string;
-  isValidator: boolean;
-  ipAddress: string | null;
-  port: number | null;
-
-  // OSINT data
-  osintPorts: number[];
-  osintVulns: string[];
-  osintTags: string[];
-  osintReputation: 'clean' | 'suspicious' | 'malicious' | 'unknown';
-  osintLastScan: string | null;
-
-  // Port categorization
-  hasPeeringPort: boolean;      // 8888
-  hasGrpcDefault: boolean;       // 20000
-  hasGrpcOther: number[];        // Other gRPC ports (10000, 10001, 11000, 50051, 8080, 8443, 9000, 9090, 9999)
-  hasOtherPorts: number[];       // Any other discovered ports (non-gRPC)
-
-  // Risk assessment
-  riskLevel: 'low' | 'medium' | 'high' | 'critical' | 'unknown';
-}
-
-/**
- * Assess risk level based on exposed ports and vulnerabilities
- */
-function assessRiskLevel(
-  osintPorts: number[],
-  osintVulns: string[],
-  osintReputation: string,
-  isValidator: boolean
-): 'low' | 'medium' | 'high' | 'critical' | 'unknown' {
-  // No IP = unknown risk
-  if (osintPorts.length === 0) {
-    return 'unknown';
-  }
-
-  // Malicious reputation = critical
-  if (osintReputation === 'malicious') {
-    return 'critical';
-  }
-
-  // Many vulns = critical for validators, high for others
-  if (osintVulns.length > 5) {
-    return isValidator ? 'critical' : 'high';
-  }
-
-  // Suspicious reputation or some vulns = high for validators, medium for others
-  if (osintReputation === 'suspicious' || osintVulns.length > 0) {
-    return isValidator ? 'high' : 'medium';
-  }
-
-  // Many exposed ports = medium risk
-  if (osintPorts.length > 5) {
-    return 'medium';
-  }
-
-  // Clean with few ports = low risk
-  return 'low';
-}
+import {
+  assessRisk,
+  categorizePorts,
+  type AttackSurfaceNode,
+  type AttackSurfaceStats,
+  type OsintReputation,
+  type RiskLevel,
+} from '@/lib/attack-surface';
 
 /**
  * Fetch OSINT data for a specific IP
@@ -103,16 +36,27 @@ async function fetchOsintData(ip: string): Promise<OsintFullResponse | null> {
 }
 
 /**
+ * Hook return type
+ */
+export interface UseAttackSurfaceResult {
+  nodes: AttackSurfaceNode[];
+  stats: AttackSurfaceStats;
+  isLoading: boolean;
+  osintError: string | null;
+  getNodeAttackSurface: (nodeId: string) => AttackSurfaceNode | null;
+}
+
+/**
  * Hook to aggregate attack surface data from nodes, peers, and OSINT
  */
-export function useAttackSurface() {
+export function useAttackSurface(): UseAttackSurfaceResult {
   const { data: nodes, isLoading: nodesLoading } = useNodes();
   const { peers, isLoading: peersLoading } = usePeers();
 
   // Build a map of node IDs to peer data
   const peerMap = useMemo(() => {
-    const map = new Map<string, typeof peers[0]>();
-    peers.forEach(peer => {
+    const map = new Map<string, (typeof peers)[0]>();
+    peers.forEach((peer) => {
       map.set(peer.peerId, peer);
     });
     return map;
@@ -121,7 +65,7 @@ export function useAttackSurface() {
   // Get all unique IPs that need OSINT lookup
   const ipsToLookup = useMemo(() => {
     const ips = new Set<string>();
-    peers.forEach(peer => {
+    peers.forEach((peer) => {
       if (peer.ipAddress) {
         ips.add(peer.ipAddress);
       }
@@ -132,7 +76,11 @@ export function useAttackSurface() {
   // Fetch OSINT data for all IPs
   // Note: InternetDB updates on a scanning cycle (days/weeks), not real-time
   // Our database cache is 24 hours, so we only need to refetch when cache expires
-  const { data: osintData, isLoading: osintLoading } = useQuery({
+  const {
+    data: osintData,
+    isLoading: osintLoading,
+    error: osintFetchError,
+  } = useQuery({
     queryKey: ['attack-surface-osint', ipsToLookup],
     queryFn: async () => {
       const results = await Promise.all(
@@ -171,24 +119,20 @@ export function useAttackSurface() {
       const osintPorts = osint?.ports ?? [];
       const osintVulns = osint?.vulns ?? [];
       const osintTags = osint?.tags ?? [];
-      const osintReputation = osint?.reputation ?? 'unknown';
+      const osintReputation = (osint?.reputation ?? 'unknown') as OsintReputation;
       const osintLastScan = osint?.cached_at ?? null;
 
-      // Categorize ports
-      const hasPeeringPort = osintPorts.includes(PORT_CATEGORIES.PEERING);
-      const hasGrpcDefault = osintPorts.includes(PORT_CATEGORIES.GRPC_DEFAULT);
-      const hasGrpcOther = PORT_CATEGORIES.GRPC_OTHER.filter(p => osintPorts.includes(p));
+      // Categorize ports using pure function
+      const portCategories = categorizePorts(osintPorts);
 
-      // Other ports (excluding known gRPC ports)
-      const knownPorts = new Set<number>([
-        PORT_CATEGORIES.PEERING,
-        PORT_CATEGORIES.GRPC_DEFAULT,
-        ...PORT_CATEGORIES.GRPC_OTHER,
-      ]);
-      const hasOtherPorts = osintPorts.filter((p: number) => !knownPorts.has(p));
-
-      // Assess risk
-      const riskLevel = assessRiskLevel(osintPorts, osintVulns, osintReputation, isValidator);
+      // Assess risk using pure function
+      const riskResult = assessRisk({
+        osintPorts,
+        osintVulns,
+        osintReputation,
+        isValidator,
+        ipAddress,
+      });
 
       return {
         nodeId: node.nodeId,
@@ -201,36 +145,38 @@ export function useAttackSurface() {
         osintTags,
         osintReputation,
         osintLastScan,
-        hasPeeringPort,
-        hasGrpcDefault,
-        hasGrpcOther,
-        hasOtherPorts,
-        riskLevel,
+        hasPeeringPort: portCategories.hasPeering,
+        hasGrpcDefault: portCategories.hasGrpcDefault,
+        hasGrpcOther: portCategories.grpcOther,
+        hasOtherPorts: portCategories.otherPorts,
+        riskLevel: riskResult.level,
       };
     });
   }, [nodes, peerMap, osintData]);
 
   // Calculate statistics
-  const stats = useMemo(() => {
+  const stats = useMemo<AttackSurfaceStats>(() => {
     const total = attackSurfaceNodes.length;
-    const withIp = attackSurfaceNodes.filter(n => n.ipAddress !== null).length;
+    const withIp = attackSurfaceNodes.filter((n) => n.ipAddress !== null).length;
     const withoutIp = total - withIp;
 
-    const validators = attackSurfaceNodes.filter(n => n.isValidator).length;
-    const validatorsWithIp = attackSurfaceNodes.filter(n => n.isValidator && n.ipAddress !== null).length;
+    const validators = attackSurfaceNodes.filter((n) => n.isValidator).length;
+    const validatorsWithIp = attackSurfaceNodes.filter(
+      (n) => n.isValidator && n.ipAddress !== null
+    ).length;
 
-    const riskLevels = {
-      critical: attackSurfaceNodes.filter(n => n.riskLevel === 'critical').length,
-      high: attackSurfaceNodes.filter(n => n.riskLevel === 'high').length,
-      medium: attackSurfaceNodes.filter(n => n.riskLevel === 'medium').length,
-      low: attackSurfaceNodes.filter(n => n.riskLevel === 'low').length,
-      unknown: attackSurfaceNodes.filter(n => n.riskLevel === 'unknown').length,
+    const riskLevels: Record<RiskLevel, number> = {
+      critical: attackSurfaceNodes.filter((n) => n.riskLevel === 'critical').length,
+      high: attackSurfaceNodes.filter((n) => n.riskLevel === 'high').length,
+      medium: attackSurfaceNodes.filter((n) => n.riskLevel === 'medium').length,
+      low: attackSurfaceNodes.filter((n) => n.riskLevel === 'low').length,
+      unknown: attackSurfaceNodes.filter((n) => n.riskLevel === 'unknown').length,
     };
 
     const portExposure = {
-      peering: attackSurfaceNodes.filter(n => n.hasPeeringPort).length,
-      grpcDefault: attackSurfaceNodes.filter(n => n.hasGrpcDefault).length,
-      grpcOther: attackSurfaceNodes.filter(n => n.hasGrpcOther.length > 0).length,
+      peering: attackSurfaceNodes.filter((n) => n.hasPeeringPort).length,
+      grpcDefault: attackSurfaceNodes.filter((n) => n.hasGrpcDefault).length,
+      grpcOther: attackSurfaceNodes.filter((n) => n.hasGrpcOther.length > 0).length,
     };
 
     return {
@@ -246,13 +192,19 @@ export function useAttackSurface() {
 
   // Function to get attack surface data for a specific node
   const getNodeAttackSurface = (nodeId: string): AttackSurfaceNode | null => {
-    return attackSurfaceNodes.find(n => n.nodeId === nodeId) ?? null;
+    return attackSurfaceNodes.find((n) => n.nodeId === nodeId) ?? null;
   };
+
+  // Format OSINT error for display
+  const osintError = osintFetchError
+    ? `Failed to load OSINT data: ${osintFetchError instanceof Error ? osintFetchError.message : 'Unknown error'}`
+    : null;
 
   return {
     nodes: attackSurfaceNodes,
     stats,
     isLoading: nodesLoading || peersLoading || osintLoading,
+    osintError,
     getNodeAttackSurface,
   };
 }
