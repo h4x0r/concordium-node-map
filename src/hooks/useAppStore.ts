@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type ViewType = 'topology' | 'geographic' | 'transactions' | 'blocks';
+export type ViewType = 'topology' | 'attack-surface' | 'geographic' | 'transactions' | 'blocks';
 
 interface AppState {
   // State

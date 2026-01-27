@@ -26,6 +26,7 @@ import { CopyableTooltip } from '@/components/ui/CopyableTooltip';
 import { OsintHoverCard, OsintDrawer } from '@/components/osint';
 import { TransactionsView } from '@/components/dashboard/TransactionsView';
 import { BlocksView } from '@/components/dashboard/BlocksView';
+import { AttackSurfaceView } from '@/components/dashboard/AttackSurfaceView';
 
 // Dynamic imports for heavy map components
 const TopologyGraph = dynamic(
@@ -720,6 +721,12 @@ function DesktopHome() {
               Topology
             </button>
             <button
+              className={`bb-tab ${currentView === 'attack-surface' ? 'active' : ''}`}
+              onClick={() => setView('attack-surface')}
+            >
+              Attack Surface
+            </button>
+            <button
               className={`bb-tab ${currentView === 'geographic' ? 'active' : ''}`}
               onClick={() => setView('geographic')}
             >
@@ -746,6 +753,7 @@ function DesktopHome() {
           {/* Map/Data Content */}
           <div className="flex-1 min-h-0 relative">
             {currentView === 'topology' && <TopologyGraph />}
+            {currentView === 'attack-surface' && <AttackSurfaceView />}
             {currentView === 'geographic' && <GeographicMap />}
             {currentView === 'transactions' && <TransactionsView />}
             {currentView === 'blocks' && <BlocksView />}
