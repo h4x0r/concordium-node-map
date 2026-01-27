@@ -12,6 +12,16 @@ type SortDirection = 'asc' | 'desc';
 /**
  * Attack Surface view showing nodes, IPs, and open ports discovered via OSINT
  */
+// Risk level tooltip explanations
+const RISK_TOOLTIPS = {
+  all: 'Show all nodes regardless of risk level',
+  critical: 'Malicious reputation OR 6+ CVEs on validators',
+  high: 'Validators with 1-5 CVEs or suspicious reputation, OR non-validators with 6+ CVEs',
+  medium: 'Non-validators with 1-5 CVEs or suspicious reputation, OR nodes with 6+ exposed ports',
+  low: 'Clean reputation with few exposed ports',
+  unknown: 'No IP address or no OSINT data available',
+} as const;
+
 export function AttackSurfaceView() {
   const { nodes, stats, isLoading } = useAttackSurface();
   const { selectNode } = useAppStore();
@@ -20,6 +30,48 @@ export function AttackSurfaceView() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortColumn, setSortColumn] = useState<SortColumn>('risk');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
+  // Generate node-specific risk tooltip
+  const getRiskTooltip = (node: AttackSurfaceNode): string => {
+    const reasons: string[] = [];
+
+    // No IP = unknown
+    if (!node.ipAddress) {
+      return 'UNKNOWN: No IP address available';
+    }
+
+    // Check for malicious reputation
+    if (node.osintReputation === 'malicious') {
+      reasons.push('Malicious reputation from OSINT');
+    }
+
+    // Check for suspicious reputation
+    if (node.osintReputation === 'suspicious') {
+      reasons.push('Suspicious reputation from OSINT');
+    }
+
+    // Check for vulnerabilities
+    if (node.osintVulns.length > 0) {
+      reasons.push(`${node.osintVulns.length} CVE vulnerabilit${node.osintVulns.length === 1 ? 'y' : 'ies'} detected`);
+    }
+
+    // Check for many exposed ports
+    if (node.osintPorts.length > 5) {
+      reasons.push(`${node.osintPorts.length} ports exposed`);
+    }
+
+    // Add validator context
+    if (node.isValidator) {
+      reasons.push('Validator node (higher risk threshold)');
+    }
+
+    // Build final message
+    if (reasons.length === 0) {
+      return `${node.riskLevel.toUpperCase()}: Clean reputation, few exposed ports`;
+    }
+
+    return `${node.riskLevel.toUpperCase()}: ${reasons.join(' • ')}`;
+  };
 
   // Sort handler
   const handleSort = (column: SortColumn) => {
@@ -171,6 +223,7 @@ export function AttackSurfaceView() {
             <button
               key={risk}
               onClick={() => setRiskFilter(risk)}
+              title={RISK_TOOLTIPS[risk]}
               className={`px-2 py-1 text-xs ${
                 riskFilter === risk
                   ? risk === 'critical' ? 'bg-[var(--bb-red)] text-black'
@@ -208,7 +261,7 @@ export function AttackSurfaceView() {
                 NODE {sortColumn === 'node' && (sortDirection === 'asc' ? '▲' : '▼')}
               </th>
               <th className="text-left cursor-pointer" onClick={() => handleSort('ip')}>
-                IP:PORT {sortColumn === 'ip' && (sortDirection === 'asc' ? '▲' : '▼')}
+                IP {sortColumn === 'ip' && (sortDirection === 'asc' ? '▲' : '▼')}
               </th>
               <th className="text-center">8888</th>
               <th className="text-center">20000</th>
@@ -234,7 +287,7 @@ export function AttackSurfaceView() {
                     onClick={() => selectNode(node.nodeId)}
                     className="cursor-pointer hover:bg-[var(--bb-panel-bg)]"
                   >
-                    <td style={{ color: riskColor }}>
+                    <td style={{ color: riskColor }} title={getRiskTooltip(node)}>
                       {node.riskLevel === 'critical' && '🔴'}
                       {node.riskLevel === 'high' && '🟠'}
                       {node.riskLevel === 'medium' && '🟡'}
@@ -247,7 +300,7 @@ export function AttackSurfaceView() {
                     </td>
                     <td className="font-mono text-xs">
                       {node.ipAddress ? (
-                        <span className="text-[var(--bb-text)]">{node.ipAddress}:{node.port}</span>
+                        <span className="text-[var(--bb-text)]">{node.ipAddress}</span>
                       ) : (
                         <span className="text-[var(--bb-gray)] italic">No IP</span>
                       )}

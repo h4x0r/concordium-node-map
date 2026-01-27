@@ -851,7 +851,7 @@ function DesktopHome() {
               className={`bb-tab ${currentView === 'geographic' ? 'active' : ''}`}
               onClick={() => setView('geographic')}
             >
-              Geographic
+              Geography
             </button>
             <button
               className={`bb-tab ${currentView === 'transactions' ? 'active' : ''}`}
