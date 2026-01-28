@@ -12,6 +12,7 @@ import { useValidators } from '@/hooks/useValidators';
 import { useIsMobile } from '@/hooks/useMediaQuery';
 import { useAudio } from '@/hooks/useAudio';
 import { formatLotteryPower } from '@/lib/format-utils';
+import { formatUptime } from '@/lib/formatting';
 import { calculateNetworkPulse, getPulseStatus, THRESHOLDS, calculateFinalizationHealth, calculateLatencyHealth } from '@/lib/pulse';
 import { calculateNodeHealth } from '@/lib/transforms';
 import { Sparkline } from '@/components/dashboard/Sparkline';
@@ -577,7 +578,7 @@ function DesktopHome() {
                     </div>
                     <div className="bb-forensic-row">
                       <span className="bb-forensic-label">Uptime</span>
-                      <span className="bb-forensic-value">{Math.floor(selectedNode.uptime / 3600)}h {Math.floor((selectedNode.uptime % 3600) / 60)}m</span>
+                      <span className="bb-forensic-value">{formatUptime(selectedNode.uptime)}</span>
                     </div>
                     <div className="bb-forensic-row">
                       <span className="bb-forensic-label">Baker ID</span>

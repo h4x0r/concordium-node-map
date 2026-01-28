@@ -6,17 +6,23 @@
 const MS_PER_MINUTE = 60 * 1000;
 const MS_PER_HOUR = 60 * MS_PER_MINUTE;
 const MS_PER_DAY = 24 * MS_PER_HOUR;
+const MS_PER_MONTH = 30 * MS_PER_DAY; // Approximate
+const MS_PER_YEAR = 365 * MS_PER_DAY; // Approximate
 
 /**
  * Format uptime from milliseconds to human-readable string
  * @param ms - uptime in milliseconds (as returned by Concordium API)
- * @returns formatted string like "3d 5h", "5h 30m", or "30m"
+ * @returns formatted string like "1y 11mo", "45d 5h", "5h 30m", or "30m"
  */
 export function formatUptime(ms: number): string {
-  const days = Math.floor(ms / MS_PER_DAY);
+  const years = Math.floor(ms / MS_PER_YEAR);
+  const months = Math.floor((ms % MS_PER_YEAR) / MS_PER_MONTH);
+  const days = Math.floor((ms % MS_PER_MONTH) / MS_PER_DAY);
   const hours = Math.floor((ms % MS_PER_DAY) / MS_PER_HOUR);
   const mins = Math.floor((ms % MS_PER_HOUR) / MS_PER_MINUTE);
 
+  if (years > 0) return `${years}y ${months}mo`;
+  if (months > 0) return `${months}mo ${days}d`;
   if (days > 0) return `${days}d ${hours}h`;
   if (hours > 0) return `${hours}h ${mins}m`;
   return `${mins}m`;

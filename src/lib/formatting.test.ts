@@ -12,8 +12,20 @@ describe('formatUptime', () => {
   const MS_PER_MINUTE = 60 * MS_PER_SECOND;
   const MS_PER_HOUR = 60 * MS_PER_MINUTE;
   const MS_PER_DAY = 24 * MS_PER_HOUR;
+  const MS_PER_MONTH = 30 * MS_PER_DAY;
+  const MS_PER_YEAR = 365 * MS_PER_DAY;
 
-  it('formats milliseconds into days and hours when days > 0', () => {
+  it('formats years and months for very long uptimes', () => {
+    const oneYearElevenMonths = MS_PER_YEAR + 11 * MS_PER_MONTH;
+    expect(formatUptime(oneYearElevenMonths)).toBe('1y 11mo');
+  });
+
+  it('formats months and days when under a year', () => {
+    const threeMonthsFiveDays = 3 * MS_PER_MONTH + 5 * MS_PER_DAY;
+    expect(formatUptime(threeMonthsFiveDays)).toBe('3mo 5d');
+  });
+
+  it('formats milliseconds into days and hours when days > 0 but months = 0', () => {
     const threeDays = 3 * MS_PER_DAY + 5 * MS_PER_HOUR;
     expect(formatUptime(threeDays)).toBe('3d 5h');
   });
@@ -32,6 +44,14 @@ describe('formatUptime', () => {
     expect(formatUptime(0)).toBe('0m');
   });
 
+  it('handles exactly one year', () => {
+    expect(formatUptime(MS_PER_YEAR)).toBe('1y 0mo');
+  });
+
+  it('handles exactly one month', () => {
+    expect(formatUptime(MS_PER_MONTH)).toBe('1mo 0d');
+  });
+
   it('handles exactly one day', () => {
     expect(formatUptime(MS_PER_DAY)).toBe('1d 0h');
   });
@@ -43,6 +63,12 @@ describe('formatUptime', () => {
   it('handles real API value (4+ days in ms)', () => {
     // Real API returns values like 368216253 ms
     expect(formatUptime(368216253)).toBe('4d 6h');
+  });
+
+  it('handles ~2 years uptime (like 16746 hours converted to ms)', () => {
+    // 16746 hours = 60,285,600,000 ms ≈ 1y 11mo
+    const longUptime = 16746 * MS_PER_HOUR;
+    expect(formatUptime(longUptime)).toBe('1y 11mo');
   });
 });
 
