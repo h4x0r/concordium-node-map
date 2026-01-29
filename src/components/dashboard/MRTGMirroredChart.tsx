@@ -1,11 +1,8 @@
 'use client';
 
 import { useMemo } from 'react';
-
-export interface MRTGDataPoint {
-  timestamp: number;
-  value: number;
-}
+import type { MRTGDataPoint } from '@/lib/types/charts';
+import { BANDWIDTH_COLORS } from '@/lib/theme/colors';
 
 export interface MRTGMirroredChartProps {
   outboundData: MRTGDataPoint[];
@@ -15,22 +12,6 @@ export interface MRTGMirroredChartProps {
   height?: number;
   showGrid?: boolean;
 }
-
-// Network monitoring aesthetic: contrasting colors for up/down traffic
-// Outbound (upload, going UP) = warm orange/amber
-// Inbound (download, going DOWN) = cool cyan
-const BANDWIDTH_COLORS = {
-  outbound: {
-    stroke: '#ff9500', // warm orange
-    glow: 'rgba(255, 149, 0, 0.6)',
-    fill: 'rgba(255, 149, 0, 0.15)',
-  },
-  inbound: {
-    stroke: '#00d4ff', // cool cyan
-    glow: 'rgba(0, 212, 255, 0.6)',
-    fill: 'rgba(0, 212, 255, 0.15)',
-  },
-};
 
 function formatValue(value: number, unit?: string): string {
   if (unit === 'KB/s') return `${value.toFixed(0)}`;

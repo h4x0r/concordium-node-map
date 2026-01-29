@@ -1,22 +1,11 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import type { MRTGDataPoint } from './MRTGChart';
+import type { MRTGDataPoint } from '@/lib/types/charts';
 import type { HealthStatus } from './HealthTimeline';
+import { BANDWIDTH_COLORS } from '@/lib/theme/colors';
 
 export type MiniMetricType = 'health' | 'latency' | 'bandwidth' | 'peers';
-
-// Bandwidth colors: contrasting for up/down traffic (network monitoring style)
-const BANDWIDTH_COLORS = {
-  outbound: {
-    stroke: '#ff9500', // warm orange (upload)
-    glow: 'rgba(255, 149, 0, 0.5)',
-  },
-  inbound: {
-    stroke: '#00d4ff', // cool cyan (download)
-    glow: 'rgba(0, 212, 255, 0.5)',
-  },
-};
 
 export interface MiniMetricTrackProps {
   label: string;

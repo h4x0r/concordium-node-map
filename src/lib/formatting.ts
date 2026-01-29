@@ -1,6 +1,9 @@
 /**
  * Centralized formatting utilities
- * Consolidates duplicate formatting functions from mobile and desktop components
+ * Consolidates all formatting functions for the application.
+ *
+ * Uses explicit locales (en-US) to ensure consistent output
+ * between server-side rendering and client-side hydration.
  */
 
 const MS_PER_MINUTE = 60 * 1000;
@@ -73,4 +76,69 @@ export function formatLatency(ms: number | null): string {
  */
 export function formatBlockHeight(height: number): string {
   return height.toLocaleString('en-US');
+}
+
+/**
+ * Format a number with thousand separators (hydration-safe).
+ * Uses en-US locale explicitly to avoid server/client mismatch.
+ * @param n - number to format
+ * @returns formatted string like "1,234,567"
+ */
+export function formatWithThousands(n: number): string {
+  return new Intl.NumberFormat('en-US').format(n);
+}
+
+/**
+ * Format a percentage with specified decimal places.
+ * @param value - decimal value (0.5 = 50%)
+ * @param decimals - decimal places (default 2)
+ * @returns formatted string like "50.00%"
+ */
+export function formatPercent(value: number, decimals = 2): string {
+  return `${(value * 100).toFixed(decimals)}%`;
+}
+
+/**
+ * Format relative time from a timestamp.
+ * Returns a placeholder if not yet mounted to avoid hydration mismatch.
+ *
+ * @param timestamp - Unix timestamp in milliseconds
+ * @param isMounted - Whether component is mounted (client-side)
+ * @returns Formatted relative time string
+ */
+export function formatRelativeTime(
+  timestamp: number | null,
+  isMounted: boolean
+): string {
+  if (timestamp === null) return '--';
+  if (!isMounted) return '...';
+
+  const diff = Date.now() - timestamp;
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+
+  if (hours < 1) return 'Just now';
+  if (hours < 24) return `${hours}h ago`;
+
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
+/**
+ * Format lottery power as a percentage.
+ * @param power - lottery power decimal (or null)
+ * @returns formatted string like "0.123%" or "--" for null
+ */
+export function formatLotteryPower(power: number | null): string {
+  if (power === null) return '--';
+  return `${(power * 100).toFixed(3)}%`;
+}
+
+/**
+ * Format commission rate as a percentage.
+ * @param rate - commission rate decimal (or null)
+ * @returns formatted string like "10.00%" or "--" for null
+ */
+export function formatCommission(rate: number | null): string {
+  if (rate === null) return '--';
+  return `${(rate * 100).toFixed(2)}%`;
 }

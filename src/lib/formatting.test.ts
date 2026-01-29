@@ -1,10 +1,15 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   formatUptime,
   formatBytesPerSecond,
   formatNumber,
   formatLatency,
   formatBlockHeight,
+  formatWithThousands,
+  formatPercent,
+  formatRelativeTime,
+  formatLotteryPower,
+  formatCommission,
 } from './formatting';
 
 describe('formatUptime', () => {
@@ -145,5 +150,133 @@ describe('formatBlockHeight', () => {
 
   it('handles zero', () => {
     expect(formatBlockHeight(0)).toBe('0');
+  });
+});
+
+describe('formatWithThousands', () => {
+  it('formats with thousand separators', () => {
+    expect(formatWithThousands(1234567)).toBe('1,234,567');
+  });
+
+  it('handles small numbers without separators', () => {
+    expect(formatWithThousands(42)).toBe('42');
+    expect(formatWithThousands(999)).toBe('999');
+  });
+
+  it('handles numbers at thousand boundary', () => {
+    expect(formatWithThousands(1000)).toBe('1,000');
+  });
+
+  it('handles zero', () => {
+    expect(formatWithThousands(0)).toBe('0');
+  });
+
+  it('handles decimals (rounds)', () => {
+    expect(formatWithThousands(1234.567)).toBe('1,234.567');
+  });
+
+  it('handles negative numbers', () => {
+    expect(formatWithThousands(-1234567)).toBe('-1,234,567');
+  });
+});
+
+describe('formatPercent', () => {
+  it('formats decimal as percentage with default 2 decimals', () => {
+    expect(formatPercent(0.5)).toBe('50.00%');
+    expect(formatPercent(0.1234)).toBe('12.34%');
+  });
+
+  it('formats with custom decimal places', () => {
+    expect(formatPercent(0.12345, 3)).toBe('12.345%');
+    expect(formatPercent(0.5, 0)).toBe('50%');
+  });
+
+  it('handles zero', () => {
+    expect(formatPercent(0)).toBe('0.00%');
+  });
+
+  it('handles values over 100%', () => {
+    expect(formatPercent(1.5)).toBe('150.00%');
+  });
+
+  it('handles small values', () => {
+    expect(formatPercent(0.001)).toBe('0.10%');
+  });
+});
+
+describe('formatRelativeTime', () => {
+  const NOW = 1706500000000; // Fixed timestamp for testing
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('returns "--" for null timestamp', () => {
+    expect(formatRelativeTime(null, true)).toBe('--');
+    expect(formatRelativeTime(null, false)).toBe('--');
+  });
+
+  it('returns "..." when not mounted (hydration safety)', () => {
+    expect(formatRelativeTime(NOW - 60000, false)).toBe('...');
+  });
+
+  it('returns "Just now" for recent timestamps (< 1 hour)', () => {
+    expect(formatRelativeTime(NOW - 30 * 60 * 1000, true)).toBe('Just now');
+    expect(formatRelativeTime(NOW - 59 * 60 * 1000, true)).toBe('Just now');
+  });
+
+  it('formats hours ago for timestamps < 24 hours', () => {
+    expect(formatRelativeTime(NOW - 1 * 60 * 60 * 1000, true)).toBe('1h ago');
+    expect(formatRelativeTime(NOW - 5 * 60 * 60 * 1000, true)).toBe('5h ago');
+    expect(formatRelativeTime(NOW - 23 * 60 * 60 * 1000, true)).toBe('23h ago');
+  });
+
+  it('formats days ago for timestamps >= 24 hours', () => {
+    expect(formatRelativeTime(NOW - 24 * 60 * 60 * 1000, true)).toBe('1d ago');
+    expect(formatRelativeTime(NOW - 48 * 60 * 60 * 1000, true)).toBe('2d ago');
+    expect(formatRelativeTime(NOW - 7 * 24 * 60 * 60 * 1000, true)).toBe('7d ago');
+  });
+});
+
+describe('formatLotteryPower', () => {
+  it('returns "--" for null', () => {
+    expect(formatLotteryPower(null)).toBe('--');
+  });
+
+  it('formats lottery power with 3 decimal places', () => {
+    expect(formatLotteryPower(0.05)).toBe('5.000%');
+    expect(formatLotteryPower(0.12345)).toBe('12.345%');
+  });
+
+  it('handles very small values', () => {
+    expect(formatLotteryPower(0.00001)).toBe('0.001%');
+  });
+
+  it('handles zero', () => {
+    expect(formatLotteryPower(0)).toBe('0.000%');
+  });
+});
+
+describe('formatCommission', () => {
+  it('returns "--" for null', () => {
+    expect(formatCommission(null)).toBe('--');
+  });
+
+  it('formats commission rate with 2 decimal places', () => {
+    expect(formatCommission(0.1)).toBe('10.00%');
+    expect(formatCommission(0.05)).toBe('5.00%');
+  });
+
+  it('handles zero commission', () => {
+    expect(formatCommission(0)).toBe('0.00%');
+  });
+
+  it('handles small values', () => {
+    expect(formatCommission(0.001)).toBe('0.10%');
   });
 });

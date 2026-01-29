@@ -1,18 +1,15 @@
 'use client';
 
 import { useMemo } from 'react';
+import {
+  type MRTGDataPoint,
+  type HealthThresholds,
+  DEFAULT_HEALTH_THRESHOLDS,
+} from '@/lib/types/charts';
+import { CHART_COLORS } from '@/lib/theme/colors';
 
-export interface MRTGDataPoint {
-  timestamp: number;
-  value: number;
-}
-
-export interface HealthThresholds {
-  green: number;  // >= this value = green
-  amber: number;  // >= this value = amber
-  orange: number; // >= this value = orange
-  // below orange threshold = red
-}
+// Re-export for backwards compatibility
+export type { MRTGDataPoint, HealthThresholds };
 
 export interface MRTGChartProps {
   data: MRTGDataPoint[];
@@ -33,24 +30,10 @@ export interface MRTGChartProps {
   rawUnit?: string;
 }
 
-const COLOR_MAP = {
-  green: { stroke: 'var(--bb-green)', fill: 'rgba(0, 204, 102, 0.2)' },
-  amber: { stroke: 'var(--bb-amber)', fill: 'rgba(255, 204, 0, 0.15)' },
-  orange: { stroke: 'var(--bb-orange)', fill: 'rgba(255, 102, 0, 0.15)' },
-  cyan: { stroke: 'var(--bb-cyan)', fill: 'rgba(102, 204, 255, 0.15)' },
-  red: { stroke: 'var(--bb-red)', fill: 'rgba(255, 68, 68, 0.15)' },
-};
-
-const DEFAULT_THRESHOLDS: HealthThresholds = {
-  green: 90,
-  amber: 70,
-  orange: 50,
-};
-
 /**
  * Determine color based on health value with configurable thresholds
  */
-function getHealthColor(value: number, thresholds: HealthThresholds = DEFAULT_THRESHOLDS): 'green' | 'amber' | 'orange' | 'red' {
+function getHealthColor(value: number, thresholds: HealthThresholds = DEFAULT_HEALTH_THRESHOLDS): 'green' | 'amber' | 'orange' | 'red' {
   if (value >= thresholds.green) return 'green';
   if (value >= thresholds.amber) return 'amber';
   if (value >= thresholds.orange) return 'orange';
@@ -95,7 +78,7 @@ export function MRTGChart({
   const padding = { top: 8, right: 40, bottom: 20, left: 8 };
   const latestValue = data.length > 0 ? data[data.length - 1].value : 0;
   const effectiveColor = color === 'auto' ? getHealthColor(latestValue, thresholds) : color;
-  const colors = COLOR_MAP[effectiveColor];
+  const colors = CHART_COLORS[effectiveColor];
 
   const { points, pathD, areaD, yMin, yMax, yTicks, timeLabels } = useMemo(() => {
     if (data.length === 0) {
@@ -331,7 +314,7 @@ export function MRTGMultiChart({
       return {
         ...s,
         pathD,
-        colors: COLOR_MAP[s.color],
+        colors: CHART_COLORS[s.color],
       };
     });
 
@@ -357,7 +340,7 @@ export function MRTGMultiChart({
           <span key={i} className="bb-mrtg-legend-item">
             <span
               className="bb-mrtg-legend-dot"
-              style={{ background: COLOR_MAP[s.color].stroke }}
+              style={{ background: CHART_COLORS[s.color].stroke }}
             />
             {s.label}
           </span>

@@ -14,7 +14,7 @@
 import { useState, useEffect } from 'react';
 import type { Validator } from '@/lib/types/validators';
 import { AddressIdenticon } from '@/components/ui/AddressIdenticon';
-import { formatNumber, formatLotteryPower, formatCommission, formatRelativeTime } from '@/lib/format-utils';
+import { formatWithThousands, formatLotteryPower, formatCommission, formatRelativeTime } from '@/lib/formatting';
 
 export interface BakerDetailPanelProps {
   isOpen: boolean;
@@ -124,15 +124,15 @@ export function BakerDetailPanel({
             <h3>Block Production</h3>
             <div className="bdp-stat-row">
               <span className="bdp-stat-label">24h</span>
-              <span className="bdp-stat-value">{formatNumber(validator.blocks24h)}</span>
+              <span className="bdp-stat-value">{formatWithThousands(validator.blocks24h)}</span>
             </div>
             <div className="bdp-stat-row">
               <span className="bdp-stat-label">7d</span>
-              <span className="bdp-stat-value">{formatNumber(validator.blocks7d)}</span>
+              <span className="bdp-stat-value">{formatWithThousands(validator.blocks7d)}</span>
             </div>
             <div className="bdp-stat-row">
               <span className="bdp-stat-label">30d</span>
-              <span className="bdp-stat-value">{formatNumber(validator.blocks30d)}</span>
+              <span className="bdp-stat-value">{formatWithThousands(validator.blocks30d)}</span>
             </div>
             <div className="bdp-stat-row">
               <span className="bdp-stat-label">Last Block</span>
@@ -142,7 +142,7 @@ export function BakerDetailPanel({
               <span className="bdp-stat-label">Last Height</span>
               <span className="bdp-stat-value">
                 {validator.lastBlockHeight !== null
-                  ? formatNumber(validator.lastBlockHeight)
+                  ? formatWithThousands(validator.lastBlockHeight)
                   : '--'}
               </span>
             </div>
@@ -152,15 +152,15 @@ export function BakerDetailPanel({
             <h3>Transactions</h3>
             <div className="bdp-stat-row">
               <span className="bdp-stat-label">24h</span>
-              <span className="bdp-stat-value">{formatNumber(validator.transactions24h)}</span>
+              <span className="bdp-stat-value">{formatWithThousands(validator.transactions24h)}</span>
             </div>
             <div className="bdp-stat-row">
               <span className="bdp-stat-label">7d</span>
-              <span className="bdp-stat-value">{formatNumber(validator.transactions7d)}</span>
+              <span className="bdp-stat-value">{formatWithThousands(validator.transactions7d)}</span>
             </div>
             <div className="bdp-stat-row">
               <span className="bdp-stat-label">30d</span>
-              <span className="bdp-stat-value">{formatNumber(validator.transactions30d)}</span>
+              <span className="bdp-stat-value">{formatWithThousands(validator.transactions30d)}</span>
             </div>
           </div>
 
@@ -196,7 +196,7 @@ export function BakerDetailPanel({
             <h3>Metadata</h3>
             <div className="bdp-stat-row">
               <span className="bdp-stat-label">State Transitions</span>
-              <span className="bdp-stat-value">{formatNumber(validator.stateTransitionCount)}</span>
+              <span className="bdp-stat-value">{formatWithThousands(validator.stateTransitionCount)}</span>
             </div>
             <div className="bdp-stat-row">
               <span className="bdp-stat-label">Data Completeness</span>
